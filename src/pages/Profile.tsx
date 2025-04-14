@@ -20,8 +20,19 @@ import {
   Mail, 
   Phone, 
   Briefcase, 
-  Building2 
+  Building2,
+  EyeIcon,
+  EyeOffIcon
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { toast } from '@/components/ui/sonner';
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -30,7 +41,8 @@ export default function ProfilePage() {
     preferences, 
     loading, 
     updateProfile, 
-    updatePreferences 
+    updatePreferences,
+    changePassword
   } = useProfileSettings(user);
 
   const [localProfile, setLocalProfile] = useState({
@@ -42,6 +54,29 @@ export default function ProfilePage() {
     receive_deadline_notifications: profile?.receive_deadline_notifications || false,
     receive_upload_alerts: profile?.receive_upload_alerts || false,
     receive_newsletter: profile?.receive_newsletter || false,
+  });
+
+  // Password change state
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
+
+  // Update local profile state when profile data is loaded
+  useState(() => {
+    if (profile) {
+      setLocalProfile({
+        first_name: profile.first_name || '',
+        last_name: profile.last_name || '',
+        phone_number: profile.phone_number || '',
+        job_title: profile.job_title || '',
+        department: profile.department || '',
+        receive_deadline_notifications: profile.receive_deadline_notifications || false,
+        receive_upload_alerts: profile.receive_upload_alerts || false,
+        receive_newsletter: profile.receive_newsletter || false,
+      });
+    }
   });
 
   const getInitials = () => {
@@ -66,6 +101,36 @@ export default function ProfilePage() {
       theme: theme,
       user_id: user?.id || ''
     });
+  };
+
+  // Password change handler
+  const handlePasswordChange = async () => {
+    if (newPassword !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    setIsSubmittingPassword(true);
+    
+    try {
+      const { error } = await changePassword(newPassword);
+      
+      if (error) throw error;
+      
+      // Reset fields and close dialog on success
+      setNewPassword('');
+      setConfirmPassword('');
+      setIsChangePasswordOpen(false);
+    } catch (error) {
+      console.error('Error changing password:', error);
+    } finally {
+      setIsSubmittingPassword(false);
+    }
   };
 
   // Helper function to validate theme
@@ -118,7 +183,7 @@ export default function ProfilePage() {
                     
                     <div>
                       <h3 className="text-lg font-semibold">
-                        {user?.profile?.first_name} {user?.profile?.last_name}
+                        {profile?.first_name} {profile?.last_name}
                       </h3>
                       <p className="text-sm text-gray-500 flex items-center gap-2">
                         <Mail className="h-4 w-4" /> {user?.email}
@@ -257,7 +322,10 @@ export default function ProfilePage() {
                       className="bg-gray-100" 
                     />
                   </div>
-                  <Button variant="destructive">
+                  <Button 
+                    variant="destructive"
+                    onClick={() => setIsChangePasswordOpen(true)}
+                  >
                     Change Password
                   </Button>
                 </div>
@@ -332,6 +400,80 @@ export default function ProfilePage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Password Change Dialog */}
+      <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+            <DialogDescription>
+              Enter your new password below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <div className="relative">
+                <Input
+                  id="new-password"
+                  type={showPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="pr-10"
+                />
+                <Button 
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <div className="relative">
+                <Input
+                  id="confirm-password"
+                  type={showPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="pr-10"
+                />
+                <Button 
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsChangePasswordOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handlePasswordChange}
+              disabled={isSubmittingPassword}
+            >
+              {isSubmittingPassword ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 }

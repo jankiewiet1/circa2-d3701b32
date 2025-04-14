@@ -135,11 +135,29 @@ export const useProfileSettings = (user: UserWithProfile | null) => {
     }
   };
 
+  const changePassword = async (newPassword: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) throw error;
+      
+      toast.success('Password updated successfully');
+      return { error: null };
+    } catch (error: any) {
+      console.error('Error updating password:', error);
+      toast.error('Failed to update password: ' + error.message);
+      return { error };
+    }
+  };
+
   return {
     profile,
     preferences,
     loading,
     updateProfile,
-    updatePreferences
+    updatePreferences,
+    changePassword
   };
 };
