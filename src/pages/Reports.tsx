@@ -53,7 +53,7 @@ const reports = [
 
 export default function Reports() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState("");
+  const [filterType, setFilterType] = useState("all");
   
   // Filter reports based on search term and type filter
   const filteredReports = reports.filter(report => {
@@ -61,7 +61,7 @@ export default function Reports() {
       report.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       report.description.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesType = filterType === "" || report.type === filterType;
+    const matchesType = filterType === "all" || report.type === filterType;
     
     return matchesSearch && matchesType;
   });
@@ -115,11 +115,11 @@ export default function Reports() {
                       <SelectTrigger className="w-full sm:w-[180px]">
                         <div className="flex items-center">
                           <Filter className="mr-2 h-4 w-4" />
-                          {filterType || "Filter by type"}
+                          {filterType === "all" ? "All Types" : filterType}
                         </div>
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Types</SelectItem>
+                        <SelectItem value="all">All Types</SelectItem>
                         <SelectItem value="Annual">Annual</SelectItem>
                         <SelectItem value="Quarterly">Quarterly</SelectItem>
                         <SelectItem value="Bi-annual">Bi-annual</SelectItem>
