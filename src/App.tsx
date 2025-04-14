@@ -1,25 +1,148 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
+import { AuthProvider } from "@/contexts/AuthContext";
+import { CompanyProvider } from "@/contexts/CompanyContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+
+// Auth Pages
+import Login from "@/pages/auth/Login";
+import Register from "@/pages/auth/Register";
+
+// Main Pages
+import Dashboard from "@/pages/Dashboard";
+import Reports from "@/pages/Reports";
+
+// Emissions Pages
+import Scope1 from "@/pages/emissions/Scope1";
+import Scope2 from "@/pages/emissions/Scope2";
+import Scope3 from "@/pages/emissions/Scope3";
+
+// Company Pages
+import CompanySetup from "@/pages/company/CompanySetup";
+import CompanyManage from "@/pages/company/CompanyManage";
+
+// User Pages
+import Profile from "@/pages/Profile";
+import Settings from "@/pages/Settings";
+
+// Not Found
+import NotFound from "@/pages/NotFound";
+
+// Create React Query client
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <AuthProvider>
+        <CompanyProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* Auth Routes - Public */}
+              <Route path="/auth/login" element={<Login />} />
+              <Route path="/auth/register" element={<Register />} />
+              
+              {/* Redirect root to dashboard */}
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              
+              {/* Protected Routes */}
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              
+              <Route
+                path="/reports"
+                element={
+                  <ProtectedRoute>
+                    <Reports />
+                  </ProtectedRoute>
+                }
+              />
+              
+              {/* Emissions Routes */}
+              <Route
+                path="/emissions/scope1"
+                element={
+                  <ProtectedRoute>
+                    <Scope1 />
+                  </ProtectedRoute>
+                }
+              />
+              
+              <Route
+                path="/emissions/scope2"
+                element={
+                  <ProtectedRoute>
+                    <Scope2 />
+                  </ProtectedRoute>
+                }
+              />
+              
+              <Route
+                path="/emissions/scope3"
+                element={
+                  <ProtectedRoute>
+                    <Scope3 />
+                  </ProtectedRoute>
+                }
+              />
+              
+              {/* Company Routes */}
+              <Route
+                path="/company/setup"
+                element={
+                  <ProtectedRoute>
+                    <CompanySetup />
+                  </ProtectedRoute>
+                }
+              />
+              
+              <Route
+                path="/company/manage"
+                element={
+                  <ProtectedRoute>
+                    <CompanyManage />
+                  </ProtectedRoute>
+                }
+              />
+              
+              {/* User Routes */}
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
+              
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <Settings />
+                  </ProtectedRoute>
+                }
+              />
+              
+              {/* Catch all route - 404 */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </CompanyProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
