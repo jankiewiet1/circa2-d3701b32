@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Company, CompanyMember, UserRole } from "@/types";
@@ -53,7 +52,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         console.error("Error fetching company data:", error);
       } else {
         setCompany(company);
-        setCompanyMembers(members);
+        setCompanyMembers(members || []);
         setUserRole(role);
       }
       
@@ -72,6 +71,9 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       fetchCompanyData();
     } else {
       setLoading(false);
+      setCompany(null);
+      setCompanyMembers([]);
+      setUserRole(null);
     }
   }, [user?.id]);
 

@@ -14,7 +14,7 @@ export const ProtectedRoute = ({ children, requireCompany = true }: ProtectedRou
   const { hasCompany, loading: companyLoading } = useCompany();
   const location = useLocation();
   
-  const loading = authLoading || companyLoading;
+  const loading = authLoading || (requireCompany && companyLoading);
   
   if (loading) {
     return (
@@ -25,7 +25,6 @@ export const ProtectedRoute = ({ children, requireCompany = true }: ProtectedRou
           <div className="space-y-2">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-4/5" />
-            <Skeleton className="h-4 w-3/5" />
           </div>
         </div>
       </div>
@@ -39,8 +38,13 @@ export const ProtectedRoute = ({ children, requireCompany = true }: ProtectedRou
   
   // If the route requires company access and user doesn't have a company,
   // redirect to the company setup page
-  if (requireCompany && !hasCompany) {
+  if (requireCompany && !hasCompany && !location.pathname.startsWith('/company/setup')) {
     return <Navigate to="/company/setup" state={{ from: location }} replace />;
+  }
+  
+  // If user has a company and tries to access setup page, redirect to dashboard
+  if (hasCompany && location.pathname.startsWith('/company/setup')) {
+    return <Navigate to="/dashboard" replace />;
   }
   
   return <>{children}</>;

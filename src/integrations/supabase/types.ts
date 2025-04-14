@@ -169,6 +169,50 @@ export type Database = {
           },
         ]
       }
+      company_preferences: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          fiscal_year_start_month: string | null
+          id: string
+          language: string | null
+          preferred_currency: string | null
+          reporting_frequency: string | null
+          timezone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          fiscal_year_start_month?: string | null
+          id?: string
+          language?: string | null
+          preferred_currency?: string | null
+          reporting_frequency?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          fiscal_year_start_month?: string | null
+          id?: string
+          language?: string | null
+          preferred_currency?: string | null
+          reporting_frequency?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_preferences_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { Company, CompanyMember, UserRole } from "@/types";
@@ -9,84 +8,66 @@ export const fetchCompanyDataService = async (userId: string) => {
     
     const { data: memberData, error: memberError } = await supabase
       .from('company_members')
-      .select('*, companies(*)')
-      .eq('user_id', userId);
+      .select(`
+        id,
+        role,
+        company:companies (
+          id,
+          name,
+          industry,
+          created_by_user_id,
+          created_at,
+          updated_at,
+          country,
+          kvk_number,
+          vat_number,
+          iban,
+          bank_name,
+          billing_email,
+          phone_number,
+          billing_address,
+          postal_code,
+          city,
+          contact_name,
+          contact_title,
+          contact_email,
+          preferred_currency,
+          fiscal_year_start_month,
+          reporting_frequency,
+          language,
+          timezone,
+          setup_completed
+        )
+      `)
+      .eq('user_id', userId)
+      .single();
     
-    if (memberError) {
+    if (memberError && memberError.code !== 'PGRST116') {
       console.error("Member error:", memberError);
       throw memberError;
     }
     
     console.log("Member data received:", memberData);
     
-    if (memberData && memberData.length > 0) {
-      const userCompany = memberData[0].companies;
-      
-      if (!userCompany) {
-        console.log("No company found in member data");
-        return { company: null, members: [], userRole: null, error: new Error("Company data missing from member record") };
-      }
-      
-      const companyWithTypes: Company = {
-        id: userCompany.id,
-        name: userCompany.name,
-        industry: userCompany.industry,
-        created_by_user_id: userCompany.created_by_user_id,
-        created_at: userCompany.created_at,
-        updated_at: userCompany.updated_at || undefined,
-        // Additional fields from our extension
-        country: userCompany.country,
-        kvk_number: userCompany.kvk_number,
-        vat_number: userCompany.vat_number,
-        iban: userCompany.iban,
-        bank_name: userCompany.bank_name,
-        billing_email: userCompany.billing_email,
-        phone_number: userCompany.phone_number,
-        billing_address: userCompany.billing_address,
-        postal_code: userCompany.postal_code,
-        city: userCompany.city,
-        contact_name: userCompany.contact_name,
-        contact_title: userCompany.contact_title,
-        contact_email: userCompany.contact_email,
-        preferred_currency: userCompany.preferred_currency,
-        fiscal_year_start_month: userCompany.fiscal_year_start_month,
-        reporting_frequency: userCompany.reporting_frequency,
-        language: userCompany.language,
-        timezone: userCompany.timezone,
-        setup_completed: userCompany.setup_completed
-      };
-      
+    if (memberData?.company) {
       const { data: allMembers, error: membersError } = await supabase
         .from('company_members')
         .select('*')
-        .eq('company_id', userCompany.id);
+        .eq('company_id', memberData.company.id);
       
       if (membersError) {
         console.error("Members list error:", membersError);
         throw membersError;
       }
       
-      const typedMembers: CompanyMember[] = allMembers?.map(member => ({
-        id: member.id,
-        company_id: member.company_id,
-        user_id: member.user_id,
-        role: member.role,
-        joined_at: member.joined_at,
-        created_at: member.created_at || undefined,
-        updated_at: member.updated_at || undefined
-      })) || [];
-      
-      console.log("Successfully processed company data:", companyWithTypes.name);
-      
       return {
-        company: companyWithTypes,
-        members: typedMembers,
-        userRole: memberData[0].role as UserRole,
+        company: memberData.company,
+        members: allMembers || [],
+        userRole: memberData.role as UserRole,
         error: null
       };
     }
     
-    console.log("No company membership found for user");
     return { company: null, members: [], userRole: null, error: null };
   } catch (error: any) {
     console.error("Error in fetchCompanyDataService:", error);
@@ -102,7 +83,6 @@ export const createCompanyService = async (name: string, industry: string, userI
       throw new Error("User ID is required to create a company");
     }
     
-    // Check if user already belongs to a company
     const { data: existingMember, error: checkError } = await supabase
       .from('company_members')
       .select('company_id')
@@ -118,7 +98,6 @@ export const createCompanyService = async (name: string, industry: string, userI
       throw new Error("You already belong to a company");
     }
     
-    // Create company
     const { data: newCompany, error: companyError } = await supabase
       .from('companies')
       .insert({
@@ -136,7 +115,6 @@ export const createCompanyService = async (name: string, industry: string, userI
     
     console.log("Company created:", newCompany);
     
-    // Create company member entry for the creator with admin role
     const { error: memberError } = await supabase
       .from('company_members')
       .insert({
