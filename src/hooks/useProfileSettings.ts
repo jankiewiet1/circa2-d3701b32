@@ -33,7 +33,17 @@ export const useProfileSettings = (user: UserWithProfile | null) => {
         if (preferencesError) throw preferencesError;
 
         setProfile(profileData);
-        setPreferences(preferencesData);
+        
+        // Ensure theme is a valid value before setting state
+        if (preferencesData) {
+          const validTheme = validateTheme(preferencesData.theme);
+          const typedPreferences: UserPreferences = {
+            ...preferencesData,
+            theme: validTheme,
+            user_id: preferencesData.user_id
+          };
+          setPreferences(typedPreferences);
+        }
       } catch (error) {
         console.error('Error fetching profile data:', error);
         toast.error('Failed to load profile data');
@@ -44,6 +54,14 @@ export const useProfileSettings = (user: UserWithProfile | null) => {
 
     fetchProfileData();
   }, [user?.id]);
+
+  // Helper function to validate theme
+  const validateTheme = (theme: string | null | undefined): 'light' | 'dark' | 'system' => {
+    if (theme === 'light' || theme === 'dark' || theme === 'system') {
+      return theme;
+    }
+    return 'system'; // Default fallback
+  };
 
   const updateProfile = async (updatedProfile: any) => {
     if (!user) return;
@@ -68,6 +86,11 @@ export const useProfileSettings = (user: UserWithProfile | null) => {
     if (!user) return;
 
     try {
+      // Ensure theme is a valid value
+      if (updatedPreferences.theme) {
+        updatedPreferences.theme = validateTheme(updatedPreferences.theme);
+      }
+      
       // First check if a preferences record exists
       const { data: existingPreferences } = await supabase
         .from('user_preferences')
@@ -95,7 +118,16 @@ export const useProfileSettings = (user: UserWithProfile | null) => {
       const { error } = result;
       if (error) throw error;
 
-      setPreferences(prev => ({ ...prev, ...updatedPreferences } as UserPreferences));
+      if (preferences) {
+        setPreferences(prev => {
+          if (!prev) return null;
+          return { 
+            ...prev, 
+            ...updatedPreferences,
+            theme: validateTheme(updatedPreferences.theme || prev.theme)
+          };
+        });
+      }
       toast.success('Preferences updated successfully');
     } catch (error) {
       console.error('Error updating preferences:', error);

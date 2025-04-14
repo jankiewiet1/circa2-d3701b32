@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfileSettings } from '@/hooks/useProfileSettings';
+import { UserPreferences } from '@/types';
 import { 
   UserRound, 
   Lock, 
@@ -55,11 +56,24 @@ export default function ProfilePage() {
 
   const handlePreferencesSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Ensure theme is one of the allowed values
+    const theme = validateTheme(preferences?.theme);
+    
     await updatePreferences({
       language: preferences?.language || 'en',
       timezone: preferences?.timezone || 'Europe/Amsterdam',
-      theme: preferences?.theme || 'system',
+      theme: theme,
+      user_id: user?.id || ''
     });
+  };
+
+  // Helper function to validate theme
+  const validateTheme = (theme?: string | null): UserPreferences['theme'] => {
+    if (theme === 'light' || theme === 'dark' || theme === 'system') {
+      return theme;
+    }
+    return 'system'; // Default fallback
   };
 
   if (loading) {
@@ -295,8 +309,8 @@ export default function ProfilePage() {
                   <div className="space-y-2">
                     <Label>Theme</Label>
                     <Select 
-                      value={preferences?.theme || 'system'}
-                      onValueChange={(value) => updatePreferences({ theme: value })}
+                      value={validateTheme(preferences?.theme)}
+                      onValueChange={(value: 'light' | 'dark' | 'system') => updatePreferences({ theme: value })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select Theme" />
