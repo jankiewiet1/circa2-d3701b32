@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,7 +18,8 @@ import Register from "@/pages/auth/Register";
 // Main Pages
 import Dashboard from "@/pages/Dashboard";
 import Reports from "@/pages/Reports";
-import DataUpload from "@/pages/DataUpload"; // Added the missing import here
+import DataUpload from "@/pages/DataUpload";
+import Profile from "@/pages/Profile";
 
 // Emissions Pages
 import Scope1 from "@/pages/emissions/Scope1";
@@ -34,7 +34,6 @@ import CompanyTeam from "@/pages/company/setup/CompanyTeam";
 import CompanyPreferences from "@/pages/company/setup/CompanyPreferences";
 
 // User Pages
-import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";
 
 // Not Found

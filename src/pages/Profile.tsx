@@ -1,204 +1,318 @@
 
-import { useState } from "react";
-import { MainLayout } from "@/components/MainLayout";
-import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, UserRound, Mail, Settings, Key } from "lucide-react";
+import { useState } from 'react';
+import { MainLayout } from '@/components/MainLayout';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useAuth } from '@/contexts/AuthContext';
+import { useProfileSettings } from '@/hooks/useProfileSettings';
+import { 
+  UserRound, 
+  Lock, 
+  Settings, 
+  Loader2, 
+  Mail, 
+  Phone, 
+  Briefcase, 
+  Building2 
+} from 'lucide-react';
 
-export default function Profile() {
-  const { user, loading, updateProfile } = useAuth();
-  const [firstName, setFirstName] = useState(user?.profile?.first_name || "");
-  const [lastName, setLastName] = useState(user?.profile?.last_name || "");
-  const [updating, setUpdating] = useState(false);
-  
+export default function ProfilePage() {
+  const { user } = useAuth();
+  const { 
+    profile, 
+    preferences, 
+    loading, 
+    updateProfile, 
+    updatePreferences 
+  } = useProfileSettings(user);
+
+  const [localProfile, setLocalProfile] = useState({
+    first_name: profile?.first_name || '',
+    last_name: profile?.last_name || '',
+    phone_number: profile?.phone_number || '',
+    job_title: profile?.job_title || '',
+    department: profile?.department || '',
+    receive_deadline_notifications: profile?.receive_deadline_notifications || false,
+    receive_upload_alerts: profile?.receive_upload_alerts || false,
+    receive_newsletter: profile?.receive_newsletter || false,
+  });
+
   const getInitials = () => {
-    if (!user?.profile) return "U";
-    return `${user.profile.first_name[0]}${user.profile.last_name[0]}`;
+    if (!user?.profile) return 'U';
+    return `${user.profile.first_name?.[0] || ''}${user.profile.last_name?.[0] || ''}`;
   };
-  
-  const handleUpdateProfile = async (e: React.FormEvent) => {
+
+  const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setUpdating(true);
-    
-    try {
-      await updateProfile({
-        first_name: firstName,
-        last_name: lastName,
-      });
-    } finally {
-      setUpdating(false);
-    }
+    await updateProfile(localProfile);
   };
-  
+
+  const handlePreferencesSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await updatePreferences({
+      language: preferences?.language || 'en',
+      timezone: preferences?.timezone || 'Europe/Amsterdam',
+      theme: preferences?.theme || 'system',
+    });
+  };
+
   if (loading) {
     return (
       <MainLayout>
-        <div className="max-w-3xl space-y-6">
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-4 w-64" />
-          </div>
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-24" />
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center space-x-4">
-                <Skeleton className="h-16 w-16 rounded-full" />
-                <div className="space-y-2">
-                  <Skeleton className="h-5 w-40" />
-                  <Skeleton className="h-4 w-60" />
-                </div>
-              </div>
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </CardContent>
-          </Card>
+        <div className="flex justify-center items-center min-h-screen">
+          <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       </MainLayout>
     );
   }
-  
+
   return (
     <MainLayout>
-      <div className="max-w-3xl">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold">Your Profile</h1>
-          <p className="text-gray-500 mt-2">Manage your account information and preferences</p>
-        </div>
-        
-        <Tabs defaultValue="profile">
-          <TabsList>
-            <TabsTrigger value="profile" className="flex items-center">
-              <UserRound className="mr-2 h-4 w-4" />
-              Profile
+      <div className="max-w-4xl mx-auto space-y-6 p-6">
+        <Tabs defaultValue="profile" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="profile" className="flex items-center gap-2">
+              <UserRound className="h-4 w-4" /> Profile
             </TabsTrigger>
-            <TabsTrigger value="security" className="flex items-center">
-              <Key className="mr-2 h-4 w-4" />
-              Security
+            <TabsTrigger value="security" className="flex items-center gap-2">
+              <Lock className="h-4 w-4" /> Security
             </TabsTrigger>
-            <TabsTrigger value="preferences" className="flex items-center">
-              <Settings className="mr-2 h-4 w-4" />
-              Preferences
+            <TabsTrigger value="preferences" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" /> Preferences
             </TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="profile" className="mt-6 space-y-6">
+
+          <TabsContent value="profile">
             <Card>
               <CardHeader>
                 <CardTitle>Personal Information</CardTitle>
-                <CardDescription>Update your personal details</CardDescription>
               </CardHeader>
-              <form onSubmit={handleUpdateProfile}>
-                <CardContent className="space-y-6">
-                  <div className="flex items-center space-x-4">
+              <CardContent>
+                <form onSubmit={handleProfileSubmit} className="space-y-6">
+                  <div className="flex items-center space-x-6">
                     <Avatar className="h-16 w-16">
-                      <AvatarFallback className="text-xl bg-circa-green text-white">
+                      <AvatarFallback className="bg-circa-green text-white text-xl">
                         {getInitials()}
                       </AvatarFallback>
                     </Avatar>
                     
                     <div>
-                      <h3 className="font-medium">
+                      <h3 className="text-lg font-semibold">
                         {user?.profile?.first_name} {user?.profile?.last_name}
                       </h3>
-                      <p className="text-sm text-gray-500 flex items-center mt-1">
-                        <Mail className="h-4 w-4 mr-1" />
-                        {user?.email}
+                      <p className="text-sm text-gray-500 flex items-center gap-2">
+                        <Mail className="h-4 w-4" /> {user?.email}
                       </p>
                     </div>
                   </div>
-                  
-                  <Separator />
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input
-                        id="firstName"
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        required
+                      <Label>First Name</Label>
+                      <Input 
+                        value={localProfile.first_name} 
+                        onChange={(e) => setLocalProfile(prev => ({ 
+                          ...prev, 
+                          first_name: e.target.value 
+                        }))}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input
-                        id="lastName"
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        required
+                      <Label>Last Name</Label>
+                      <Input 
+                        value={localProfile.last_name} 
+                        onChange={(e) => setLocalProfile(prev => ({ 
+                          ...prev, 
+                          last_name: e.target.value 
+                        }))}
                       />
                     </div>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={user?.email}
-                      disabled
-                      className="bg-gray-50"
-                    />
-                    <p className="text-xs text-gray-500">
-                      To change your email address, please contact support
-                    </p>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        <Phone className="h-4 w-4" /> Phone Number
+                      </Label>
+                      <Input 
+                        value={localProfile.phone_number} 
+                        onChange={(e) => setLocalProfile(prev => ({ 
+                          ...prev, 
+                          phone_number: e.target.value 
+                        }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        <Briefcase className="h-4 w-4" /> Job Title
+                      </Label>
+                      <Input 
+                        value={localProfile.job_title} 
+                        onChange={(e) => setLocalProfile(prev => ({ 
+                          ...prev, 
+                          job_title: e.target.value 
+                        }))}
+                      />
+                    </div>
                   </div>
-                </CardContent>
-                <CardFooter>
-                  <Button type="submit" className="bg-circa-green hover:bg-circa-green-dark" disabled={updating}>
-                    {updating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Save Changes
+
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4" /> Department
+                    </Label>
+                    <Input 
+                      value={localProfile.department} 
+                      onChange={(e) => setLocalProfile(prev => ({ 
+                        ...prev, 
+                        department: e.target.value 
+                      }))}
+                    />
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Communication Preferences</h3>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="deadline_notifications"
+                          checked={localProfile.receive_deadline_notifications}
+                          onCheckedChange={(checked) => setLocalProfile(prev => ({
+                            ...prev,
+                            receive_deadline_notifications: !!checked
+                          }))}
+                        />
+                        <Label htmlFor="deadline_notifications">
+                          Receive deadline notifications
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="upload_alerts"
+                          checked={localProfile.receive_upload_alerts}
+                          onCheckedChange={(checked) => setLocalProfile(prev => ({
+                            ...prev,
+                            receive_upload_alerts: !!checked
+                          }))}
+                        />
+                        <Label htmlFor="upload_alerts">
+                          Receive upload alerts
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="newsletter"
+                          checked={localProfile.receive_newsletter}
+                          onCheckedChange={(checked) => setLocalProfile(prev => ({
+                            ...prev,
+                            receive_newsletter: !!checked
+                          }))}
+                        />
+                        <Label htmlFor="newsletter">
+                          Receive newsletter
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button type="submit" className="w-full">
+                    Save Profile Changes
                   </Button>
-                </CardFooter>
-              </form>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Communication Preferences</CardTitle>
-                <CardDescription>Manage how we communicate with you</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-500">
-                  Email preference settings will be available in the full version.
-                </p>
+                </form>
               </CardContent>
             </Card>
           </TabsContent>
-          
-          <TabsContent value="security" className="mt-6 space-y-6">
+
+          <TabsContent value="security">
             <Card>
               <CardHeader>
-                <CardTitle>Security Settings</CardTitle>
-                <CardDescription>Manage your password and security preferences</CardDescription>
+                <CardTitle>Account Security</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-500">
-                  Password change and security settings will be available in the full version.
-                </p>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <Input 
+                      value={user?.email || ''} 
+                      disabled 
+                      className="bg-gray-100" 
+                    />
+                  </div>
+                  <Button variant="destructive">
+                    Change Password
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
-          
-          <TabsContent value="preferences" className="mt-6 space-y-6">
+
+          <TabsContent value="preferences">
             <Card>
               <CardHeader>
-                <CardTitle>Application Preferences</CardTitle>
-                <CardDescription>Customize your application experience</CardDescription>
+                <CardTitle>User Preferences</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-500">
-                  Application preferences will be available in the full version.
-                </p>
+                <form onSubmit={handlePreferencesSubmit} className="space-y-6">
+                  <div className="space-y-2">
+                    <Label>Language</Label>
+                    <Select 
+                      value={preferences?.language || 'en'}
+                      onValueChange={(value) => updatePreferences({ language: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Language" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="en">English</SelectItem>
+                        <SelectItem value="es">Spanish</SelectItem>
+                        <SelectItem value="fr">French</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Timezone</Label>
+                    <Select 
+                      value={preferences?.timezone || 'Europe/Amsterdam'}
+                      onValueChange={(value) => updatePreferences({ timezone: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Timezone" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Europe/Amsterdam">Amsterdam</SelectItem>
+                        <SelectItem value="America/New_York">New York</SelectItem>
+                        <SelectItem value="Asia/Tokyo">Tokyo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Theme</Label>
+                    <Select 
+                      value={preferences?.theme || 'system'}
+                      onValueChange={(value) => updatePreferences({ theme: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Theme" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="system">System</SelectItem>
+                        <SelectItem value="light">Light</SelectItem>
+                        <SelectItem value="dark">Dark</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <Button type="submit" className="w-full">
+                    Save Preferences
+                  </Button>
+                </form>
               </CardContent>
             </Card>
           </TabsContent>

@@ -216,24 +216,42 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string | null
+          department: string | null
           email: string | null
           first_name: string | null
           id: string
+          job_title: string | null
           last_name: string | null
+          phone_number: string | null
+          receive_deadline_notifications: boolean | null
+          receive_newsletter: boolean | null
+          receive_upload_alerts: boolean | null
         }
         Insert: {
           created_at?: string | null
+          department?: string | null
           email?: string | null
           first_name?: string | null
           id: string
+          job_title?: string | null
           last_name?: string | null
+          phone_number?: string | null
+          receive_deadline_notifications?: boolean | null
+          receive_newsletter?: boolean | null
+          receive_upload_alerts?: boolean | null
         }
         Update: {
           created_at?: string | null
+          department?: string | null
           email?: string | null
           first_name?: string | null
           id?: string
+          job_title?: string | null
           last_name?: string | null
+          phone_number?: string | null
+          receive_deadline_notifications?: boolean | null
+          receive_newsletter?: boolean | null
+          receive_upload_alerts?: boolean | null
         }
         Relationships: []
       }
@@ -268,6 +286,44 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_preferences: {
+        Row: {
+          created_at: string | null
+          id: string
+          language: string | null
+          theme: string | null
+          timezone: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          language?: string | null
+          theme?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          language?: string | null
+          theme?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
