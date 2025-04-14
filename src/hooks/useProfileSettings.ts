@@ -8,6 +8,7 @@ export const useProfileSettings = (user: UserWithProfile | null) => {
   const [profile, setProfile] = useState<any>(null);
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -30,8 +31,9 @@ export const useProfileSettings = (user: UserWithProfile | null) => {
           .single();
 
         if (profileError) throw profileError;
-        if (preferencesError) throw preferencesError;
+        if (preferencesError && preferencesError.code !== 'PGRST116') throw preferencesError;
 
+        console.log("Profile data loaded:", profileData);
         setProfile(profileData);
         
         // Ensure theme is a valid value before setting state
@@ -76,6 +78,7 @@ export const useProfileSettings = (user: UserWithProfile | null) => {
 
       setProfile(prev => ({ ...prev, ...updatedProfile }));
       toast.success('Profile updated successfully');
+      setIsEditing(false); // Exit edit mode after successful update
     } catch (error) {
       console.error('Error updating profile:', error);
       toast.error('Failed to update profile');
@@ -152,10 +155,16 @@ export const useProfileSettings = (user: UserWithProfile | null) => {
     }
   };
 
+  const toggleEditMode = () => {
+    setIsEditing(!isEditing);
+  };
+
   return {
     profile,
     preferences,
     loading,
+    isEditing,
+    toggleEditMode,
     updateProfile,
     updatePreferences,
     changePassword

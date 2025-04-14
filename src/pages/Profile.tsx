@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +22,10 @@ import {
   Briefcase, 
   Building2,
   EyeIcon,
-  EyeOffIcon
+  EyeOffIcon,
+  Pencil,
+  Save,
+  X
 } from 'lucide-react';
 import {
   Dialog,
@@ -40,20 +43,22 @@ export default function ProfilePage() {
     profile, 
     preferences, 
     loading, 
+    isEditing,
+    toggleEditMode,
     updateProfile, 
     updatePreferences,
     changePassword
   } = useProfileSettings(user);
 
   const [localProfile, setLocalProfile] = useState({
-    first_name: profile?.first_name || '',
-    last_name: profile?.last_name || '',
-    phone_number: profile?.phone_number || '',
-    job_title: profile?.job_title || '',
-    department: profile?.department || '',
-    receive_deadline_notifications: profile?.receive_deadline_notifications || false,
-    receive_upload_alerts: profile?.receive_upload_alerts || false,
-    receive_newsletter: profile?.receive_newsletter || false,
+    first_name: '',
+    last_name: '',
+    phone_number: '',
+    job_title: '',
+    department: '',
+    receive_deadline_notifications: false,
+    receive_upload_alerts: false,
+    receive_newsletter: false,
   });
 
   // Password change state
@@ -64,7 +69,7 @@ export default function ProfilePage() {
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
 
   // Update local profile state when profile data is loaded
-  useState(() => {
+  useEffect(() => {
     if (profile) {
       setLocalProfile({
         first_name: profile.first_name || '',
@@ -77,7 +82,7 @@ export default function ProfilePage() {
         receive_newsletter: profile.receive_newsletter || false,
       });
     }
-  });
+  }, [profile]);
 
   const getInitials = () => {
     if (!user?.profile) return 'U';
@@ -169,11 +174,40 @@ export default function ProfilePage() {
 
           <TabsContent value="profile">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Personal Information</CardTitle>
+                {isEditing ? (
+                  <div className="flex gap-2">
+                    <Button 
+                      type="submit" 
+                      form="profile-form" 
+                      size="sm" 
+                      className="flex items-center gap-2"
+                    >
+                      <Save className="h-4 w-4" /> Save
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={toggleEditMode} 
+                      className="flex items-center gap-2"
+                    >
+                      <X className="h-4 w-4" /> Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <Button 
+                    onClick={toggleEditMode} 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center gap-2"
+                  >
+                    <Pencil className="h-4 w-4" /> Edit
+                  </Button>
+                )}
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleProfileSubmit} className="space-y-6">
+                <form id="profile-form" onSubmit={handleProfileSubmit} className="space-y-6">
                   <div className="flex items-center space-x-6">
                     <Avatar className="h-16 w-16">
                       <AvatarFallback className="bg-circa-green text-white text-xl">
@@ -200,6 +234,8 @@ export default function ProfilePage() {
                           ...prev, 
                           first_name: e.target.value 
                         }))}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-gray-50" : ""}
                       />
                     </div>
                     <div className="space-y-2">
@@ -210,6 +246,8 @@ export default function ProfilePage() {
                           ...prev, 
                           last_name: e.target.value 
                         }))}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-gray-50" : ""}
                       />
                     </div>
                   </div>
@@ -225,6 +263,8 @@ export default function ProfilePage() {
                           ...prev, 
                           phone_number: e.target.value 
                         }))}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-gray-50" : ""}
                       />
                     </div>
                     <div className="space-y-2">
@@ -237,6 +277,8 @@ export default function ProfilePage() {
                           ...prev, 
                           job_title: e.target.value 
                         }))}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-gray-50" : ""}
                       />
                     </div>
                   </div>
@@ -251,6 +293,8 @@ export default function ProfilePage() {
                         ...prev, 
                         department: e.target.value 
                       }))}
+                      disabled={!isEditing}
+                      className={!isEditing ? "bg-gray-50" : ""}
                     />
                   </div>
 
@@ -265,6 +309,7 @@ export default function ProfilePage() {
                             ...prev,
                             receive_deadline_notifications: !!checked
                           }))}
+                          disabled={!isEditing}
                         />
                         <Label htmlFor="deadline_notifications">
                           Receive deadline notifications
@@ -278,6 +323,7 @@ export default function ProfilePage() {
                             ...prev,
                             receive_upload_alerts: !!checked
                           }))}
+                          disabled={!isEditing}
                         />
                         <Label htmlFor="upload_alerts">
                           Receive upload alerts
@@ -291,6 +337,7 @@ export default function ProfilePage() {
                             ...prev,
                             receive_newsletter: !!checked
                           }))}
+                          disabled={!isEditing}
                         />
                         <Label htmlFor="newsletter">
                           Receive newsletter
@@ -299,9 +346,11 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  <Button type="submit" className="w-full">
-                    Save Profile Changes
-                  </Button>
+                  {isEditing && (
+                    <Button type="submit" className="w-full">
+                      Save Profile Changes
+                    </Button>
+                  )}
                 </form>
               </CardContent>
             </Card>
