@@ -55,7 +55,17 @@ const App = () => (
               <Route path="/auth/login" element={<Login />} />
               <Route path="/auth/register" element={<Register />} />
               
-              {/* Protected Routes */}
+              {/* Company Setup - Protected but doesn't require company */}
+              <Route
+                path="/company/setup"
+                element={
+                  <ProtectedRoute requireCompany={false}>
+                    <CompanySetup />
+                  </ProtectedRoute>
+                }
+              />
+              
+              {/* Protected Routes - Requires both authentication and company membership */}
               <Route
                 path="/dashboard"
                 element={
@@ -102,16 +112,7 @@ const App = () => (
                 }
               />
               
-              {/* Company Routes */}
-              <Route
-                path="/company/setup"
-                element={
-                  <ProtectedRoute>
-                    <CompanySetup />
-                  </ProtectedRoute>
-                }
-              />
-              
+              {/* Company Management - Protected */}
               <Route
                 path="/company/manage"
                 element={

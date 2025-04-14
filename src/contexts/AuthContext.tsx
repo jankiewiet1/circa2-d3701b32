@@ -1,7 +1,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { Profile, UserWithProfile } from '../types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -24,12 +24,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   
   useEffect(() => {
-    // Fetch session and setup auth state change listener
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+      setSession(currentSession);
+      
+      if (currentSession && currentSession.user) {
+        // Fetch profile on auth changes - using setTimeout to avoid Supabase auth deadlocks
+        setTimeout(async () => {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', currentSession.user.id)
+            .single();
+          
+          if (profileError && profileError.code !== 'PGRST116') {
+            console.error('Error fetching profile during auth change:', profileError);
+          }
+          
+          setUser({
+            id: currentSession.user.id,
+            email: currentSession.user.email || '',
+            profile: profile || undefined,
+          });
+        }, 0);
+      } else {
+        setUser(null);
+      }
+      
+      setLoading(false);
+    });
+    
+    // THEN check for existing session
     const getInitialSession = async () => {
       try {
         setLoading(true);
         
-        // Get initial session
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -44,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('*')
-            .eq('user_id', session.user.id)
+            .eq('id', session.user.id)
             .single();
           
           if (profileError && profileError.code !== 'PGRST116') {
@@ -65,34 +94,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     
     getInitialSession();
-    
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-      setSession(currentSession);
-      
-      if (currentSession && currentSession.user) {
-        // Fetch profile on auth changes
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', currentSession.user.id)
-          .single();
-        
-        if (profileError && profileError.code !== 'PGRST116') {
-          console.error('Error fetching profile during auth change:', profileError);
-        }
-        
-        setUser({
-          id: currentSession.user.id,
-          email: currentSession.user.email || '',
-          profile: profile || undefined,
-        });
-      } else {
-        setUser(null);
-      }
-      
-      setLoading(false);
-    });
     
     // Cleanup subscription
     return () => {
@@ -134,7 +135,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Sign up with email and password
   const signUp = async (email: string, password: string, firstName: string, lastName: string) => {
     try {
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName
+          }
+        }
+      });
       
       if (error) {
         toast({
@@ -150,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { error: profileError } = await supabase
           .from('profiles')
           .insert({
-            user_id: data.user.id,
+            id: data.user.id,
             first_name: firstName,
             last_name: lastName,
           });
@@ -201,7 +211,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase
         .from('profiles')
         .update(profileData)
-        .eq('user_id', user.id);
+        .eq('id', user.id);
       
       if (error) {
         toast({
@@ -216,7 +226,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data: profile } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .single();
       
       setUser({

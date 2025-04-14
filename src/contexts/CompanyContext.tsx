@@ -1,15 +1,17 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { Company, CompanyMember, UserRole } from '../types';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface CompanyContextType {
   company: Company | null;
   loading: boolean;
   userRole: UserRole | null;
   companyMembers: CompanyMember[];
+  hasCompany: boolean;
   createCompany: (name: string, industry: string) => Promise<{ error: any, company: Company | null }>;
   updateCompany: (data: Partial<Company>) => Promise<{ error: any }>;
   inviteMember: (email: string, role: UserRole) => Promise<{ error: any }>;
@@ -27,6 +29,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [companyMembers, setCompanyMembers] = useState<CompanyMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasCompany, setHasCompany] = useState<boolean>(false);
   
   // Fetch company data when user changes
   useEffect(() => {
@@ -36,6 +39,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       setCompany(null);
       setUserRole(null);
       setCompanyMembers([]);
+      setHasCompany(false);
       setLoading(false);
     }
   }, [user]);
@@ -60,12 +64,14 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
           setCompany(null);
           setUserRole(null);
           setCompanyMembers([]);
+          setHasCompany(false);
         } else {
           console.error('Error fetching company membership:', membershipError);
         }
       } else if (membership) {
         setCompany(membership.company);
         setUserRole(membership.role as UserRole);
+        setHasCompany(true);
         
         // Fetch all members of this company
         const { data: members, error: membersError } = await supabase
@@ -212,7 +218,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       
       const { data: foundUser, error: userError } = await supabase
         .from('profiles')
-        .select('user_id')
+        .select('id')
         .eq('email', email)
         .single();
       
@@ -230,7 +236,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         .from('company_members')
         .select('*')
         .eq('company_id', company.id)
-        .eq('user_id', foundUser.user_id)
+        .eq('user_id', foundUser.id)
         .maybeSingle();
       
       if (existingMember) {
@@ -247,7 +253,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         .from('company_members')
         .insert({
           company_id: company.id,
-          user_id: foundUser.user_id,
+          user_id: foundUser.id,
           role,
         });
       
@@ -377,6 +383,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     loading,
     userRole,
     companyMembers,
+    hasCompany,
     createCompany,
     updateCompany,
     inviteMember,

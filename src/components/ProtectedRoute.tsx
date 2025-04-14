@@ -1,15 +1,20 @@
 
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCompany } from "@/contexts/CompanyContext";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  requireCompany?: boolean;
 }
 
-export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { user, loading } = useAuth();
+export const ProtectedRoute = ({ children, requireCompany = true }: ProtectedRouteProps) => {
+  const { user, loading: authLoading } = useAuth();
+  const { hasCompany, loading: companyLoading } = useCompany();
   const location = useLocation();
+  
+  const loading = authLoading || companyLoading;
   
   if (loading) {
     return (
@@ -30,6 +35,12 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   if (!user) {
     // Redirect to login page, but save the current location they tried to access
     return <Navigate to="/auth/login" state={{ from: location }} replace />;
+  }
+  
+  // If the route requires company access and user doesn't have a company,
+  // redirect to the company setup page
+  if (requireCompany && !hasCompany) {
+    return <Navigate to="/company/setup" state={{ from: location }} replace />;
   }
   
   return <>{children}</>;

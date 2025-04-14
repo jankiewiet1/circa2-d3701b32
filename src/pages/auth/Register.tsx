@@ -29,12 +29,9 @@ export default function Register() {
       
       if (signUpError) {
         console.error("Registration error:", signUpError);
-        if (signUpError.message.includes("fetch")) {
-          setError("Unable to connect to authentication service. Please make sure your Supabase configuration is correct.");
-        } else {
-          setError(signUpError.message);
-        }
+        setError(signUpError.message);
       } else {
+        // After successful signup, redirect to login
         navigate("/auth/login", { 
           state: { 
             message: "Registration successful! Please check your email to verify your account before logging in." 
@@ -119,16 +116,6 @@ export default function Register() {
                   Password must be at least 8 characters long
                 </p>
               </div>
-              
-              {import.meta.env.VITE_SUPABASE_URL ? null : (
-                <Alert className="bg-amber-50 border-amber-200 text-amber-800">
-                  <AlertCircle className="h-4 w-4 text-amber-600" />
-                  <AlertDescription className="text-xs">
-                    <strong>Developer Notice:</strong> Supabase is not properly configured. 
-                    To enable authentication, please connect to Supabase through the Lovable interface.
-                  </AlertDescription>
-                </Alert>
-              )}
             </CardContent>
             <CardFooter className="flex flex-col">
               <Button type="submit" className="w-full bg-circa-green hover:bg-circa-green-dark" disabled={loading}>
