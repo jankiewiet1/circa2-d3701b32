@@ -11,25 +11,85 @@ export type Database = {
     Tables: {
       companies: {
         Row: {
+          bank_name: string | null
+          billing_address: string | null
+          billing_email: string | null
+          city: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_title: string | null
+          country: string | null
           created_at: string | null
           created_by_user_id: string | null
+          fiscal_year_start_month: string | null
+          iban: string | null
           id: string
           industry: string | null
+          kvk_number: string | null
+          language: string | null
           name: string
+          phone_number: string | null
+          postal_code: string | null
+          preferred_currency: string | null
+          reporting_frequency: string | null
+          setup_completed: boolean | null
+          timezone: string | null
+          updated_at: string | null
+          vat_number: string | null
         }
         Insert: {
+          bank_name?: string | null
+          billing_address?: string | null
+          billing_email?: string | null
+          city?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_title?: string | null
+          country?: string | null
           created_at?: string | null
           created_by_user_id?: string | null
+          fiscal_year_start_month?: string | null
+          iban?: string | null
           id?: string
           industry?: string | null
+          kvk_number?: string | null
+          language?: string | null
           name: string
+          phone_number?: string | null
+          postal_code?: string | null
+          preferred_currency?: string | null
+          reporting_frequency?: string | null
+          setup_completed?: boolean | null
+          timezone?: string | null
+          updated_at?: string | null
+          vat_number?: string | null
         }
         Update: {
+          bank_name?: string | null
+          billing_address?: string | null
+          billing_email?: string | null
+          city?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_title?: string | null
+          country?: string | null
           created_at?: string | null
           created_by_user_id?: string | null
+          fiscal_year_start_month?: string | null
+          iban?: string | null
           id?: string
           industry?: string | null
+          kvk_number?: string | null
+          language?: string | null
           name?: string
+          phone_number?: string | null
+          postal_code?: string | null
+          preferred_currency?: string | null
+          reporting_frequency?: string | null
+          setup_completed?: boolean | null
+          timezone?: string | null
+          updated_at?: string | null
+          vat_number?: string | null
         }
         Relationships: []
       }
@@ -74,23 +134,29 @@ export type Database = {
       company_members: {
         Row: {
           company_id: string | null
+          created_at: string | null
           id: string
           joined_at: string | null
           role: string | null
+          updated_at: string | null
           user_id: string | null
         }
         Insert: {
           company_id?: string | null
+          created_at?: string | null
           id?: string
           joined_at?: string | null
           role?: string | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Update: {
           company_id?: string | null
+          created_at?: string | null
           id?: string
           joined_at?: string | null
           role?: string | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Relationships: [
