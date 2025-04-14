@@ -81,6 +81,17 @@ export const fetchCompanyDataService = async (userId: string) => {
 
 export const createCompanyService = async (name: string, industry: string, userId: string) => {
   try {
+    // Check if user already belongs to a company
+    const { data: existingMember } = await supabase
+      .from('company_members')
+      .select('company_id')
+      .eq('user_id', userId)
+      .maybeSingle();
+    
+    if (existingMember?.company_id) {
+      throw new Error("You already belong to a company");
+    }
+    
     const { data: newCompany, error: companyError } = await supabase
       .from('companies')
       .insert({

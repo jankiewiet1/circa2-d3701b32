@@ -1,25 +1,95 @@
 
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/MainLayout";
+import { useCompany } from "@/contexts/CompanyContext";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Building2, Users, Settings } from "lucide-react";
+import CompanyInfoTab from "./setup/tabs/CompanyInfoTab";
+import CompanyTeamTab from "./setup/tabs/CompanyTeamTab";
+import CompanyPreferencesTab from "./setup/tabs/CompanyPreferencesTab";
+import { useNavigate } from "react-router-dom";
 
 export default function CompanySetup() {
+  const { company, loading } = useCompany();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("info");
   
   useEffect(() => {
-    // Automatically redirect to the first step of the setup flow
-    navigate("/company/setup/info");
-  }, [navigate]);
+    // If the user already has completed the setup, redirect to dashboard
+    if (company?.setup_completed) {
+      navigate("/dashboard");
+    }
+  }, [company, navigate]);
+  
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="max-w-3xl mx-auto">
+          <div className="mb-8">
+            <Skeleton className="h-12 w-60 mb-2" />
+            <Skeleton className="h-4 w-full max-w-md" />
+          </div>
+          <Skeleton className="h-[500px] w-full rounded-md" />
+        </div>
+      </MainLayout>
+    );
+  }
   
   return (
     <MainLayout>
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <Skeleton className="h-12 w-60 mb-2" />
-          <Skeleton className="h-4 w-full max-w-md" />
+          <h1 className="text-3xl font-bold">Company Setup</h1>
+          <p className="text-muted-foreground">
+            Configure your company information to get started with carbon accounting
+          </p>
         </div>
-        <Skeleton className="h-[500px] w-full rounded-md" />
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Complete Your Profile</CardTitle>
+            <CardDescription>
+              Fill in all required information to set up your company profile
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs 
+              defaultValue="info"
+              value={activeTab} 
+              onValueChange={setActiveTab}
+              className="space-y-6"
+            >
+              <TabsList className="grid grid-cols-3 w-full">
+                <TabsTrigger value="info" className="flex items-center">
+                  <Building2 className="mr-2 h-4 w-4" />
+                  Company Info
+                </TabsTrigger>
+                <TabsTrigger value="team" className="flex items-center">
+                  <Users className="mr-2 h-4 w-4" />
+                  Team Members
+                </TabsTrigger>
+                <TabsTrigger value="preferences" className="flex items-center">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Preferences
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="info">
+                <CompanyInfoTab setActiveTab={setActiveTab} />
+              </TabsContent>
+              
+              <TabsContent value="team">
+                <CompanyTeamTab setActiveTab={setActiveTab} />
+              </TabsContent>
+              
+              <TabsContent value="preferences">
+                <CompanyPreferencesTab />
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </MainLayout>
   );

@@ -9,7 +9,7 @@ interface AuthContextType {
   user: UserWithProfile | null;
   session: Session | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ error: any }>;
   signUp: (email: string, password: string, firstName: string, lastName: string) => Promise<{ error: any, user: any }>;
   signOut: () => Promise<void>;
   updateProfile: (profile: Partial<Profile>) => Promise<{ error: any }>;
@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .from('profiles')
             .select('*')
             .eq('id', currentSession.user.id)
-            .single();
+            .maybeSingle();
           
           if (profileError && profileError.code !== 'PGRST116') {
             console.error('Error fetching profile during auth change:', profileError);
@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle();
           
           if (profileError && profileError.code !== 'PGRST116') {
             console.error('Error fetching profile:', profileError);
@@ -104,9 +104,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
   
   // Sign in with email and password
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string, rememberMe = true) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password,
+        options: {
+          persistSession: rememberMe
+        } 
+      });
       
       if (error) {
         toast({
@@ -229,7 +235,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
       
       // Update the user state with the new profile data
       setUser({
