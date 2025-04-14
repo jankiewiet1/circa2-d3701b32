@@ -62,3 +62,14 @@ export interface EmissionsData {
   unit: string;
   date: string;
 }
+
+export interface UserActivity {
+  id: string;
+  user_id: string;
+  company_id: string;
+  activity_type: string;
+  description: string;
+  created_at: string;
+  user_first_name?: string | null;
+  user_last_name?: string | null;
+}
