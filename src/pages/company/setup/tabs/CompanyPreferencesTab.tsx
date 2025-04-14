@@ -21,15 +21,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Check, Loader2, Save } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Loader2, Save } from "lucide-react";
 
 const formSchema = z.object({
   preferred_currency: z.string().min(1, "Currency is required"),
   fiscal_year_start_month: z.string().min(1, "Fiscal year start month is required"),
   reporting_frequency: z.string().min(1, "Reporting frequency is required"),
   language: z.string().min(1, "Language is required"),
-  timezone: z.string().optional(),
+  timezone: z.string().min(1, "Timezone is required"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -80,7 +79,6 @@ const timezones = [
 
 export default function CompanyPreferencesTab() {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const { company, updateCompany } = useCompany();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -96,37 +94,20 @@ export default function CompanyPreferencesTab() {
   });
 
   const onSubmit = async (data: FormValues) => {
-    if (!company) {
-      toast({
-        title: "Error",
-        description: "You need to create a company first",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     setIsSubmitting(true);
     
     try {
-      const { error } = await updateCompany({
-        ...data,
-        setup_completed: true,
-      });
-      
-      if (error) throw error;
+      await updateCompany(data);
       
       toast({
-        title: "Setup Complete",
-        description: "Your company preferences have been saved successfully",
+        title: "Success",
+        description: "Company preferences have been saved successfully",
       });
-      
-      // Navigate to dashboard after completing the setup
-      navigate("/dashboard");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error saving preferences:", error);
       toast({
         title: "Error",
-        description: error.message || "There was a problem saving your company preferences",
+        description: "Failed to save company preferences",
         variant: "destructive",
       });
     } finally {
@@ -282,46 +263,24 @@ export default function CompanyPreferencesTab() {
             </div>
           </div>
           
-          <div className="flex justify-between border-t pt-6">
+          <div className="flex justify-end">
             <Button
-              type="button"
-              variant="outline"
-              onClick={() => document.querySelector('[value="team"]')?.dispatchEvent(
-                new MouseEvent('click', { bubbles: true })
-              )}
+              type="submit"
+              className="bg-circa-green hover:bg-circa-green-dark"
+              disabled={isSubmitting}
             >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Previous Step
-            </Button>
-            
-            <div className="space-x-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  form.handleSubmit(onSubmit)();
-                }}
-                disabled={isSubmitting}
-              >
-                <Save className="mr-2 h-4 w-4" />
-                Save Progress
-              </Button>
-              
-              <Button
-                type="submit"
-                className="bg-circa-green hover:bg-circa-green-dark"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
+              {isSubmitting ? (
+                <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    <Check className="mr-2 h-4 w-4" />
-                    Complete Setup
-                  </>
-                )}
-              </Button>
-            </div>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Preferences
+                </>
+              )}
+            </Button>
           </div>
         </form>
       </Form>

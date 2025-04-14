@@ -3,11 +3,10 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useToast } from "@/hooks/use-toast";
-import { useCompany } from "@/contexts/CompanyContext";
-import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { useCompany } from "@/contexts/CompanyContext";
 import {
   Form,
   FormControl,
@@ -23,41 +22,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowRight, Loader2, Save, AlertCircle } from "lucide-react";
-import { countries } from "@/lib/countries";
+import { Loader2, Save } from "lucide-react";
 import { industries } from "@/lib/industries";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { countries } from "@/lib/countries";
 
 const formSchema = z.object({
-  name: z.string().min(2, "Company name must be at least 2 characters"),
-  industry: z.string().min(1, "Please select an industry"),
-  country: z.string().min(1, "Please select a country"),
+  name: z.string().min(1, "Company name is required"),
+  industry: z.string().min(1, "Industry is required"),
+  country: z.string().min(1, "Country is required"),
   kvk_number: z.string().optional(),
   vat_number: z.string().optional(),
   iban: z.string().optional(),
   bank_name: z.string().optional(),
-  billing_email: z.string().email("Please enter a valid email").optional().or(z.literal("")),
-  phone_number: z.string().optional(),
+  billing_email: z.string().email("Invalid email address").optional().or(z.literal('')),
   billing_address: z.string().optional(),
   postal_code: z.string().optional(),
   city: z.string().optional(),
   contact_name: z.string().optional(),
   contact_title: z.string().optional(),
-  contact_email: z.string().email("Please enter a valid email").optional().or(z.literal("")),
+  contact_email: z.string().email("Invalid email address").optional().or(z.literal('')),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-interface CompanyInfoTabProps {
-  setActiveTab: (tab: string) => void;
-}
-
-export default function CompanyInfoTab({ setActiveTab }: CompanyInfoTabProps) {
+export default function CompanyInfoTab() {
   const { toast } = useToast();
-  const { user } = useAuth();
-  const { company, updateCompany, createCompany, error, fetchCompanyData } = useCompany();
+  const { company, updateCompany } = useCompany();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -70,7 +61,6 @@ export default function CompanyInfoTab({ setActiveTab }: CompanyInfoTabProps) {
       iban: company?.iban || "",
       bank_name: company?.bank_name || "",
       billing_email: company?.billing_email || "",
-      phone_number: company?.phone_number || "",
       billing_address: company?.billing_address || "",
       postal_code: company?.postal_code || "",
       city: company?.city || "",
@@ -82,56 +72,19 @@ export default function CompanyInfoTab({ setActiveTab }: CompanyInfoTabProps) {
 
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
-    setFormError(null);
     
     try {
-      if (company) {
-        // Update existing company
-        const { error } = await updateCompany({
-          ...data
-        });
-        
-        if (error) throw error;
-        
-        toast({
-          title: "Company Updated",
-          description: "Your company information has been updated successfully",
-        });
-      } else {
-        // Create new company
-        if (!user) throw new Error("You must be logged in to create a company");
-        
-        const { error, company: newCompany } = await createCompany(data.name, data.industry);
-        
-        if (error) throw error;
-        
-        if (newCompany) {
-          // Update with additional fields after creation
-          const { error: updateError } = await updateCompany({
-            ...data,
-            id: newCompany.id
-          });
-          
-          if (updateError) throw updateError;
-          
-          // Refresh company data
-          await fetchCompanyData();
-        }
-        
-        toast({
-          title: "Company Created",
-          description: "Your company has been created successfully",
-        });
-      }
+      await updateCompany(data);
       
-      // Move to the next tab
-      setActiveTab("team");
-    } catch (error: any) {
+      toast({
+        title: "Success",
+        description: "Company information has been saved successfully",
+      });
+    } catch (error) {
       console.error("Error saving company info:", error);
-      setFormError(error.message || "There was a problem saving your company information");
       toast({
         title: "Error",
-        description: error.message || "There was a problem saving your company information",
+        description: "Failed to save company information",
         variant: "destructive",
       });
     } finally {
@@ -144,86 +97,43 @@ export default function CompanyInfoTab({ setActiveTab }: CompanyInfoTabProps) {
       <div>
         <h3 className="text-lg font-medium">Company Information</h3>
         <p className="text-sm text-muted-foreground">
-          Enter your company details and KYC information
+          Update your company details for carbon accounting
         </p>
       </div>
       
-      {formError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{formError}</AlertDescription>
-        </Alert>
-      )}
-      
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Error retrieving company data: {error.message}
-          </AlertDescription>
-        </Alert>
-      )}
-      
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Company Name*</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter company name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="industry"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Industry*</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select industry" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {industries.map((industry) => (
-                          <SelectItem key={industry.value} value={industry.value}>
-                            {industry.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Company Name *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter your company name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
             <FormField
               control={form.control}
-              name="country"
+              name="industry"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Country*</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormLabel>Industry *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || undefined}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select country" />
+                        <SelectValue placeholder="Select industry" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {countries.map((country) => (
-                        <SelectItem key={country.code} value={country.code}>
-                          {country.name}
+                      {industries.map((industry) => (
+                        <SelectItem key={industry.value} value={industry.value}>
+                          {industry.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -232,58 +142,64 @@ export default function CompanyInfoTab({ setActiveTab }: CompanyInfoTabProps) {
                 </FormItem>
               )}
             />
-          </div>
-          
-          <div>
-            <h4 className="text-md font-medium mb-2">Registration Details</h4>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <FormField
-                control={form.control}
-                name="kvk_number"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>KVK Number</FormLabel>
+            
+            <FormField
+              control={form.control}
+              name="country"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Country *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || undefined}>
                     <FormControl>
-                      <Input placeholder="Chamber of Commerce #" {...field} />
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select country" />
+                      </SelectTrigger>
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="vat_number"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>VAT Number</FormLabel>
-                    <FormControl>
-                      <Input placeholder="VAT #" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="phone_number"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Company phone" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                    <SelectContent>
+                      {countries.map((country) => (
+                        <SelectItem key={country.value} value={country.value}>
+                          {country.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="kvk_number"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>KVK Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Chamber of Commerce number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="vat_number"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>VAT Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="VAT number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
           
           <div>
             <h4 className="text-md font-medium mb-2">Banking Information</h4>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <FormField
                 control={form.control}
                 name="iban"
@@ -291,7 +207,7 @@ export default function CompanyInfoTab({ setActiveTab }: CompanyInfoTabProps) {
                   <FormItem>
                     <FormLabel>IBAN</FormLabel>
                     <FormControl>
-                      <Input placeholder="IBAN" {...field} />
+                      <Input placeholder="IBAN number" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -319,7 +235,7 @@ export default function CompanyInfoTab({ setActiveTab }: CompanyInfoTabProps) {
                   <FormItem>
                     <FormLabel>Billing Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="billing@example.com" {...field} />
+                      <Input placeholder="billing@yourcompany.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -330,36 +246,38 @@ export default function CompanyInfoTab({ setActiveTab }: CompanyInfoTabProps) {
           
           <div>
             <h4 className="text-md font-medium mb-2">Billing Address</h4>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="md:col-span-3">
+                <FormField
+                  control={form.control}
+                  name="billing_address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Address</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter your address" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
               <FormField
                 control={form.control}
-                name="billing_address"
+                name="postal_code"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Address</FormLabel>
+                    <FormLabel>Postal Code</FormLabel>
                     <FormControl>
-                      <Input placeholder="Street address" {...field} />
+                      <Input placeholder="1234 AB" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="postal_code"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Postal Code</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Postal code" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
+              <div className="md:col-span-2">
                 <FormField
                   control={form.control}
                   name="city"
@@ -367,7 +285,7 @@ export default function CompanyInfoTab({ setActiveTab }: CompanyInfoTabProps) {
                     <FormItem>
                       <FormLabel>City</FormLabel>
                       <FormControl>
-                        <Input placeholder="City" {...field} />
+                        <Input placeholder="Amsterdam" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -379,7 +297,7 @@ export default function CompanyInfoTab({ setActiveTab }: CompanyInfoTabProps) {
           
           <div>
             <h4 className="text-md font-medium mb-2">Primary Contact</h4>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <FormField
                 control={form.control}
                 name="contact_name"
@@ -399,9 +317,9 @@ export default function CompanyInfoTab({ setActiveTab }: CompanyInfoTabProps) {
                 name="contact_title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Title/Position</FormLabel>
+                    <FormLabel>Title / Position</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. CEO" {...field} />
+                      <Input placeholder="e.g. Sustainability Manager" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -415,7 +333,7 @@ export default function CompanyInfoTab({ setActiveTab }: CompanyInfoTabProps) {
                   <FormItem>
                     <FormLabel>Contact Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="contact@example.com" {...field} />
+                      <Input placeholder="contact@yourcompany.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -424,29 +342,23 @@ export default function CompanyInfoTab({ setActiveTab }: CompanyInfoTabProps) {
             </div>
           </div>
           
-          <div className="flex justify-end space-x-4 pt-4">
-            <Button
-              type="submit"
+          <div className="flex justify-end">
+            <Button 
+              type="submit" 
               className="bg-circa-green hover:bg-circa-green-dark"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
               ) : (
                 <>
                   <Save className="mr-2 h-4 w-4" />
-                  Save Information
+                  Save Company Info
                 </>
               )}
-            </Button>
-            
-            <Button 
-              type="button" 
-              variant="outline"
-              onClick={() => setActiveTab("team")}
-            >
-              Next Step
-              <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
         </form>
