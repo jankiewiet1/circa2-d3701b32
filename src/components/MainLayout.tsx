@@ -9,11 +9,11 @@ interface MainLayoutProps {
 
 export const MainLayout = ({ children }: MainLayoutProps) => {
   return (
-    <div className="main-layout">
+    <div className="min-h-screen flex bg-gray-50">
       <Sidebar />
-      <div className="main-content">
+      <div className="flex-1 flex flex-col">
         <Header />
-        <main className="page-container">
+        <main className="flex-1 p-6 overflow-auto">
           {children}
         </main>
       </div>

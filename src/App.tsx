@@ -9,6 +9,9 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { CompanyProvider } from "@/contexts/CompanyContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
+// Public Pages
+import Index from "@/pages/Index";
+
 // Auth Pages
 import Login from "@/pages/auth/Login";
 import Register from "@/pages/auth/Register";
@@ -45,12 +48,12 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Index />} />
+              
               {/* Auth Routes - Public */}
               <Route path="/auth/login" element={<Login />} />
               <Route path="/auth/register" element={<Register />} />
-              
-              {/* Redirect root to dashboard */}
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
               
               {/* Protected Routes */}
               <Route
