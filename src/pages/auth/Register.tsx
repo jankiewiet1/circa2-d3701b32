@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -16,21 +17,33 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     
     try {
-      const { error } = await signUp(email, password, firstName, lastName);
+      const { error: signUpError } = await signUp(email, password, firstName, lastName);
       
-      if (!error) {
+      if (signUpError) {
+        console.error("Registration error:", signUpError);
+        if (signUpError.message.includes("fetch")) {
+          setError("Unable to connect to authentication service. Please make sure your Supabase configuration is correct.");
+        } else {
+          setError(signUpError.message);
+        }
+      } else {
         navigate("/auth/login", { 
           state: { 
             message: "Registration successful! Please check your email to verify your account before logging in." 
           } 
         });
       }
+    } catch (err: any) {
+      console.error("Unexpected error during registration:", err);
+      setError(err.message || "An unexpected error occurred during registration");
     } finally {
       setLoading(false);
     }
@@ -54,6 +67,13 @@ export default function Register() {
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
+              {error && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+              
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First name</Label>
@@ -99,6 +119,16 @@ export default function Register() {
                   Password must be at least 8 characters long
                 </p>
               </div>
+              
+              {import.meta.env.VITE_SUPABASE_URL ? null : (
+                <Alert className="bg-amber-50 border-amber-200 text-amber-800">
+                  <AlertCircle className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-xs">
+                    <strong>Developer Notice:</strong> Supabase is not properly configured. 
+                    To enable authentication, please connect to Supabase through the Lovable interface.
+                  </AlertDescription>
+                </Alert>
+              )}
             </CardContent>
             <CardFooter className="flex flex-col">
               <Button type="submit" className="w-full bg-circa-green hover:bg-circa-green-dark" disabled={loading}>
