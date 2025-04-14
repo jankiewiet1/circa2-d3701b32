@@ -187,12 +187,7 @@ export const inviteMemberService = async (
   invitedBy: string
 ) => {
   try {
-    const { data: existingUser, error: userError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('email', email)
-      .maybeSingle();
-
+    // Check if the current user is an admin
     const { data: adminMember, error: adminError } = await supabase
       .from('company_members')
       .select('id')
@@ -205,6 +200,7 @@ export const inviteMemberService = async (
       throw new Error('Only company admins can invite members');
     }
 
+    // Check if invitation already exists
     const { data: existingInvite, error: inviteError } = await supabase
       .from('company_invitations')
       .select('id')
@@ -217,6 +213,7 @@ export const inviteMemberService = async (
       throw new Error('An invitation for this email already exists');
     }
 
+    // Create invitation
     const { error } = await supabase
       .from('company_invitations')
       .insert({
@@ -229,6 +226,7 @@ export const inviteMemberService = async (
     
     if (error) throw error;
 
+    // Record activity
     await supabase
       .from('user_activities')
       .insert({
