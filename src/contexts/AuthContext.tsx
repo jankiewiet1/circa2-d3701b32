@@ -80,6 +80,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.error('Error fetching profile:', profileError);
           }
           
+          // Make sure we're setting the profile with all required fields,
+          // even if some are undefined
           setUser({
             id: session.user.id,
             email: session.user.email || '',
@@ -229,6 +231,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('id', user.id)
         .single();
       
+      // Update the user state with the new profile data
       setUser({
         ...user,
         profile: profile || undefined,

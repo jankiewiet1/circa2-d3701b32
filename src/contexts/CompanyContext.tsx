@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Company, CompanyMember, UserRole } from '../types';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
 
 interface CompanyContextType {
   company: Company | null;
@@ -69,7 +68,14 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
           console.error('Error fetching company membership:', membershipError);
         }
       } else if (membership) {
-        setCompany(membership.company);
+        // Ensure the company object has all required fields based on our type definition
+        const companyData: Company = {
+          ...membership.company,
+          // Add default values for any missing fields
+          updated_at: membership.company.updated_at || undefined
+        };
+        
+        setCompany(companyData);
         setUserRole(membership.role as UserRole);
         setHasCompany(true);
         
@@ -82,7 +88,14 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         if (membersError) {
           console.error('Error fetching company members:', membersError);
         } else {
-          setCompanyMembers(members || []);
+          // Ensure each member has all required fields
+          const typedMembers: CompanyMember[] = (members || []).map(member => ({
+            ...member,
+            created_at: member.created_at || undefined,
+            updated_at: member.updated_at || undefined
+          }));
+          
+          setCompanyMembers(typedMembers);
         }
       }
     } catch (error) {
@@ -145,7 +158,13 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         description: `${name} has been successfully created`,
       });
       
-      return { error: null, company: newCompany };
+      // Add missing fields to match our Company type
+      const companyWithAllFields: Company = {
+        ...newCompany,
+        updated_at: newCompany.updated_at || undefined
+      };
+      
+      return { error: null, company: companyWithAllFields };
     } catch (error: any) {
       toast({
         title: "Company Creation Failed",

@@ -3,29 +3,33 @@ export type UserRole = "admin" | "editor" | "viewer";
 
 export interface Profile {
   id: string;
-  user_id: string;
-  first_name: string;
-  last_name: string;
-  created_at: string;
-  updated_at: string;
+  first_name: string | null;
+  last_name: string | null;
+  created_at: string | null;
+  // Add the missing properties from the error
+  user_id?: string; // Making optional since it might not be in the DB schema
+  updated_at?: string; // Making optional since it might not be in the DB schema
 }
 
 export interface Company {
   id: string;
   name: string;
-  industry: string;
-  created_by_user_id: string;
-  created_at: string;
-  updated_at: string;
+  industry: string | null;
+  created_by_user_id: string | null;
+  created_at: string | null;
+  // Add the missing property from the error
+  updated_at?: string; // Making optional since it might not be in the DB
 }
 
 export interface CompanyMember {
   id: string;
-  company_id: string;
-  user_id: string;
-  role: UserRole;
-  created_at: string;
-  updated_at: string;
+  company_id: string | null;
+  user_id: string | null;
+  role: string | null;
+  joined_at?: string | null;
+  // Add the missing properties from the error
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 export interface UserWithProfile {
