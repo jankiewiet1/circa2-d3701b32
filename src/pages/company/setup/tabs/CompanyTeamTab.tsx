@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -29,6 +29,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { RecentActivities } from "@/components/activity/RecentActivities";
+import { Loader2, Plus, Trash2 } from "lucide-react";
+import { UserRole } from "@/types";
+import { toast } from "@/components/ui/use-toast";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,10 +45,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { RecentActivities } from "@/components/activity/RecentActivities";
-import { Loader2, Plus, Save, Trash2, X } from "lucide-react";
-import { UserRole } from "@/types";
 
 const userRoles: { value: UserRole; label: string }[] = [
   { value: "admin", label: "Admin" },
@@ -73,8 +74,27 @@ export default function CompanyTeamTab() {
   const onInviteMember = async (data: InviteFormValues) => {
     setIsSubmitting(true);
     try {
-      await inviteMember(data.email, data.role);
-      form.reset();
+      const result = await inviteMember(data.email, data.role);
+      
+      if (result.error) {
+        toast({
+          title: "Invitation Failed",
+          description: result.error.message || "Could not send invitation",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Invitation Sent",
+          description: `Invitation sent to ${data.email}`
+        });
+        form.reset();
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }

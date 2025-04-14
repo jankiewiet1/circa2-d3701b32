@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { Company, CompanyMember, UserRole } from "@/types";
@@ -99,7 +98,6 @@ export const createCompanyService = async (name: string, industry: string, userI
       throw new Error("You already belong to a company");
     }
     
-    // FIX: Remove the extra parentheses at the end which were causing the error
     const { data: newCompany, error: companyError } = await supabase
       .from('companies')
       .insert({
@@ -189,6 +187,36 @@ export const inviteMemberService = async (
   invitedBy: string
 ) => {
   try {
+    const { data: existingUser, error: userError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
+
+    const { data: adminMember, error: adminError } = await supabase
+      .from('company_members')
+      .select('id')
+      .eq('company_id', companyId)
+      .eq('user_id', invitedBy)
+      .eq('role', 'admin')
+      .maybeSingle();
+
+    if (adminError || !adminMember) {
+      throw new Error('Only company admins can invite members');
+    }
+
+    const { data: existingInvite, error: inviteError } = await supabase
+      .from('company_invitations')
+      .select('id')
+      .eq('company_id', companyId)
+      .eq('email', email)
+      .eq('status', 'pending')
+      .maybeSingle();
+
+    if (existingInvite) {
+      throw new Error('An invitation for this email already exists');
+    }
+
     const { error } = await supabase
       .from('company_invitations')
       .insert({
@@ -200,8 +228,19 @@ export const inviteMemberService = async (
       });
     
     if (error) throw error;
+
+    await supabase
+      .from('user_activities')
+      .insert({
+        user_id: invitedBy,
+        company_id: companyId,
+        activity_type: 'invitation',
+        description: `Invited ${email} as ${role}`
+      });
+
     return { error: null };
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Invitation error:', error);
     return { error };
   }
 };
