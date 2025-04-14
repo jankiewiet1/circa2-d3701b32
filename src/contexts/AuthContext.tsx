@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,8 +24,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   
   useEffect(() => {
+    console.log("AuthProvider: initializing auth state");
+    setLoading(true);
+    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+      console.log("Auth state changed:", event, "with session:", !!currentSession);
       setSession(currentSession);
       
       if (currentSession && currentSession.user) {
@@ -45,34 +50,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email: currentSession.user.email || '',
             profile: profile || undefined,
           });
+          
+          setLoading(false);
         }, 0);
       } else {
         setUser(null);
+        setLoading(false);
       }
-      
-      setLoading(false);
     });
     
     // THEN check for existing session
     const getInitialSession = async () => {
       try {
-        setLoading(true);
+        console.log("Fetching initial session");
         
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('Error getting session:', error);
+          setLoading(false);
           return;
         }
         
-        if (session) {
-          setSession(session);
+        if (initialSession) {
+          console.log("Initial session found");
+          setSession(initialSession);
           
           // Fetch user profile
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('*')
-            .eq('id', session.user.id)
+            .eq('id', initialSession.user.id)
             .maybeSingle();
           
           if (profileError && profileError.code !== 'PGRST116') {
@@ -82,8 +90,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Make sure we're setting the profile with all required fields,
           // even if some are undefined
           setUser({
-            id: session.user.id,
-            email: session.user.email || '',
+            id: initialSession.user.id,
+            email: initialSession.user.email || '',
             profile: profile || undefined,
           });
         }
@@ -98,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     // Cleanup subscription
     return () => {
+      console.log("Cleaning up auth subscription");
       subscription.unsubscribe();
     };
   }, []);

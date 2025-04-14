@@ -3,6 +3,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect } from "react";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -10,11 +11,24 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute = ({ children, requireCompany = true }: ProtectedRouteProps) => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, session } = useAuth();
   const { hasCompany, loading: companyLoading } = useCompany();
   const location = useLocation();
   
   const loading = authLoading || (requireCompany && companyLoading);
+  
+  // Add debug logging
+  useEffect(() => {
+    console.log("ProtectedRoute:", { 
+      path: location.pathname,
+      authLoading,
+      companyLoading,
+      hasUser: !!user,
+      hasSession: !!session,
+      hasCompany,
+      requireCompany
+    });
+  }, [location.pathname, authLoading, companyLoading, user, session, hasCompany, requireCompany]);
   
   if (loading) {
     return (
@@ -31,19 +45,22 @@ export const ProtectedRoute = ({ children, requireCompany = true }: ProtectedRou
     );
   }
   
-  if (!user) {
+  if (!session || !user) {
     // Redirect to login page, but save the current location they tried to access
+    console.log("No session/user, redirecting to login");
     return <Navigate to="/auth/login" state={{ from: location }} replace />;
   }
   
   // If the route requires company access and user doesn't have a company,
   // redirect to the company setup page
   if (requireCompany && !hasCompany && !location.pathname.startsWith('/company/setup')) {
+    console.log("No company, redirecting to company setup");
     return <Navigate to="/company/setup" state={{ from: location }} replace />;
   }
   
   // If user has a company and tries to access setup page, redirect to dashboard
   if (hasCompany && location.pathname.startsWith('/company/setup')) {
+    console.log("Has company, redirecting to dashboard");
     return <Navigate to="/dashboard" replace />;
   }
   
