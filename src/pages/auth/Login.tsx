@@ -27,14 +27,7 @@ export default function Login() {
     setLoading(true);
     
     try {
-      // Modify Supabase client configuration based on rememberMe
-      supabase.auth.onAuthStateChange((event, session) => {
-        if (session) {
-          // Persist session based on rememberMe checkbox
-          supabase.auth.persistent = rememberMe;
-        }
-      });
-      
+      // Pass rememberMe to the signIn function which will handle session persistence
       const { error } = await signIn(email, password, rememberMe);
       
       if (!error) {
@@ -122,5 +115,3 @@ export default function Login() {
     </div>
   );
 }
-
-export default Login;
