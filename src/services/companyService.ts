@@ -23,7 +23,27 @@ export const fetchCompanyDataService = async (userId: string) => {
         industry: userCompany.industry,
         created_by_user_id: userCompany.created_by_user_id,
         created_at: userCompany.created_at,
-        updated_at: userCompany.updated_at
+        updated_at: userCompany.updated_at || undefined,
+        // Additional fields from our extension
+        country: userCompany.country,
+        kvk_number: userCompany.kvk_number,
+        vat_number: userCompany.vat_number,
+        iban: userCompany.iban,
+        bank_name: userCompany.bank_name,
+        billing_email: userCompany.billing_email,
+        phone_number: userCompany.phone_number,
+        billing_address: userCompany.billing_address,
+        postal_code: userCompany.postal_code,
+        city: userCompany.city,
+        contact_name: userCompany.contact_name,
+        contact_title: userCompany.contact_title,
+        contact_email: userCompany.contact_email,
+        preferred_currency: userCompany.preferred_currency,
+        fiscal_year_start_month: userCompany.fiscal_year_start_month,
+        reporting_frequency: userCompany.reporting_frequency,
+        language: userCompany.language,
+        timezone: userCompany.timezone,
+        setup_completed: userCompany.setup_completed
       };
       
       const { data: allMembers, error: membersError } = await supabase
@@ -41,8 +61,8 @@ export const fetchCompanyDataService = async (userId: string) => {
         user_id: member.user_id,
         role: member.role,
         joined_at: member.joined_at,
-        created_at: member.created_at,
-        updated_at: member.updated_at
+        created_at: member.created_at || undefined,
+        updated_at: member.updated_at || undefined
       })) || [];
       
       return {
@@ -89,7 +109,7 @@ export const createCompanyService = async (name: string, industry: string, userI
       industry: newCompany.industry,
       created_by_user_id: newCompany.created_by_user_id,
       created_at: newCompany.created_at,
-      updated_at: newCompany.updated_at
+      updated_at: newCompany.updated_at || undefined
     };
     
     return { error: null, company };

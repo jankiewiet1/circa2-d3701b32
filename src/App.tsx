@@ -28,6 +28,9 @@ import Scope3 from "@/pages/emissions/Scope3";
 // Company Pages
 import CompanySetup from "@/pages/company/CompanySetup";
 import CompanyManage from "@/pages/company/CompanyManage";
+import CompanyInfo from "@/pages/company/setup/CompanyInfo";
+import CompanyTeam from "@/pages/company/setup/CompanyTeam";
+import CompanyPreferences from "@/pages/company/setup/CompanyPreferences";
 
 // User Pages
 import Profile from "@/pages/Profile";
@@ -61,6 +64,32 @@ const App = () => (
                 element={
                   <ProtectedRoute requireCompany={false}>
                     <CompanySetup />
+                  </ProtectedRoute>
+                }
+              />
+              
+              {/* Company Setup Flow */}
+              <Route
+                path="/company/setup/info"
+                element={
+                  <ProtectedRoute requireCompany={false}>
+                    <CompanyInfo />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/company/setup/team"
+                element={
+                  <ProtectedRoute>
+                    <CompanyTeam />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/company/setup/preferences"
+                element={
+                  <ProtectedRoute>
+                    <CompanyPreferences />
                   </ProtectedRoute>
                 }
               />

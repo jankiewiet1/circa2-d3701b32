@@ -6,9 +6,8 @@ export interface Profile {
   first_name: string | null;
   last_name: string | null;
   created_at: string | null;
-  // Add the missing properties from the error
-  user_id?: string; // Making optional since it might not be in the DB schema
-  updated_at?: string; // Making optional since it might not be in the DB schema
+  user_id?: string; 
+  updated_at?: string;
 }
 
 export interface Company {
@@ -17,8 +16,28 @@ export interface Company {
   industry: string | null;
   created_by_user_id: string | null;
   created_at: string | null;
-  // Add the missing property from the error
-  updated_at?: string; // Making optional since it might not be in the DB
+  updated_at?: string;
+  
+  // Extended company fields
+  country?: string;
+  kvk_number?: string;
+  vat_number?: string;
+  iban?: string;
+  bank_name?: string;
+  billing_email?: string;
+  phone_number?: string;
+  billing_address?: string;
+  postal_code?: string;
+  city?: string;
+  contact_name?: string;
+  contact_title?: string;
+  contact_email?: string;
+  preferred_currency?: string;
+  fiscal_year_start_month?: string;
+  reporting_frequency?: string;
+  language?: string;
+  timezone?: string;
+  setup_completed?: boolean;
 }
 
 export interface CompanyMember {
@@ -27,7 +46,6 @@ export interface CompanyMember {
   user_id: string | null;
   role: string | null;
   joined_at?: string | null;
-  // Add the missing properties from the error
   created_at?: string | null;
   updated_at?: string | null;
 }
