@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { Company, CompanyMember, UserRole } from "@/types";
@@ -98,6 +99,7 @@ export const createCompanyService = async (name: string, industry: string, userI
       throw new Error("You already belong to a company");
     }
     
+    // FIX: Remove the extra parentheses at the end which were causing the error
     const { data: newCompany, error: companyError } = await supabase
       .from('companies')
       .insert({
@@ -106,7 +108,7 @@ export const createCompanyService = async (name: string, industry: string, userI
         created_by_user_id: userId,
       })
       .select()
-      .maybeSingle()();
+      .maybeSingle();
     
     if (companyError) {
       console.error("Error creating company:", companyError);
