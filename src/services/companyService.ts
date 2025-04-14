@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { Company, CompanyMember, UserRole } from "@/types";
@@ -97,16 +96,28 @@ export const fetchCompanyDataService = async (userId: string) => {
         }
       }
       
-      // Fetch emails for users
-      const { data: users, error: usersError } = await supabase.auth.admin.listUsers();
-      const emailsMap: Record<string, string> = {};
+      // Fetch emails for users - Fixed the typing issue here
+      let emailsMap: Record<string, string> = {};
       
-      if (!usersError && users) {
-        users.users.forEach(user => {
-          if (user.id && user.email) {
-            emailsMap[user.id] = user.email;
-          }
-        });
+      try {
+        // The admin.listUsers() may not be available with the current token
+        // This is a common issue with the client-side Supabase JS library
+        // as it doesn't have admin privileges by default
+        const { data, error } = await supabase.auth.admin.listUsers();
+        
+        if (error) {
+          console.error("Error fetching users:", error);
+        } else if (data && data.users) {
+          // Properly type and access the users array
+          data.users.forEach((user: { id?: string; email?: string }) => {
+            if (user.id && user.email) {
+              emailsMap[user.id] = user.email;
+            }
+          });
+        }
+      } catch (error) {
+        console.error("Admin listUsers not available:", error);
+        // Fallback: we'll continue with empty emails
       }
       
       // Process the members data to include email and profile info
