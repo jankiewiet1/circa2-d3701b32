@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, Users, Settings } from "lucide-react";
+import { Building2, Users, Settings, Pencil, Save, X } from "lucide-react";
 import CompanyInfoTab from "./setup/tabs/CompanyInfoTab";
 import CompanyTeamTab from "./setup/tabs/CompanyTeamTab";
 import CompanyPreferencesTab from "./setup/tabs/CompanyPreferencesTab";
@@ -16,6 +15,7 @@ export default function CompanyManage() {
   const { user } = useAuth();
   const { company, loading } = useCompany();
   const [activeTab, setActiveTab] = useState("info");
+  const [isEditing, setIsEditing] = useState(false);
   
   if (loading) {
     return (
@@ -40,7 +40,7 @@ export default function CompanyManage() {
       </MainLayout>
     );
   }
-  
+
   if (!company) {
     return (
       <MainLayout>
@@ -71,14 +71,53 @@ export default function CompanyManage() {
     );
   }
   
+  const toggleEditMode = () => {
+    setIsEditing(!isEditing);
+  };
+
   return (
     <MainLayout>
       <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">{company.name}</h1>
-          <p className="text-muted-foreground">
-            Configure your company information for carbon accounting
-          </p>
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">{company.name}</h1>
+            <p className="text-muted-foreground">
+              Configure your company information for carbon accounting
+            </p>
+          </div>
+          {activeTab === "info" && (
+            <div className="flex gap-2">
+              {isEditing ? (
+                <>
+                  <Button 
+                    type="submit" 
+                    form="company-form"
+                    size="sm" 
+                    className="flex items-center gap-2"
+                  >
+                    <Save className="h-4 w-4" /> Save
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={toggleEditMode}
+                    className="flex items-center gap-2"
+                  >
+                    <X className="h-4 w-4" /> Cancel
+                  </Button>
+                </>
+              ) : (
+                <Button 
+                  onClick={toggleEditMode} 
+                  variant="outline" 
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Pencil className="h-4 w-4" /> Edit Company
+                </Button>
+              )}
+            </div>
+          )}
         </div>
         
         <Card>
@@ -92,7 +131,12 @@ export default function CompanyManage() {
             <Tabs 
               defaultValue="info"
               value={activeTab} 
-              onValueChange={setActiveTab}
+              onValueChange={(value) => {
+                setActiveTab(value);
+                if (isEditing) {
+                  setIsEditing(false);
+                }
+              }}
               className="space-y-6"
             >
               <TabsList className="grid grid-cols-3 w-full">
@@ -111,7 +155,7 @@ export default function CompanyManage() {
               </TabsList>
               
               <TabsContent value="info">
-                <CompanyInfoTab />
+                <CompanyInfoTab isEditing={isEditing} onSave={toggleEditMode} />
               </TabsContent>
               
               <TabsContent value="team">
