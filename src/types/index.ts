@@ -43,7 +43,9 @@ export interface CompanyMember {
   joined_at?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
-  email?: string | null; // Added email field
+  email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
 }
 
 export interface ProfileFormValues {
@@ -68,4 +70,27 @@ export interface CompanyFormValues {
   contact_name?: string;
   contact_title?: string;
   contact_email?: string;
+}
+
+// Added Profile interface for AuthContext
+export interface Profile {
+  id: string;
+  first_name?: string;
+  last_name?: string;
+  created_at?: string;
+}
+
+// Added UserWithProfile interface for AuthContext
+export interface UserWithProfile {
+  id: string;
+  email: string;
+  profile?: Profile;
+}
+
+// Added EmissionsData interface for Dashboard
+export interface EmissionsData {
+  scope: string;
+  value: number;
+  unit: string;
+  date: string;
 }

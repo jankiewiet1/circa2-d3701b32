@@ -59,12 +59,7 @@ export const fetchCompanyDataService = async (userId: string) => {
           id, 
           user_id, 
           role, 
-          company_id,
-          user:profiles(
-            first_name,
-            last_name,
-            email
-          )
+          company_id
         `)
         .eq('company_id', memberData.company.id);
       
@@ -73,12 +68,52 @@ export const fetchCompanyDataService = async (userId: string) => {
         throw membersError;
       }
       
-      // Process the members data to include email info
+      // Get profiles for all members
+      const userIds = allMembers?.filter(member => member.user_id).map(member => member.user_id) || [];
+      
+      let profilesData = {};
+      if (userIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select(`
+            id,
+            first_name,
+            last_name
+          `)
+          .in('id', userIds);
+        
+        if (profilesError) {
+          console.error("Profiles error:", profilesError);
+          // Don't throw here - just continue with empty profiles
+        } else {
+          // Create a map of user_id to profile data
+          profilesData = (profiles || []).reduce((acc, profile) => {
+            acc[profile.id] = {
+              firstName: profile.first_name,
+              lastName: profile.last_name
+            };
+            return acc;
+          }, {} as Record<string, { firstName?: string, lastName?: string }>);
+        }
+      }
+      
+      // Fetch emails for users
+      const { data: users, error: usersError } = await supabase.auth.admin.listUsers();
+      const emailsMap: Record<string, string> = {};
+      
+      if (!usersError && users) {
+        users.users.forEach(user => {
+          if (user.id && user.email) {
+            emailsMap[user.id] = user.email;
+          }
+        });
+      }
+      
+      // Process the members data to include email and profile info
       const processedMembers = allMembers?.map(member => {
-        // Extract email from user info if available
-        const email = member.user?.email || null;
-        const firstName = member.user?.first_name || null;
-        const lastName = member.user?.last_name || null;
+        const userId = member.user_id || '';
+        const profile = userId ? (profilesData[userId] || {}) : {};
+        const email = emailsMap[userId] || null;
         
         // Extract just what we need
         return {
@@ -87,8 +122,8 @@ export const fetchCompanyDataService = async (userId: string) => {
           role: member.role,
           company_id: member.company_id,
           email,
-          firstName,
-          lastName
+          firstName: profile.firstName || null,
+          lastName: profile.lastName || null
         };
       }) || [];
       
