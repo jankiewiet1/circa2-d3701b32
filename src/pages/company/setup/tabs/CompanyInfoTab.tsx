@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,9 +22,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowRight, Loader2, Save } from "lucide-react";
+import { ArrowRight, Loader2, Save, AlertCircle } from "lucide-react";
 import { countries } from "@/lib/countries";
 import { industries } from "@/lib/industries";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const formSchema = z.object({
   name: z.string().min(2, "Company name must be at least 2 characters"),
@@ -54,8 +54,9 @@ interface CompanyInfoTabProps {
 export default function CompanyInfoTab({ setActiveTab }: CompanyInfoTabProps) {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { company, updateCompany, createCompany } = useCompany();
+  const { company, updateCompany, createCompany, error, fetchCompanyData } = useCompany();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -80,6 +81,7 @@ export default function CompanyInfoTab({ setActiveTab }: CompanyInfoTabProps) {
 
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
+    setFormError(null);
     
     try {
       if (company) {
@@ -110,6 +112,9 @@ export default function CompanyInfoTab({ setActiveTab }: CompanyInfoTabProps) {
           });
           
           if (updateError) throw updateError;
+          
+          // Refresh company data
+          await fetchCompanyData();
         }
         
         toast({
@@ -122,6 +127,7 @@ export default function CompanyInfoTab({ setActiveTab }: CompanyInfoTabProps) {
       setActiveTab("team");
     } catch (error: any) {
       console.error("Error saving company info:", error);
+      setFormError(error.message || "There was a problem saving your company information");
       toast({
         title: "Error",
         description: error.message || "There was a problem saving your company information",
@@ -140,6 +146,22 @@ export default function CompanyInfoTab({ setActiveTab }: CompanyInfoTabProps) {
           Enter your company details and KYC information
         </p>
       </div>
+      
+      {formError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{formError}</AlertDescription>
+        </Alert>
+      )}
+      
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Error retrieving company data: {error.message}
+          </AlertDescription>
+        </Alert>
+      )}
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">

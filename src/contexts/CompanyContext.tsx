@@ -11,6 +11,7 @@ interface CompanyContextType {
   hasCompany: boolean;
   userRole: UserRole | null;
   loading: boolean;
+  error: Error | null;
   createCompany: (name: string, industry: string) => Promise<{ error: any, company: Company | null }>;
   updateCompany: (data: Partial<Company>) => Promise<{ error: any }>;
   inviteMember: (email: string, role: UserRole) => Promise<{ error: any }>;
@@ -27,11 +28,15 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const [companyMembers, setCompanyMembers] = useState<CompanyMember[]>([]);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   
   const hasCompany = Boolean(company);
   const companyActions = useCompanyActions(user?.id, company?.id);
 
   const fetchCompanyData = async () => {
+    setLoading(true);
+    setError(null);
+    
     if (!user) {
       setCompany(null);
       setCompanyMembers([]);
@@ -40,18 +45,34 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       return { error: null };
     }
     
-    const { company, members, userRole: role, error } = await fetchCompanyDataService(user.id);
-    
-    setCompany(company);
-    setCompanyMembers(members);
-    setUserRole(role);
-    setLoading(false);
-    
-    return { error };
+    try {
+      const { company, members, userRole: role, error } = await fetchCompanyDataService(user.id);
+      
+      if (error) {
+        setError(error);
+        console.error("Error fetching company data:", error);
+      } else {
+        setCompany(company);
+        setCompanyMembers(members);
+        setUserRole(role);
+      }
+      
+      setLoading(false);
+      return { error };
+    } catch (err: any) {
+      console.error("Unexpected error in fetchCompanyData:", err);
+      setError(err);
+      setLoading(false);
+      return { error: err };
+    }
   };
 
   useEffect(() => {
-    fetchCompanyData();
+    if (user?.id) {
+      fetchCompanyData();
+    } else {
+      setLoading(false);
+    }
   }, [user?.id]);
 
   const contextValue: CompanyContextType = {
@@ -60,6 +81,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     userRole,
     companyMembers,
     hasCompany,
+    error,
     ...companyActions,
     fetchCompanyData
   };

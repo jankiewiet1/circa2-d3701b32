@@ -5,14 +5,16 @@ import { useCompany } from "@/contexts/CompanyContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building2, Users, Settings } from "lucide-react";
+import { Building2, Users, Settings, AlertCircle } from "lucide-react";
 import CompanyInfoTab from "./setup/tabs/CompanyInfoTab";
 import CompanyTeamTab from "./setup/tabs/CompanyTeamTab";
 import CompanyPreferencesTab from "./setup/tabs/CompanyPreferencesTab";
 import { useNavigate } from "react-router-dom";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 export default function CompanySetup() {
-  const { company, loading } = useCompany();
+  const { company, loading, error, fetchCompanyData } = useCompany();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("info");
   
@@ -22,6 +24,10 @@ export default function CompanySetup() {
       navigate("/dashboard");
     }
   }, [company, navigate]);
+  
+  const handleRetry = async () => {
+    await fetchCompanyData();
+  };
   
   if (loading) {
     return (
@@ -46,6 +52,18 @@ export default function CompanySetup() {
             Configure your company information to get started with carbon accounting
           </p>
         </div>
+        
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Error loading company data: {error.message}
+              <Button variant="link" onClick={handleRetry} className="ml-2 p-0">
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
         
         <Card>
           <CardHeader>
