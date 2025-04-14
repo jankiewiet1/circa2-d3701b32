@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { Company, CompanyMember, UserRole } from "@/types";
@@ -6,6 +7,7 @@ export const fetchCompanyDataService = async (userId: string) => {
   try {
     console.log("Fetching company data for userId:", userId);
     
+    // Get the user's company membership data
     const { data: memberData, error: memberError } = await supabase
       .from('company_members')
       .select(`
@@ -50,9 +52,20 @@ export const fetchCompanyDataService = async (userId: string) => {
     console.log("Member data received:", memberData);
     
     if (memberData?.company) {
+      // Get all members of the company
       const { data: allMembers, error: membersError } = await supabase
         .from('company_members')
-        .select('*')
+        .select(`
+          id, 
+          user_id, 
+          role, 
+          company_id,
+          user:profiles(
+            first_name,
+            last_name,
+            email
+          )
+        `)
         .eq('company_id', memberData.company.id);
       
       if (membersError) {
@@ -60,9 +73,28 @@ export const fetchCompanyDataService = async (userId: string) => {
         throw membersError;
       }
       
+      // Process the members data to include email info
+      const processedMembers = allMembers?.map(member => {
+        // Extract email from user info if available
+        const email = member.user?.email || null;
+        const firstName = member.user?.first_name || null;
+        const lastName = member.user?.last_name || null;
+        
+        // Extract just what we need
+        return {
+          id: member.id,
+          user_id: member.user_id,
+          role: member.role,
+          company_id: member.company_id,
+          email,
+          firstName,
+          lastName
+        };
+      }) || [];
+      
       return {
         company: memberData.company,
-        members: allMembers || [],
+        members: processedMembers,
         userRole: memberData.role as UserRole,
         error: null
       };

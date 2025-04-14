@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -29,11 +29,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RecentActivities } from "@/components/activity/RecentActivities";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2, User } from "lucide-react";
 import { UserRole } from "@/types";
 import { toast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -62,6 +63,7 @@ type InviteFormValues = z.infer<typeof inviteFormSchema>;
 export default function CompanyTeamTab() {
   const { companyMembers, inviteMember, updateMemberRole, removeMember } = useCompany();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userProfiles, setUserProfiles] = useState<Record<string, { firstName: string, lastName: string }>>({});
 
   const form = useForm<InviteFormValues>({
     resolver: zodResolver(inviteFormSchema),
@@ -70,6 +72,80 @@ export default function CompanyTeamTab() {
       role: "viewer",
     },
   });
+
+  // Fetch user details for all members
+  useEffect(() => {
+    const fetchUserProfiles = async () => {
+      if (!companyMembers.length) return;
+      
+      const userIds = companyMembers.map(member => member.user_id).filter(Boolean) as string[];
+      
+      if (userIds.length === 0) return;
+      
+      try {
+        const { data: profiles, error } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name')
+          .in('id', userIds);
+          
+        if (error) {
+          console.error('Error fetching user profiles:', error);
+          return;
+        }
+        
+        const profileMap: Record<string, { firstName: string, lastName: string }> = {};
+        
+        for (const profile of profiles || []) {
+          if (profile.id) {
+            profileMap[profile.id] = {
+              firstName: profile.first_name || '',
+              lastName: profile.last_name || ''
+            };
+          }
+        }
+        
+        setUserProfiles(profileMap);
+      } catch (error) {
+        console.error('Error in fetching user profiles:', error);
+      }
+    };
+    
+    fetchUserProfiles();
+  }, [companyMembers]);
+
+  const getUserDisplayName = (userId: string | null) => {
+    if (!userId) return 'Unknown User';
+    
+    const profile = userProfiles[userId];
+    if (!profile) return 'User';
+    
+    if (profile.firstName && profile.lastName) {
+      return `${profile.firstName} ${profile.lastName}`;
+    } else if (profile.firstName) {
+      return profile.firstName;
+    } else if (profile.lastName) {
+      return profile.lastName;
+    } else {
+      return 'User';
+    }
+  };
+
+  const getInitials = (userId: string | null) => {
+    if (!userId) return 'U';
+    
+    const profile = userProfiles[userId];
+    if (!profile) return 'U';
+    
+    if (profile.firstName && profile.lastName) {
+      return `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`.toUpperCase();
+    } else if (profile.firstName) {
+      return profile.firstName.substring(0, 1).toUpperCase();
+    } else if (profile.lastName) {
+      return profile.lastName.substring(0, 1).toUpperCase();
+    } else {
+      return 'U';
+    }
+  };
 
   const onInviteMember = async (data: InviteFormValues) => {
     setIsSubmitting(true);
@@ -124,16 +200,16 @@ export default function CompanyTeamTab() {
             {companyMembers.map((member) => (
               <TableRow key={member.id}>
                 <TableCell>
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback>
-                      {member.user_id?.substring(0, 2).toUpperCase()}
+                  <Avatar className="h-8 w-8 bg-primary/10">
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {getInitials(member.user_id)}
                     </AvatarFallback>
                   </Avatar>
                 </TableCell>
                 <TableCell className="font-medium">
-                  {member.user_id}
+                  {getUserDisplayName(member.user_id)}
                 </TableCell>
-                <TableCell>{member.user_id}</TableCell>
+                <TableCell>{member.email || "No email available"}</TableCell>
                 <TableCell>
                   <Select
                     value={member.role || undefined}
