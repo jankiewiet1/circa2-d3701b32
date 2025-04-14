@@ -157,8 +157,8 @@ export default function CompanyInfoTab() {
                     </FormControl>
                     <SelectContent>
                       {countries.map((country) => (
-                        <SelectItem key={country.value} value={country.value}>
-                          {country.label}
+                        <SelectItem key={country.code} value={country.code}>
+                          {country.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

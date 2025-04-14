@@ -95,11 +95,11 @@ export default function CompanySetup() {
               </TabsList>
               
               <TabsContent value="info">
-                <CompanyInfoTab setActiveTab={setActiveTab} />
+                <CompanyInfoTab />
               </TabsContent>
               
               <TabsContent value="team">
-                <CompanyTeamTab setActiveTab={setActiveTab} />
+                <CompanyTeamTab />
               </TabsContent>
               
               <TabsContent value="preferences">
