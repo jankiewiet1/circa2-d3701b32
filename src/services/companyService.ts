@@ -77,7 +77,8 @@ export const fetchCompanyDataService = async (userId: string) => {
           .select(`
             id,
             first_name,
-            last_name
+            last_name,
+            email
           `)
           .in('id', userIds);
         
@@ -89,50 +90,25 @@ export const fetchCompanyDataService = async (userId: string) => {
           profilesData = (profiles || []).reduce((acc, profile) => {
             acc[profile.id] = {
               firstName: profile.first_name,
-              lastName: profile.last_name
+              lastName: profile.last_name,
+              email: profile.email
             };
             return acc;
-          }, {} as Record<string, { firstName?: string, lastName?: string }>);
+          }, {} as Record<string, { firstName?: string, lastName?: string, email?: string }>);
         }
       }
       
-      // Fetch emails for users - Fixed the typing issue here
-      let emailsMap: Record<string, string> = {};
-      
-      try {
-        // The admin.listUsers() may not be available with the current token
-        // This is a common issue with the client-side Supabase JS library
-        // as it doesn't have admin privileges by default
-        const { data, error } = await supabase.auth.admin.listUsers();
-        
-        if (error) {
-          console.error("Error fetching users:", error);
-        } else if (data && data.users) {
-          // Properly type and access the users array
-          data.users.forEach((user: { id?: string; email?: string }) => {
-            if (user.id && user.email) {
-              emailsMap[user.id] = user.email;
-            }
-          });
-        }
-      } catch (error) {
-        console.error("Admin listUsers not available:", error);
-        // Fallback: we'll continue with empty emails
-      }
-      
-      // Process the members data to include email and profile info
+      // Process the members data to include profile info
       const processedMembers = allMembers?.map(member => {
         const userId = member.user_id || '';
         const profile = userId ? (profilesData[userId] || {}) : {};
-        const email = emailsMap[userId] || null;
         
-        // Extract just what we need
         return {
           id: member.id,
           user_id: member.user_id,
           role: member.role,
           company_id: member.company_id,
-          email,
+          email: profile.email || null,
           firstName: profile.firstName || null,
           lastName: profile.lastName || null
         };
