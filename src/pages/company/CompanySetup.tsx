@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -17,6 +16,7 @@ export default function CompanySetup() {
   const { company, loading, error, fetchCompanyData } = useCompany();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("info");
+  const [isEditing, setIsEditing] = useState(true); // Default to editing mode for setup
   
   useEffect(() => {
     // If the user already has completed the setup, redirect to dashboard
@@ -27,6 +27,12 @@ export default function CompanySetup() {
   
   const handleRetry = async () => {
     await fetchCompanyData();
+  };
+  
+  const handleSave = () => {
+    // In setup, we keep editing mode on
+    // This is just a placeholder to satisfy the props requirement
+    console.log("Save triggered in setup flow");
   };
   
   if (loading) {
@@ -95,7 +101,7 @@ export default function CompanySetup() {
               </TabsList>
               
               <TabsContent value="info">
-                <CompanyInfoTab />
+                <CompanyInfoTab isEditing={isEditing} onSave={handleSave} />
               </TabsContent>
               
               <TabsContent value="team">

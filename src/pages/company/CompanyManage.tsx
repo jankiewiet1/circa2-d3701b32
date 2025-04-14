@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -73,6 +74,10 @@ export default function CompanyManage() {
   
   const toggleEditMode = () => {
     setIsEditing(!isEditing);
+  };
+
+  const handleSave = () => {
+    setIsEditing(false);
   };
 
   return (
@@ -155,7 +160,7 @@ export default function CompanyManage() {
               </TabsList>
               
               <TabsContent value="info">
-                <CompanyInfoTab isEditing={isEditing} onSave={toggleEditMode} />
+                <CompanyInfoTab isEditing={isEditing} onSave={handleSave} />
               </TabsContent>
               
               <TabsContent value="team">
