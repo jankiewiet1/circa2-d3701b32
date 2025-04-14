@@ -27,13 +27,12 @@ export default function Login() {
     setLoading(true);
     
     try {
-      // Set the persistence option based on the remember me checkbox
-      // This needs to be set before sign in
-      await supabase.auth.setSession({
-        access_token: '',
-        refresh_token: '',
-      }, {
-        persistSession: rememberMe
+      // Modify Supabase client configuration based on rememberMe
+      supabase.auth.onAuthStateChange((event, session) => {
+        if (session) {
+          // Persist session based on rememberMe checkbox
+          supabase.auth.persistent = rememberMe;
+        }
       });
       
       const { error } = await signIn(email, password, rememberMe);
@@ -123,3 +122,5 @@ export default function Login() {
     </div>
   );
 }
+
+export default Login;
