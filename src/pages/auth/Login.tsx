@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -26,6 +27,15 @@ export default function Login() {
     setLoading(true);
     
     try {
+      // Set the persistence option based on the remember me checkbox
+      // This needs to be set before sign in
+      await supabase.auth.setSession({
+        access_token: '',
+        refresh_token: '',
+      }, {
+        persistSession: rememberMe
+      });
+      
       const { error } = await signIn(email, password, rememberMe);
       
       if (!error) {
