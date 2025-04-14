@@ -178,6 +178,16 @@ const App = () => (
                 }
               />
               
+              {/* Data Upload Route */}
+              <Route
+                path="/data-upload"
+                element={
+                  <ProtectedRoute>
+                    <DataUpload />
+                  </ProtectedRoute>
+                }
+              />
+              
               {/* Catch all route - 404 */}
               <Route path="*" element={<NotFound />} />
             </Routes>

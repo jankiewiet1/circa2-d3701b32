@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,71 +15,57 @@ import {
   Truck, 
   HelpCircle,
   ChevronRight,
-  LogOut
+  LogOut,
+  Upload
 } from "lucide-react";
+import { Leaf } from "lucide-react";
 
 export const Sidebar = () => {
-  const { company, userRole } = useCompany();
+  const { company } = useCompany();
   const { signOut } = useAuth();
   
   return (
-    <aside className="bg-circa-green-dark text-white min-h-screen w-[260px] flex flex-col">
+    <aside className="bg-circa-green-dark text-white w-[260px] h-full flex flex-col">
       {/* Logo */}
-      <div className="p-6 flex items-center">
-        <Link to="/dashboard" className="text-2xl font-bold flex items-center">
-          <div className="h-8 w-8 rounded-full bg-white mr-3 flex items-center justify-center">
-            <span className="text-circa-green-dark font-bold">C</span>
+      <div className="p-4 flex items-center">
+        <Link to="/dashboard" className="text-xl font-bold flex items-center">
+          <div className="h-8 w-8 rounded-full bg-white mr-2 flex items-center justify-center relative overflow-hidden group">
+            <Leaf className="h-5 w-5 text-circa-green-dark transition-transform group-hover:scale-110" />
           </div>
-          Circa
+          <span className="text-lg">Circa</span>
         </Link>
       </div>
       
-      {/* Navigation Sections */}
-      <nav className="flex-1">
-        <div className="px-4 py-2 text-sm font-medium text-white/60">
-          Overview
-        </div>
-        
+      {/* Navigation */}
+      <nav className="flex-1 px-2 space-y-1">
         <NavLink to="/dashboard" icon={<LayoutDashboard size={18} />} label="Dashboard" />
         <NavLink to="/reports" icon={<FileText size={18} />} label="Reports" />
+        <NavLink to="/data-upload" icon={<Upload size={18} />} label="Data Upload" />
         
-        <div className="px-4 py-2 text-sm font-medium text-white/60 mt-4">
-          Emissions
+        <div className="pt-2 pb-1">
+          <div className="px-3 text-xs font-medium text-white/60">Emissions</div>
         </div>
         
         <NavLink to="/emissions/scope1" icon={<Flame size={18} />} label="Scope 1" />
         <NavLink to="/emissions/scope2" icon={<Wind size={18} />} label="Scope 2" />
         <NavLink to="/emissions/scope3" icon={<Truck size={18} />} label="Scope 3" />
         
-        <div className="px-4 py-2 text-sm font-medium text-white/60 mt-4">
-          Management
+        <div className="pt-2 pb-1">
+          <div className="px-3 text-xs font-medium text-white/60">Settings</div>
         </div>
         
         <NavLink
           to={company ? "/company/manage" : "/company/setup"}
           icon={<Building2 size={18} />}
-          label={company ? "Your Company" : "Company Setup"}
-          rightElement={
-            !company ? (
-              <span className="bg-yellow-400 text-black text-xs px-2 py-0.5 rounded-full">
-                Setup
-              </span>
-            ) : undefined
-          }
+          label="Your Company"
         />
-        
-        <div className="px-4 py-2 text-sm font-medium text-white/60 mt-4">
-          Account
-        </div>
-        
         <NavLink to="/profile" icon={<UserRound size={18} />} label="Profile" />
         <NavLink to="/settings" icon={<Settings size={18} />} label="Settings" />
       </nav>
       
-      {/* Help & Logout */}
-      <div className="mt-auto px-2 pb-4">
-        <NavLink to="/help" icon={<HelpCircle size={18} />} label="Help & Support" />
-        
+      {/* Footer */}
+      <div className="p-2">
+        <NavLink to="/help" icon={<HelpCircle size={18} />} label="Help" />
         <Button 
           variant="ghost" 
           className="w-full justify-start text-white hover:bg-white/10 hover:text-white mt-2" 
