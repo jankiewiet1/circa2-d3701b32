@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { Company, CompanyMember, UserRole } from "@/types";
@@ -104,6 +103,7 @@ export const createCompanyService = async (name: string, industry: string, userI
     
     if (companyError) throw companyError;
     
+    // Create company member entry for the creator with admin role
     const { error: memberError } = await supabase
       .from('company_members')
       .insert({
@@ -114,17 +114,13 @@ export const createCompanyService = async (name: string, industry: string, userI
     
     if (memberError) throw memberError;
     
-    const company: Company = {
-      id: newCompany.id,
-      name: newCompany.name,
-      industry: newCompany.industry,
-      created_by_user_id: newCompany.created_by_user_id,
-      created_at: newCompany.created_at,
-      updated_at: newCompany.updated_at || undefined
-    };
-    
-    return { error: null, company };
-  } catch (error) {
+    return { error: null, company: newCompany };
+  } catch (error: any) {
+    toast({
+      title: "Error Creating Company",
+      description: error.message,
+      variant: "destructive",
+    });
     return { error, company: null };
   }
 };
@@ -133,12 +129,26 @@ export const updateCompanyService = async (companyId: string, data: Partial<Comp
   try {
     const { error } = await supabase
       .from('companies')
-      .update(data)
+      .update({
+        ...data,
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', companyId);
     
     if (error) throw error;
+    
+    toast({
+      title: "Success",
+      description: "Company information updated successfully",
+    });
+    
     return { error: null };
-  } catch (error) {
+  } catch (error: any) {
+    toast({
+      title: "Error Updating Company",
+      description: error.message,
+      variant: "destructive",
+    });
     return { error };
   }
 };
