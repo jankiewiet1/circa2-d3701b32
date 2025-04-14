@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +19,7 @@ import Register from "@/pages/auth/Register";
 // Main Pages
 import Dashboard from "@/pages/Dashboard";
 import Reports from "@/pages/Reports";
+import DataUpload from "@/pages/DataUpload"; // Added the missing import here
 
 // Emissions Pages
 import Scope1 from "@/pages/emissions/Scope1";
