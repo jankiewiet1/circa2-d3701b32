@@ -40,7 +40,7 @@ export const fetchCompanyDataService = async (userId: string) => {
         )
       `)
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
     
     if (memberError && memberError.code !== 'PGRST116') {
       console.error("Member error:", memberError);
@@ -106,7 +106,7 @@ export const createCompanyService = async (name: string, industry: string, userI
         created_by_user_id: userId,
       })
       .select()
-      .single();
+      .maybeSingle()();
     
     if (companyError) {
       console.error("Error creating company:", companyError);
