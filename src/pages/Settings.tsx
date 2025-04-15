@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -42,7 +41,6 @@ export default function Settings() {
   
   const loading = companyLoading || settingsLoading;
 
-  // Add display form using react-hook-form
   const displayForm = useForm({
     defaultValues: {
       theme: settings?.theme || 'system',
@@ -53,7 +51,6 @@ export default function Settings() {
     }
   });
 
-  // Add admin form using react-hook-form
   const adminForm = useForm({
     defaultValues: {
       lock_team_changes: settings?.lock_team_changes || false,
@@ -63,7 +60,6 @@ export default function Settings() {
     }
   });
 
-  // Display form submission handler
   const handleDisplaySubmit = async (data: any) => {
     if (!user?.id) return;
     
@@ -85,7 +81,6 @@ export default function Settings() {
     }
   };
 
-  // Admin form submission handler
   const handleAdminSubmit = async (data: any) => {
     if (!user?.id || !isAdmin) return;
     
@@ -125,8 +120,7 @@ export default function Settings() {
     }
   };
 
-  // Update form values when settings load
-  React.useEffect(() => {
+  useEffect(() => {
     if (settings && !loading) {
       displayForm.reset({
         theme: settings.theme || 'system',
@@ -140,12 +134,12 @@ export default function Settings() {
         adminForm.reset({
           lock_team_changes: settings.lock_team_changes || false,
           require_reviewer: settings.require_reviewer || false,
-          audit_logging_enabled: settings.audit_logging_enabled || true,
+          audit_logging_enabled: settings.audit_logging_enabled ?? true,
           default_member_role: settings.default_member_role || 'viewer'
         });
       }
     }
-  }, [settings, loading]);
+  }, [settings, loading, adminForm, isAdmin]);
 
   return (
     <MainLayout>
