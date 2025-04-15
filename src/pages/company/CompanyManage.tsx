@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -80,6 +81,7 @@ export default function CompanyManage() {
     try {
       await fetchCompanyData();
       toast.success("Company information updated successfully");
+      setIsEditing(false);
     } catch (error) {
       console.error("Error saving company:", error);
       toast.error("Failed to save company information");
@@ -166,7 +168,11 @@ export default function CompanyManage() {
               </TabsList>
               
               <TabsContent value="info">
-                <CompanyInfoTab isEditing={isEditing} onSave={handleSave} setIsEditing={setIsEditing} />
+                <CompanyInfoTab 
+                  isEditing={isEditing} 
+                  onSave={handleSave} 
+                  setIsEditing={setIsEditing} 
+                />
               </TabsContent>
               
               <TabsContent value="team">

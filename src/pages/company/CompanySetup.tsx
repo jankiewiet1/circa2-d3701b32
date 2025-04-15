@@ -5,13 +5,14 @@ import { useCompany } from "@/contexts/CompanyContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building2, Users, Settings, AlertCircle } from "lucide-react";
+import { Building2, Users, Settings, AlertCircle, Pencil, Save, X } from "lucide-react";
 import CompanyInfoTab from "./setup/tabs/CompanyInfoTab";
 import CompanyTeamTab from "./setup/tabs/CompanyTeamTab";
 import CompanyPreferencesTab from "./setup/tabs/CompanyPreferencesTab";
 import { useNavigate } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/sonner";
 
 export default function CompanySetup() {
   const { company, loading, error, fetchCompanyData } = useCompany();
@@ -30,10 +31,18 @@ export default function CompanySetup() {
     await fetchCompanyData();
   };
   
-  const handleSave = () => {
-    // In setup, we keep editing mode on
-    // This is just a placeholder to satisfy the props requirement
-    console.log("Save triggered in setup flow");
+  const handleSave = async () => {
+    try {
+      await fetchCompanyData();
+      toast.success("Company information updated successfully");
+    } catch (error) {
+      console.error("Error saving company:", error);
+      toast.error("Failed to save company information");
+    }
+  };
+  
+  const toggleEditMode = () => {
+    setIsEditing(!isEditing);
   };
   
   if (loading) {
@@ -54,10 +63,47 @@ export default function CompanySetup() {
     <MainLayout>
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold">Company Setup</h1>
-          <p className="text-muted-foreground">
-            Configure your company information to get started with carbon accounting
-          </p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold">Company Setup</h1>
+              <p className="text-muted-foreground">
+                Configure your company information to get started with carbon accounting
+              </p>
+            </div>
+            {activeTab === "info" && (
+              <div className="flex gap-2">
+                {isEditing ? (
+                  <>
+                    <Button 
+                      type="submit" 
+                      form="company-form"
+                      size="sm" 
+                      className="flex items-center gap-2"
+                    >
+                      <Save className="h-4 w-4" /> Save
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={toggleEditMode}
+                      className="flex items-center gap-2"
+                    >
+                      <X className="h-4 w-4" /> Cancel
+                    </Button>
+                  </>
+                ) : (
+                  <Button 
+                    onClick={toggleEditMode} 
+                    variant="outline" 
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <Pencil className="h-4 w-4" /> Edit Company
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
         
         {error && (
