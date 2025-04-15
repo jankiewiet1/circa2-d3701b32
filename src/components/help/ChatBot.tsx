@@ -1,10 +1,11 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Send } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 type MessageType = {
   id: string;
@@ -24,18 +25,17 @@ export const ChatBot = () => {
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const { toast } = useToast();
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Autofocus the input on component mount
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
     }
   }, []);
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -46,35 +46,9 @@ export const ChatBot = () => {
     }
   };
 
-  // Find answer based on the question
-  const getResponse = (question: string) => {
-    const normalizedQuestion = question.toLowerCase();
-    
-    // Check for different topics based on keywords
-    if (normalizedQuestion.includes("company") && (normalizedQuestion.includes("setup") || normalizedQuestion.includes("create"))) {
-      return "To create a company, navigate to the Company Setup page from the sidebar. You'll need to provide your company information, industry, and contact details.";
-    } else if (normalizedQuestion.includes("team") || normalizedQuestion.includes("member")) {
-      return "You can add team members from the Company > Manage Team section. There are three roles available: admin, editor, and viewer. Admins have full control, editors can input data, and viewers can only see reports.";
-    } else if (normalizedQuestion.includes("upload") || normalizedQuestion.includes("data") || normalizedQuestion.includes("emission")) {
-      return "You can upload carbon data from the Data Upload page. We support CSV files with emission data which will automatically be categorized into the appropriate scope.";
-    } else if (normalizedQuestion.includes("scope")) {
-      return "We track three types of emissions: Scope 1 (direct emissions from owned sources), Scope 2 (indirect emissions from purchased energy), and Scope 3 (all other indirect emissions in your value chain). Each has its own tab in the emissions section.";
-    } else if (normalizedQuestion.includes("action") || normalizedQuestion.includes("plan") || normalizedQuestion.includes("goal")) {
-      return "You can create action plans and set climate goals in the Reports section. This helps track your progress toward emission reduction targets.";
-    } else if (normalizedQuestion.includes("edit") || normalizedQuestion.includes("information") || normalizedQuestion.includes("preference")) {
-      return "You can edit your company information and preferences in the Company section of the sidebar. This includes updating contact details, industry classification, and reporting preferences.";
-    } else if (normalizedQuestion.includes("notification") || normalizedQuestion.includes("setting")) {
-      return "You can manage notifications and other settings in the Settings page. This includes email notification preferences, display settings, and account security options.";
-    }
-    
-    // Default response if no match found
-    return "I'm not sure about that. You can always reach out to us at info@epccommodities.com.";
-  };
+  const handleSend = async () => {
+    if (inputValue.trim() === "" || isTyping) return;
 
-  const handleSend = () => {
-    if (inputValue.trim() === "") return;
-
-    // Add user message
     const userMessage: MessageType = {
       id: Date.now().toString(),
       content: inputValue,
@@ -82,23 +56,50 @@ export const ChatBot = () => {
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages(prev => [...prev, userMessage]);
     setInputValue("");
     setIsTyping(true);
 
-    // Simulate bot typing
-    setTimeout(() => {
-      const botResponse = getResponse(userMessage.content);
-      const botMessage: MessageType = {
+    try {
+      const { data, error } = await supabase.functions.invoke('chat-completion', {
+        body: {
+          messages: messages.concat(userMessage).map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.content
+          }))
+        }
+      });
+
+      if (error) throw error;
+
+      const botResponse: MessageType = {
         id: (Date.now() + 1).toString(),
-        content: botResponse,
+        content: data.choices[0].message.content,
         sender: "bot",
         timestamp: new Date(),
       };
 
-      setMessages((prev) => [...prev, botMessage]);
+      setMessages(prev => [...prev, botResponse]);
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to get response. Please try again.",
+        variant: "destructive",
+      });
+
+      // Add a fallback message
+      const fallbackMessage: MessageType = {
+        id: (Date.now() + 1).toString(),
+        content: "I'm having trouble responding right now. Please email us at info@epccommodities.com for assistance.",
+        sender: "bot",
+        timestamp: new Date(),
+      };
+
+      setMessages(prev => [...prev, fallbackMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1000);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
