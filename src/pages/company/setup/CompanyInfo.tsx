@@ -54,7 +54,7 @@ export default function CompanyInfo() {
   const navigate = useNavigate();
   const { company, updateCompany, createCompany } = useCompany();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isEditing, setIsEditing] = useState(!company); // If no company, start in edit mode
+  const [isEditing, setIsEditing] = useState(false); // If no company, start in edit mode
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -141,15 +141,31 @@ export default function CompanyInfo() {
       description="Set up your company details for carbon accounting"
     >
       <div className="flex justify-end mb-4">
-        {!isEditing ? (
-          <Button onClick={() => setIsEditing(true)}>Edit Company</Button>
-        ) : (
-          <Button type="submit" form="companyForm" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : "Save Changes"}
-          </Button>
-        )}
-      </div>
-
+  {!isEditing ? (
+    <Button onClick={() => setIsEditing(true)}>Edit Company</Button>
+  ) : (
+    <div className="flex gap-2">
+       <Button
+          type="submit"
+           form="companyForm"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Saving..." : "Save Changes"}
+        </Button>
+         <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+               setIsEditing(false);       // Exit edit mode
+              form.reset();              // Reset the form to last saved state
+             }}
+          >
+            Cancel
+           </Button>
+         </div>
+       )}
+     </div>
+      
       <Form {...form}>
         <form
           id="companyForm"
