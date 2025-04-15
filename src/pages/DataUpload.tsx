@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { Card } from "@/components/ui/card";
@@ -42,9 +43,15 @@ export default function DataUpload() {
     setIsProcessing(true);
     
     Papa.parse(file, {
+      header: true,
       complete: (results) => {
-        const headers = results.data[0] as string[];
-        const rows = results.data.slice(1) as string[][];
+        // Get the headers from the first row
+        const headers = results.meta.fields || [];
+        // Convert data to array format for preview
+        const rows = results.data.filter(row => Object.keys(row).length > 0).map(row => {
+          return headers.map(header => (row as any)[header] || '');
+        });
+        
         const detectedScope = detectScope(headers);
         
         setPreviewData({
@@ -60,6 +67,53 @@ export default function DataUpload() {
         setIsProcessing(false);
       }
     });
+  };
+
+  // Map CSV headers to database column names
+  const mapHeadersToColumns = (headers: string[], scope: '1' | '2' | '3') => {
+    // Define mapping based on scope
+    const columnMappings: Record<string, Record<string, string>> = {
+      '1': {
+        'fuel_type': 'fuel_type',
+        'source': 'source',
+        'amount': 'amount',
+        'emissions_co2e': 'emissions_co2e',
+        'date': 'date',
+        'unit': 'unit',
+        'emission_factor': 'emission_factor_source',
+        'emission_unit': 'ratio_indicators',
+      },
+      '2': {
+        'energy_type': 'energy_type',
+        'kwh': 'kwh',
+        'emissions_co2e': 'emissions_co2e',
+        'date': 'date',
+        'supplier': 'supplier',
+        'location': 'location',
+      },
+      '3': {
+        'supplier_name': 'supplier_name',
+        'supplier_type': 'supplier_type',
+        'commodity_type': 'commodity_type',
+        'annual_spend': 'annual_spend',
+        'emissions_co2e': 'emissions_co2e',
+        'date': 'date',
+      }
+    };
+    
+    return headers.reduce((acc, header) => {
+      const lowerHeader = header.toLowerCase();
+      const mapping = columnMappings[scope];
+      
+      if (mapping && mapping[lowerHeader]) {
+        acc[header] = mapping[lowerHeader];
+      } else {
+        // Use the header as is if no mapping exists
+        acc[header] = lowerHeader.replace(/\s+/g, '_');
+      }
+      
+      return acc;
+    }, {} as Record<string, string>);
   };
 
   const handleUpload = async () => {
@@ -86,43 +140,115 @@ export default function DataUpload() {
 
       if (sessionError) throw sessionError;
 
+      // Get the column mapping for this scope
+      const headerMapping = mapHeadersToColumns(previewData.headers, previewData.detectedScope);
+
       // Process the file data according to the detected scope
-      // This is a simplified version - you might want to add more validation and mapping
-      const rows = previewData.rows.map(row => {
-        const rowData: any = {
+      const rows = previewData.rows.map((row) => {
+        const rowData: Record<string, any> = {
           company_id: company.id,
           uploaded_by: user.id,
         };
         
         previewData.headers.forEach((header, index) => {
-          rowData[header.toLowerCase().replace(/\s+/g, '_')] = row[index];
+          const columnName = headerMapping[header];
+          if (columnName) {
+            // For date columns, ensure proper format
+            if (columnName === 'date' && row[index]) {
+              try {
+                // Try to parse the date
+                const date = new Date(row[index]);
+                if (!isNaN(date.getTime())) {
+                  rowData[columnName] = date.toISOString().split('T')[0];
+                }
+              } catch (e) {
+                // If date parsing fails, use as is
+                rowData[columnName] = row[index];
+              }
+            } 
+            // For numeric columns, convert to number if possible
+            else if (['amount', 'emissions_co2e', 'kwh', 'annual_spend'].includes(columnName) && row[index]) {
+              const num = parseFloat(row[index]);
+              rowData[columnName] = isNaN(num) ? row[index] : num;
+            } 
+            // For everything else, use as is
+            else if (row[index] !== undefined && row[index] !== '') {
+              rowData[columnName] = row[index];
+            }
+          }
         });
 
         return rowData;
       });
 
-      const tableName = `scope${previewData.detectedScope}_emissions`;
-      const { error: uploadError } = await supabase
-        .from(tableName as 'scope1_emissions' | 'scope2_emissions' | 'scope3_emissions')
-        .insert(rows);
+      // Filter out any rows that don't have enough data
+      const validRows = rows.filter(row => {
+        // Require at least some essential data depending on scope
+        if (previewData.detectedScope === '1') {
+          return row.fuel_type || row.source;
+        } else if (previewData.detectedScope === '2') {
+          return row.energy_type;
+        } else {
+          return row.supplier_name || row.commodity_type;
+        }
+      });
 
-      if (uploadError) throw uploadError;
+      // Only proceed if we have some valid rows
+      if (validRows.length === 0) {
+        throw new Error('No valid data rows found in the file');
+      }
+
+      const tableName = `scope${previewData.detectedScope}_emissions`;
+      
+      // Insert rows with error handling for each row
+      let successCount = 0;
+      let failCount = 0;
+      
+      // Use Promise.allSettled to attempt inserting each row
+      await Promise.allSettled(
+        validRows.map(async (rowData) => {
+          try {
+            const { error } = await supabase
+              .from(tableName)
+              .insert([rowData]);
+            
+            if (error) {
+              console.error('Row insert error:', error, rowData);
+              failCount++;
+              return false;
+            } else {
+              successCount++;
+              return true;
+            }
+          } catch (err) {
+            console.error('Row processing error:', err);
+            failCount++;
+            return false;
+          }
+        })
+      );
 
       // Update session status
       await supabase
         .from('upload_sessions')
         .update({ 
-          status: 'completed',
-          completed_at: new Date().toISOString()
+          status: failCount === 0 ? 'completed' : 'partial',
+          completed_at: new Date().toISOString(),
+          row_count: successCount
         })
         .eq('id', session.id);
 
-      toast.success('Data uploaded successfully');
+      if (failCount === 0) {
+        toast.success(`Data uploaded successfully - ${successCount} records added`);
+      } else {
+        toast.warning(`Upload completed with issues - ${successCount} records added, ${failCount} records failed`);
+      }
+      
       setFile(null);
       setPreviewData(null);
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Failed to upload data');
+      toast.error('Failed to upload data: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setIsProcessing(false);
     }
@@ -213,7 +339,7 @@ export default function DataUpload() {
                     disabled={isProcessing}
                     className="bg-circa-green hover:bg-circa-green-dark"
                   >
-                    Upload Data
+                    {isProcessing ? 'Uploading...' : 'Upload Data'}
                   </Button>
                 </div>
               </div>
