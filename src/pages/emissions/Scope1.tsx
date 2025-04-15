@@ -19,7 +19,8 @@ import {
   Factory,
   BarChart3,
   Download,
-  Droplet
+  Droplet,
+  RefreshCw
 } from "lucide-react";
 import { 
   ResponsiveContainer, 
@@ -44,46 +45,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { toast } from "sonner";
+import { useScope1Emissions, Scope1EmissionData } from "@/hooks/useScope1Emissions";
+import { fetchCompanyPreferences } from "@/services/companyPreferencesService";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
-
-interface EmissionData {
-  id: string;
-  fuel_type?: string;
-  source?: string;
-  amount?: number;
-  unit?: string;
-  emissions_co2e?: number;
-  date?: string;
-  emission_factor_source?: string;
-  company_id?: string;
-  created_at?: string;
-  uploaded_by?: string;
-  scope_description?: string;
-  reporting_boundary?: string;
-  reporting_period?: string;
-  activity_data?: string;
-  uncertainty_notes?: string;
-  trend_notes?: string;
-  progress_toward_target?: string;
-  additional_notes?: string;
-  events_affecting_data?: string;
-  ratio_indicators?: string;
-}
-
-interface ChartDataPoint {
-  name: string;
-  value: number;
-}
 
 export default function Scope1() {
   const { userRole, company } = useCompany();
   const companyId = company?.id;
   const canEdit = userRole === "admin" || userRole === "editor";
   
-  const [emissionsData, setEmissionsData] = useState<EmissionData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     dateRange: "last12months",
     fuelType: "all",
@@ -94,6 +65,7 @@ export default function Scope1() {
   const [availableFuelTypes, setAvailableFuelTypes] = useState<string[]>([]);
   const [availableSources, setAvailableSources] = useState<string[]>([]);
   const [availableUnits, setAvailableUnits] = useState<string[]>([]);
+  const [preferredEmissionSource, setPreferredEmissionSource] = useState<string>("DEFRA");
 
   const [summaryStats, setSummaryStats] = useState({
     totalEmissions: 0,
@@ -102,88 +74,57 @@ export default function Scope1() {
     mostUsedFuelType: "",
     trendDirection: "up"
   });
+
+  const { 
+    emissions: emissionsData,
+    isLoading, 
+    fetchEmissions,
+    recalculateEmissions
+  } = useScope1Emissions(companyId || '');
   
   useEffect(() => {
-    const fetchData = async () => {
+    const loadPreferences = async () => {
       if (!companyId) return;
       
-      setLoading(true);
       try {
-        let query = supabase
-          .from('scope1_emissions')
-          .select('*')
-          .eq('company_id', companyId);
-          
-        // Apply date range filter
-        const today = new Date();
-        let startDate = new Date();
-        switch (filters.dateRange) {
-          case 'last3months':
-            startDate.setMonth(today.getMonth() - 3);
-            break;
-          case 'last6months':
-            startDate.setMonth(today.getMonth() - 6);
-            break;
-          case 'last12months':
-            startDate.setMonth(today.getMonth() - 12);
-            break;
-          case 'thisYear':
-            startDate = new Date(today.getFullYear(), 0, 1);
-            break;
-          case 'lastYear':
-            startDate = new Date(today.getFullYear() - 1, 0, 1);
-            break;
+        const { data } = await fetchCompanyPreferences(companyId);
+        if (data && data.preferred_emission_source) {
+          setPreferredEmissionSource(data.preferred_emission_source);
         }
-        
-        query = query.gte('date', startDate.toISOString().split('T')[0]);
-        
-        // Apply other filters
-        if (filters.fuelType !== 'all') {
-          query = query.eq('fuel_type', filters.fuelType);
-        }
-        if (filters.source !== 'all') {
-          query = query.eq('source', filters.source);
-        }
-        if (filters.unit !== 'all') {
-          query = query.eq('unit', filters.unit);
-        }
-        
-        const { data, error: fetchError } = await query;
-          
-        if (fetchError) throw fetchError;
-        
-        if (data) {
-          setEmissionsData(data as EmissionData[]);
-          calculateSummaryStats(data as EmissionData[]);
-          extractFilterOptions(data as EmissionData[]);
-        } else {
-          // If no data, use mock data for demonstration
-          const mockData = getMockData();
-          setEmissionsData(mockData);
-          calculateSummaryStats(mockData);
-          extractFilterOptions(mockData);
-          toast.info("Using demonstration data as no emissions data was found.");
-        }
-      } catch (err: any) {
-        console.error("Error fetching emissions data:", err);
-        setError(err.message);
-        
-        // Use mock data on error
-        const mockData = getMockData();
-        setEmissionsData(mockData);
-        calculateSummaryStats(mockData);
-        extractFilterOptions(mockData);
-        toast.error("Error loading data. Using demonstration data instead.");
-      } finally {
-        setLoading(false);
+      } catch (error) {
+        console.error("Error loading preferences:", error);
       }
     };
     
-    fetchData();
+    loadPreferences();
+  }, [companyId]);
+  
+  useEffect(() => {
+    if (!companyId) return;
+    
+    const loadEmissionsData = async () => {
+      await fetchEmissions(filters);
+    };
+    
+    loadEmissionsData();
   }, [companyId, filters]);
   
-  const extractFilterOptions = (data: EmissionData[]) => {
-    // Extract unique fuel types, sources, and units for filter dropdowns
+  useEffect(() => {
+    if (emissionsData.length > 0) {
+      calculateSummaryStats(emissionsData);
+      extractFilterOptions(emissionsData);
+    }
+  }, [emissionsData]);
+
+  const handleRecalculate = async () => {
+    if (!companyId) return;
+    
+    toast.info('Recalculating emissions...');
+    await recalculateEmissions();
+    toast.success('Emissions recalculated based on current preferences');
+  };
+  
+  const extractFilterOptions = (data: Scope1EmissionData[]) => {
     const fuelTypes = [...new Set(data.map(item => item.fuel_type || 'Unknown').filter(Boolean))];
     const sources = [...new Set(data.map(item => item.source || 'Unknown').filter(Boolean))];
     const units = [...new Set(data.map(item => item.unit || 'Unknown').filter(Boolean))];
@@ -200,7 +141,7 @@ export default function Scope1() {
     return value;
   };
   
-  const calculateSummaryStats = (data: EmissionData[]) => {
+  const calculateSummaryStats = (data: Scope1EmissionData[]) => {
     if (!data || data.length === 0) {
       setSummaryStats({
         totalEmissions: 0,
@@ -212,11 +153,9 @@ export default function Scope1() {
       return;
     }
     
-    // Calculate total emissions
     const totalEmissions = data.reduce((sum, item) => 
-      sum + (item.emissions_co2e || 0), 0);
+      sum + (Number(item.emissions_co2e) || 0), 0);
     
-    // Calculate most used fuel type
     const fuelTypeCounts = data.reduce<Record<string, number>>((acc, item) => {
       const fuelType = item.fuel_type || 'Unknown';
       acc[fuelType] = (acc[fuelType] || 0) + 1;
@@ -226,17 +165,15 @@ export default function Scope1() {
     const mostUsedFuelType = Object.entries(fuelTypeCounts)
       .sort(([,a], [,b]) => b - a)[0]?.[0] || "Unknown";
     
-    // Calculate top emission source
     const sourceEmissions = data.reduce<Record<string, number>>((acc, item) => {
       const source = item.source || 'Unknown';
-      acc[source] = (acc[source] || 0) + (item.emissions_co2e || 0);
+      acc[source] = (acc[source] || 0) + (Number(item.emissions_co2e) || 0);
       return acc;
     }, {});
     
     const topEmissionSource = Object.entries(sourceEmissions)
       .sort(([,a], [,b]) => b - a)[0]?.[0] || "Unknown";
     
-    // Calculate year over year change
     const currentYear = new Date().getFullYear();
     const lastYear = currentYear - 1;
     
@@ -251,10 +188,10 @@ export default function Scope1() {
     });
     
     const lastYearTotal = lastYearData.reduce((sum, item) => 
-      sum + (item.emissions_co2e || 0), 0);
+      sum + (Number(item.emissions_co2e) || 0), 0);
     
     const thisYearTotal = thisYearData.reduce((sum, item) => 
-      sum + (item.emissions_co2e || 0), 0);
+      sum + (Number(item.emissions_co2e) || 0), 0);
     
     let changeFromLastYear = 0;
     if (lastYearTotal > 0) {
@@ -273,7 +210,6 @@ export default function Scope1() {
   const prepareMonthlyData = () => {
     if (!emissionsData.length) return [];
     
-    // Group by month
     const monthlyData: Record<string, { month: string; value: number }> = {};
     
     emissionsData.forEach(item => {
@@ -289,7 +225,6 @@ export default function Scope1() {
       monthlyData[month].value += Number(item.emissions_co2e || 0);
     });
     
-    // Convert to array and sort by month
     const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return Object.values(monthlyData).sort((a, b) => 
       monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month)
@@ -335,13 +270,10 @@ export default function Scope1() {
   const prepareMonthlyTrendsData = () => {
     if (!emissionsData.length) return [];
     
-    // Group by month and source
     const monthlySourceData: Record<string, Record<string, any>> = {};
     
-    // First get unique sources
     const sources = [...new Set(emissionsData.map(item => item.source || 'Unknown'))];
     
-    // Then process data
     emissionsData.forEach(item => {
       if (!item.date) return;
       
@@ -352,7 +284,6 @@ export default function Scope1() {
       if (!monthlySourceData[month]) {
         monthlySourceData[month] = { month };
         
-        // Initialize all sources with zero
         sources.forEach(s => {
           monthlySourceData[month][s] = 0;
         });
@@ -361,7 +292,6 @@ export default function Scope1() {
       monthlySourceData[month][source] = (monthlySourceData[month][source] || 0) + (Number(item.emissions_co2e) || 0);
     });
     
-    // Convert to array and sort by month
     const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return Object.values(monthlySourceData).sort((a, b) => 
       monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month)
@@ -467,21 +397,34 @@ export default function Scope1() {
             </h1>
             <p className="text-gray-500 mt-1">
               Direct emissions from owned or controlled sources
+              <span className="ml-2 text-sm text-blue-500">
+                Using {preferredEmissionSource} emission factors
+              </span>
             </p>
           </div>
           
-          {canEdit && (
-            <div className="flex space-x-2">
-              <Button variant="outline">
-                <Upload className="mr-2 h-4 w-4" />
-                Import Data
-              </Button>
-              <Button className="bg-green-600 hover:bg-green-700 text-white">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Entry
-              </Button>
-            </div>
-          )}
+          <div className="flex space-x-2">
+            {canEdit && (
+              <>
+                <Button variant="outline">
+                  <Upload className="mr-2 h-4 w-4" />
+                  Import Data
+                </Button>
+                <Button className="bg-green-600 hover:bg-green-700 text-white">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Entry
+                </Button>
+              </>
+            )}
+            <Button 
+              variant="outline" 
+              onClick={handleRecalculate}
+              disabled={isLoading}
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              Recalculate
+            </Button>
+          </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -817,7 +760,7 @@ export default function Scope1() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {loading ? (
+                  {isLoading ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-8">
                         <div className="flex justify-center items-center">
@@ -861,9 +804,9 @@ export default function Scope1() {
                         <TableCell>{emission.unit || 'N/A'}</TableCell>
                         <TableCell>
                           {emission.emissions_co2e ? (
-                            <span className="font-medium">{emission.emissions_co2e.toFixed(3)}</span>
+                            <span className="font-medium">{Number(emission.emissions_co2e).toFixed(3)}</span>
                           ) : (
-                            'N/A'
+                            'Uncalculated'
                           )}
                         </TableCell>
                         <TableCell>
