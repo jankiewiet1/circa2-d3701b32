@@ -223,9 +223,6 @@ export type Database = {
           job_title: string | null
           last_name: string | null
           phone_number: string | null
-          receive_deadline_notifications: boolean | null
-          receive_newsletter: boolean | null
-          receive_upload_alerts: boolean | null
         }
         Insert: {
           created_at?: string | null
@@ -236,9 +233,6 @@ export type Database = {
           job_title?: string | null
           last_name?: string | null
           phone_number?: string | null
-          receive_deadline_notifications?: boolean | null
-          receive_newsletter?: boolean | null
-          receive_upload_alerts?: boolean | null
         }
         Update: {
           created_at?: string | null
@@ -249,9 +243,6 @@ export type Database = {
           job_title?: string | null
           last_name?: string | null
           phone_number?: string | null
-          receive_deadline_notifications?: boolean | null
-          receive_newsletter?: boolean | null
-          receive_upload_alerts?: boolean | null
         }
         Relationships: []
       }
@@ -289,6 +280,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_notification_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          receive_deadline_notifications: boolean | null
+          receive_newsletter: boolean | null
+          receive_upload_alerts: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          receive_deadline_notifications?: boolean | null
+          receive_newsletter?: boolean | null
+          receive_upload_alerts?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          receive_deadline_notifications?: boolean | null
+          receive_newsletter?: boolean | null
+          receive_upload_alerts?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       user_preferences: {
         Row: {

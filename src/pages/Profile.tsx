@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -36,6 +35,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/sonner';
+import { useCompany } from '@/contexts/CompanyContext';
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -49,6 +49,7 @@ export default function ProfilePage() {
     updatePreferences,
     changePassword
   } = useProfileSettings(user);
+  const { company } = useCompany();
 
   const [localProfile, setLocalProfile] = useState({
     first_name: '',
@@ -225,6 +226,17 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4" /> Company
+                    </Label>
+                    <Input 
+                      value={company?.name || 'Not assigned to a company'}
+                      disabled
+                      className="bg-gray-50"
+                    />
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>First Name</Label>
@@ -296,54 +308,6 @@ export default function ProfilePage() {
                       disabled={!isEditing}
                       className={!isEditing ? "bg-gray-50" : ""}
                     />
-                  </div>
-
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Communication Preferences</h3>
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="deadline_notifications"
-                          checked={localProfile.receive_deadline_notifications}
-                          onCheckedChange={(checked) => setLocalProfile(prev => ({
-                            ...prev,
-                            receive_deadline_notifications: !!checked
-                          }))}
-                          disabled={!isEditing}
-                        />
-                        <Label htmlFor="deadline_notifications">
-                          Receive deadline notifications
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="upload_alerts"
-                          checked={localProfile.receive_upload_alerts}
-                          onCheckedChange={(checked) => setLocalProfile(prev => ({
-                            ...prev,
-                            receive_upload_alerts: !!checked
-                          }))}
-                          disabled={!isEditing}
-                        />
-                        <Label htmlFor="upload_alerts">
-                          Receive upload alerts
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="newsletter"
-                          checked={localProfile.receive_newsletter}
-                          onCheckedChange={(checked) => setLocalProfile(prev => ({
-                            ...prev,
-                            receive_newsletter: !!checked
-                          }))}
-                          disabled={!isEditing}
-                        />
-                        <Label htmlFor="newsletter">
-                          Receive newsletter
-                        </Label>
-                      </div>
-                    </div>
                   </div>
 
                   {isEditing && (

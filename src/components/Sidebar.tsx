@@ -23,16 +23,30 @@ import { Leaf } from "lucide-react";
 export const Sidebar = () => {
   const { company } = useCompany();
   const { signOut } = useAuth();
+  const [isExpanded, setIsExpanded] = useState(false);
   
   return (
-    <aside className="bg-circa-green-dark text-white w-[260px] h-full flex flex-col">
+    <aside 
+      className={cn(
+        "bg-circa-green-dark text-white transition-all duration-300 ease-in-out",
+        isExpanded ? "w-[221px]" : "w-[60px]",
+        "h-full flex flex-col group/sidebar hover:w-[221px]"
+      )}
+      onMouseEnter={() => setIsExpanded(true)}
+      onMouseLeave={() => setIsExpanded(false)}
+    >
       {/* Logo */}
       <div className="p-4 flex items-center">
         <Link to="/dashboard" className="text-xl font-bold flex items-center">
           <div className="h-8 w-8 rounded-full bg-white mr-2 flex items-center justify-center relative overflow-hidden group">
             <Leaf className="h-5 w-5 text-circa-green-dark transition-transform group-hover:scale-110" />
           </div>
-          <span className="text-lg">Circa</span>
+          <span className={cn(
+            "text-lg transition-opacity duration-300",
+            isExpanded ? "opacity-100" : "opacity-0 group-hover/sidebar:opacity-100"
+          )}>
+            Circa
+          </span>
         </Link>
       </div>
       

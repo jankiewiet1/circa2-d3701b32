@@ -1,17 +1,22 @@
-
 import { MainLayout } from "@/components/MainLayout";
 import { useCompany } from "@/contexts/CompanyContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNotificationSettings } from "@/hooks/useNotificationSettings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bell, Globe, PieChart, Shield, Clock } from "lucide-react";
+import { Bell, Globe, PieChart, Shield } from "lucide-react";
 
 export default function Settings() {
-  const { loading, userRole } = useCompany();
+  const { loading: companyLoading, userRole } = useCompany();
+  const { user } = useAuth();
+  const { settings, loading: settingsLoading, updateSettings } = useNotificationSettings(user?.id);
   const isAdmin = userRole === 'admin';
   
+  const loading = companyLoading || settingsLoading;
+
   if (loading) {
     return (
       <MainLayout>
@@ -75,34 +80,38 @@ export default function Settings() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between space-x-2">
                     <Label htmlFor="emission-updates" className="flex flex-col space-y-1">
-                      <span>Emissions Updates</span>
-                      <span className="font-normal text-sm text-gray-500">Get notified when emission data is updated</span>
+                      <span>Upload Alerts</span>
+                      <span className="font-normal text-sm text-gray-500">Get notified when new data is uploaded</span>
                     </Label>
-                    <Switch id="emission-updates" defaultChecked />
+                    <Switch 
+                      id="upload-alerts"
+                      checked={settings?.receive_upload_alerts}
+                      onCheckedChange={(checked) => updateSettings({ receive_upload_alerts: checked })}
+                    />
                   </div>
                   
                   <div className="flex items-center justify-between space-x-2">
-                    <Label htmlFor="team-changes" className="flex flex-col space-y-1">
-                      <span>Team Changes</span>
-                      <span className="font-normal text-sm text-gray-500">Get notified about team member changes</span>
+                    <Label htmlFor="deadline-notifications" className="flex flex-col space-y-1">
+                      <span>Deadline Notifications</span>
+                      <span className="font-normal text-sm text-gray-500">Get notified about upcoming deadlines</span>
                     </Label>
-                    <Switch id="team-changes" defaultChecked />
+                    <Switch 
+                      id="deadline-notifications"
+                      checked={settings?.receive_deadline_notifications}
+                      onCheckedChange={(checked) => updateSettings({ receive_deadline_notifications: checked })}
+                    />
                   </div>
                   
                   <div className="flex items-center justify-between space-x-2">
-                    <Label htmlFor="report-ready" className="flex flex-col space-y-1">
-                      <span>Report Availability</span>
-                      <span className="font-normal text-sm text-gray-500">Get notified when new reports are available</span>
+                    <Label htmlFor="newsletter" className="flex flex-col space-y-1">
+                      <span>Newsletter</span>
+                      <span className="font-normal text-sm text-gray-500">Receive our newsletter with updates and tips</span>
                     </Label>
-                    <Switch id="report-ready" defaultChecked />
-                  </div>
-                  
-                  <div className="flex items-center justify-between space-x-2">
-                    <Label htmlFor="product-updates" className="flex flex-col space-y-1">
-                      <span>Product Updates</span>
-                      <span className="font-normal text-sm text-gray-500">Get notified about Circa product updates</span>
-                    </Label>
-                    <Switch id="product-updates" />
+                    <Switch 
+                      id="newsletter"
+                      checked={settings?.receive_newsletter}
+                      onCheckedChange={(checked) => updateSettings({ receive_newsletter: checked })}
+                    />
                   </div>
                 </div>
               </CardContent>
