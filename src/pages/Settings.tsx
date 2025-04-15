@@ -1,10 +1,9 @@
-
+import React, { useState } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotificationSettings } from "@/hooks/useNotificationSettings";
 import { useProfileSettings } from "@/hooks/useProfileSettings";
-import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -42,14 +41,12 @@ export default function Settings() {
   
   const isAdmin = userRole === 'admin';
   
-  // Loading states
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [loadingDisplay, setLoadingDisplay] = useState(false);
   const [loadingAdmin, setLoadingAdmin] = useState(false);
   
   const loading = companyLoading || settingsLoading || preferencesLoading;
   
-  // Form for display settings
   const displayForm = useForm({
     defaultValues: {
       theme: preferences?.theme || "system",
@@ -60,7 +57,6 @@ export default function Settings() {
     }
   });
 
-  // Update display form values when preferences load
   React.useEffect(() => {
     if (preferences) {
       displayForm.reset({
@@ -73,7 +69,6 @@ export default function Settings() {
     }
   }, [preferences]);
 
-  // Form for admin settings
   const adminForm = useForm({
     defaultValues: {
       lock_team_changes: false,
@@ -83,7 +78,6 @@ export default function Settings() {
     }
   });
 
-  // Handle notifications form submission
   const handleNotificationsSubmit = async () => {
     if (!user?.id) return;
     
@@ -103,14 +97,13 @@ export default function Settings() {
     }
   };
 
-  // Handle display form submission
   const handleDisplaySubmit = async (data: any) => {
     if (!user?.id) return;
     
     setLoadingDisplay(true);
     try {
       await updatePreferences({
-        theme: data.theme,
+        theme: data.theme as "light" | "dark" | "system",
         language: data.language,
         timezone: data.timezone,
         date_format: data.date_format,
@@ -125,11 +118,9 @@ export default function Settings() {
     }
   };
 
-  // Handle admin form submission
   const handleAdminSubmit = async (data: any) => {
     setLoadingAdmin(true);
     try {
-      // This would be implemented when company_settings table is created
       toast.success("Admin settings updated successfully");
     } catch (error) {
       toast.error("Failed to update admin settings");
@@ -188,7 +179,6 @@ export default function Settings() {
             )}
           </TabsList>
           
-          {/* Notifications Tab */}
           <TabsContent value="notifications">
             <Card>
               <CardHeader>
@@ -252,7 +242,6 @@ export default function Settings() {
             </Card>
           </TabsContent>
           
-          {/* Display Tab */}
           <TabsContent value="display">
             <form onSubmit={displayForm.handleSubmit(handleDisplaySubmit)}>
               <Card className="mb-6">
@@ -383,7 +372,6 @@ export default function Settings() {
             </form>
           </TabsContent>
           
-          {/* Admin Tab - Only visible to admins */}
           {isAdmin && (
             <TabsContent value="admin">
               <form onSubmit={adminForm.handleSubmit(handleAdminSubmit)}>
