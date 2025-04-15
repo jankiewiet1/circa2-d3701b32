@@ -198,7 +198,15 @@ export default function DataUpload() {
         throw new Error('No valid data rows found in the file');
       }
 
-      const tableName = `scope${previewData.detectedScope}_emissions`;
+      // Fix: Use type-safe table names instead of string interpolation
+      const tableNames = {
+        '1': 'scope1_emissions',
+        '2': 'scope2_emissions',
+        '3': 'scope3_emissions'
+      } as const;
+      
+      // Get the appropriate table name based on the detected scope
+      const tableName = tableNames[previewData.detectedScope];
       
       // Insert rows with error handling for each row
       let successCount = 0;
