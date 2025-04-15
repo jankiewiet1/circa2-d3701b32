@@ -21,19 +21,14 @@ export type Database = {
           country: string | null
           created_at: string | null
           created_by_user_id: string | null
-          fiscal_year_start_month: string | null
           iban: string | null
           id: string
           industry: string | null
           kvk_number: string | null
-          language: string | null
           name: string
           phone_number: string | null
           postal_code: string | null
-          preferred_currency: string | null
-          reporting_frequency: string | null
           setup_completed: boolean | null
-          timezone: string | null
           updated_at: string | null
           vat_number: string | null
         }
@@ -48,19 +43,14 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           created_by_user_id?: string | null
-          fiscal_year_start_month?: string | null
           iban?: string | null
           id?: string
           industry?: string | null
           kvk_number?: string | null
-          language?: string | null
           name: string
           phone_number?: string | null
           postal_code?: string | null
-          preferred_currency?: string | null
-          reporting_frequency?: string | null
           setup_completed?: boolean | null
-          timezone?: string | null
           updated_at?: string | null
           vat_number?: string | null
         }
@@ -75,19 +65,14 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           created_by_user_id?: string | null
-          fiscal_year_start_month?: string | null
           iban?: string | null
           id?: string
           industry?: string | null
           kvk_number?: string | null
-          language?: string | null
           name?: string
           phone_number?: string | null
           postal_code?: string | null
-          preferred_currency?: string | null
-          reporting_frequency?: string | null
           setup_completed?: boolean | null
-          timezone?: string | null
           updated_at?: string | null
           vat_number?: string | null
         }

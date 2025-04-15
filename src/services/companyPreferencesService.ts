@@ -18,15 +18,15 @@ export const fetchCompanyPreferences = async (companyId: string) => {
   }
 };
 
-export const updateCompanyPreferences = async (companyId: string, preferences: Partial<{
-  preferred_currency: string;
-  fiscal_year_start_month: string;
-  reporting_frequency: string;
-  emission_unit: string;
-  default_view: string;
-}>) => {
+export const updateCompanyPreferences = async (companyId: string, preferences: {
+  preferred_currency?: string;
+  fiscal_year_start_month?: string;
+  reporting_frequency?: string;
+  language?: string;
+  timezone?: string;
+}) => {
   try {
-    const { error: upsertError } = await supabase
+    const { error } = await supabase
       .from('company_preferences')
       .upsert({
         company_id: companyId,
@@ -34,21 +34,10 @@ export const updateCompanyPreferences = async (companyId: string, preferences: P
         updated_at: new Date().toISOString(),
       });
 
-    if (upsertError) throw upsertError;
-    
-    toast({
-      title: "Success",
-      description: "Company preferences updated successfully",
-    });
-    
+    if (error) throw error;
     return { error: null };
   } catch (error: any) {
     console.error("Error updating company preferences:", error);
-    toast({
-      title: "Error",
-      description: "Failed to update company preferences",
-      variant: "destructive",
-    });
     return { error };
   }
 };

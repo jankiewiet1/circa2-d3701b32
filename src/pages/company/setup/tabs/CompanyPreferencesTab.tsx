@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2, Save } from "lucide-react";
-import { updateCompanyPreferences } from "@/services/companyPreferencesService";
+import { fetchCompanyPreferences, updateCompanyPreferences } from "@/services/companyPreferencesService";
 
 const formSchema = z.object({
   preferred_currency: z.string().min(1, "Currency is required"),
@@ -79,19 +79,37 @@ const timezones = [
 
 export default function CompanyPreferencesTab() {
   const { toast } = useToast();
-  const { company, fetchCompanyData } = useCompany();
+  const { company } = useCompany();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [preferences, setPreferences] = useState<any>(null);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      preferred_currency: company?.preferred_currency || "EUR",
-      fiscal_year_start_month: company?.fiscal_year_start_month || "1",
-      reporting_frequency: company?.reporting_frequency || "monthly",
-      language: company?.language || "en",
-      timezone: company?.timezone || "Europe/Amsterdam",
+      preferred_currency: preferences?.preferred_currency || "EUR",
+      fiscal_year_start_month: preferences?.fiscal_year_start_month || "1",
+      reporting_frequency: preferences?.reporting_frequency || "monthly",
+      language: preferences?.language || "en",
+      timezone: preferences?.timezone || "Europe/Amsterdam",
     },
   });
+
+  useEffect(() => {
+    if (company?.id) {
+      fetchCompanyPreferences(company.id).then(({ data }) => {
+        if (data) {
+          setPreferences(data);
+          form.reset({
+            preferred_currency: data.preferred_currency,
+            fiscal_year_start_month: data.fiscal_year_start_month,
+            reporting_frequency: data.reporting_frequency,
+            language: data.language,
+            timezone: data.timezone,
+          });
+        }
+      });
+    }
+  }, [company?.id]);
 
   const onSubmit = async (data: FormValues) => {
     if (!company?.id) return;
@@ -102,6 +120,8 @@ export default function CompanyPreferencesTab() {
         preferred_currency: data.preferred_currency,
         fiscal_year_start_month: data.fiscal_year_start_month,
         reporting_frequency: data.reporting_frequency,
+        language: data.language,
+        timezone: data.timezone,
       });
       
       if (!error) {
@@ -109,7 +129,10 @@ export default function CompanyPreferencesTab() {
           title: "Success",
           description: "Company preferences have been saved successfully",
         });
-        await fetchCompanyData(); // Refresh company data
+        const { data: newPreferences } = await fetchCompanyPreferences(company.id);
+        if (newPreferences) {
+          setPreferences(newPreferences);
+        }
       }
     } catch (error) {
       console.error("Error saving preferences:", error);
