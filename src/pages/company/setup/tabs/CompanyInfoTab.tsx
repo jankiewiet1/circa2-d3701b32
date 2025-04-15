@@ -1,12 +1,15 @@
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Input } from "@/components/ui/input";
+import { Form } from "@/components/ui/form";
 import { useCompany } from "@/contexts/CompanyContext";
 import { CompanyFormValues } from "@/types";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useEffect } from "react";
-import { toast } from "@/components/ui/sonner";
+import { ContactInfoSection } from "./components/ContactInfoSection";
+import { BusinessInfoSection } from "./components/BusinessInfoSection";
+import { BankingInfoSection } from "./components/BankingInfoSection";
+import { BillingInfoSection } from "./components/BillingInfoSection";
 
 const formSchema = z.object({
   name: z.string().min(1, "Company name is required"),
@@ -80,318 +83,20 @@ export default function CompanyInfoTab({ isEditing, onSave, setIsEditing }: Comp
 
   const onSubmit = async (values: CompanyFormValues) => {
     try {
-      console.log("Submitting values:", values);
-      const { error } = await updateCompany(values);
-      
-      if (error) {
-        console.error("Error updating company:", error);
-        toast.error("Failed to save company information");
-        throw error;
-      }
-      
+      await updateCompany(values);
       onSave();
     } catch (error) {
       console.error("Error updating company:", error);
-      toast.error("Failed to save company information");
     }
   };
 
   return (
     <Form {...form}>
       <form id="company-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Company Name</FormLabel>
-                <FormControl>
-                  <Input 
-                    {...field} 
-                    disabled={!isEditing}
-                    className={!isEditing ? "bg-gray-50" : ""}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="industry"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Industry</FormLabel>
-                <FormControl>
-                  <Input 
-                    {...field} 
-                    disabled={!isEditing}
-                    className={!isEditing ? "bg-gray-50" : ""}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Contact Information</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="contact_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contact Name</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      disabled={!isEditing}
-                      className={!isEditing ? "bg-gray-50" : ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="contact_title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contact Title</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      disabled={!isEditing}
-                      className={!isEditing ? "bg-gray-50" : ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="contact_email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contact Email</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      type="email"
-                      disabled={!isEditing}
-                      className={!isEditing ? "bg-gray-50" : ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="phone_number"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      disabled={!isEditing}
-                      className={!isEditing ? "bg-gray-50" : ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Business Information</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="country"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Country</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      disabled={!isEditing}
-                      className={!isEditing ? "bg-gray-50" : ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="kvk_number"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Chamber of Commerce Number (KVK)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      disabled={!isEditing}
-                      className={!isEditing ? "bg-gray-50" : ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="vat_number"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>VAT Number</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      disabled={!isEditing}
-                      className={!isEditing ? "bg-gray-50" : ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Banking Information</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="bank_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Bank Name</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      disabled={!isEditing}
-                      className={!isEditing ? "bg-gray-50" : ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="iban"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>IBAN</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      disabled={!isEditing}
-                      className={!isEditing ? "bg-gray-50" : ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Billing Information</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="billing_email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Billing Email</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      type="email"
-                      disabled={!isEditing}
-                      className={!isEditing ? "bg-gray-50" : ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="billing_address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Billing Address</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      disabled={!isEditing}
-                      className={!isEditing ? "bg-gray-50" : ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="postal_code"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Postal Code</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      disabled={!isEditing}
-                      className={!isEditing ? "bg-gray-50" : ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="city"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>City</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      disabled={!isEditing}
-                      className={!isEditing ? "bg-gray-50" : ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
+        <ContactInfoSection form={form} isEditing={isEditing} />
+        <BusinessInfoSection form={form} isEditing={isEditing} />
+        <BankingInfoSection form={form} isEditing={isEditing} />
+        <BillingInfoSection form={form} isEditing={isEditing} />
       </form>
     </Form>
   );
