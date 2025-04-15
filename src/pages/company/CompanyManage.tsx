@@ -73,11 +73,13 @@ export default function CompanyManage() {
     );
   }
   
-  const toggleEditMode = () => {
-    setIsEditing(!isEditing);
+  const handleEdit = () => {
+    setIsEditing(true);
   };
 
   const handleSave = async () => {
+    // This will be called from the CompanyInfoTab component
+    // when form is successfully submitted
     try {
       await fetchCompanyData();
       toast.success("Company information updated successfully");
@@ -90,7 +92,7 @@ export default function CompanyManage() {
 
   const handleCancel = () => {
     setIsEditing(false);
-    // Reset form values to original state
+    // Reset form values to original state by refetching company data
     fetchCompanyData();
   };
 
@@ -106,7 +108,16 @@ export default function CompanyManage() {
           </div>
           {activeTab === "info" && (
             <div className="flex gap-2">
-              {isEditing ? (
+              {!isEditing ? (
+                <Button 
+                  onClick={handleEdit} 
+                  variant="outline" 
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Pencil className="h-4 w-4" /> Edit Company
+                </Button>
+              ) : (
                 <>
                   <Button 
                     type="submit" 
@@ -125,15 +136,6 @@ export default function CompanyManage() {
                     <X className="h-4 w-4" /> Cancel
                   </Button>
                 </>
-              ) : (
-                <Button 
-                  onClick={() => setIsEditing(true)} 
-                  variant="outline" 
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <Pencil className="h-4 w-4" /> Edit Company
-                </Button>
               )}
             </div>
           )}

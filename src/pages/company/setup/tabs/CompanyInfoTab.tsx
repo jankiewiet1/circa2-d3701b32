@@ -59,6 +59,7 @@ export default function CompanyInfoTab({ isEditing, onSave, setIsEditing }: Comp
     },
   });
 
+  // Reset form when company data changes or when exiting edit mode
   useEffect(() => {
     if (company) {
       form.reset({
@@ -79,12 +80,12 @@ export default function CompanyInfoTab({ isEditing, onSave, setIsEditing }: Comp
         contact_email: company.contact_email || "",
       });
     }
-  }, [company, form]);
+  }, [company, form, isEditing]);
 
   const onSubmit = async (values: CompanyFormValues) => {
     try {
       await updateCompany(values);
-      onSave();
+      onSave(); // Call the parent component's onSave function
     } catch (error) {
       console.error("Error updating company:", error);
     }
