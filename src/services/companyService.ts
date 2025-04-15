@@ -197,10 +197,18 @@ export const updateCompanyService = async (companyId: string, data: Partial<Comp
       throw new Error("Company ID is required to update a company");
     }
     
+    // Remove preference-related fields from the update
+    const {
+      preferred_currency,
+      fiscal_year_start_month,
+      reporting_frequency,
+      ...companyData
+    } = data;
+    
     const { error } = await supabase
       .from('companies')
       .update({
-        ...data,
+        ...companyData,
         updated_at: new Date().toISOString(),
       })
       .eq('id', companyId);

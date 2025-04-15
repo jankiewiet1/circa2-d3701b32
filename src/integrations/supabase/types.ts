@@ -173,6 +173,8 @@ export type Database = {
         Row: {
           company_id: string
           created_at: string | null
+          default_view: string
+          emission_unit: string
           fiscal_year_start_month: string | null
           id: string
           language: string | null
@@ -184,6 +186,8 @@ export type Database = {
         Insert: {
           company_id: string
           created_at?: string | null
+          default_view?: string
+          emission_unit?: string
           fiscal_year_start_month?: string | null
           id?: string
           language?: string | null
@@ -195,6 +199,8 @@ export type Database = {
         Update: {
           company_id?: string
           created_at?: string | null
+          default_view?: string
+          emission_unit?: string
           fiscal_year_start_month?: string | null
           id?: string
           language?: string | null

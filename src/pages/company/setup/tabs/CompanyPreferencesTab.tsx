@@ -79,7 +79,7 @@ const timezones = [
 
 export default function CompanyPreferencesTab() {
   const { toast } = useToast();
-  const { company, updateCompany } = useCompany();
+  const { company, fetchCompanyData } = useCompany();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const form = useForm<FormValues>({
@@ -94,15 +94,23 @@ export default function CompanyPreferencesTab() {
   });
 
   const onSubmit = async (data: FormValues) => {
+    if (!company?.id) return;
     setIsSubmitting(true);
     
     try {
-      await updateCompany(data);
-      
-      toast({
-        title: "Success",
-        description: "Company preferences have been saved successfully",
+      const { error } = await updateCompanyPreferences(company.id, {
+        preferred_currency: data.preferred_currency,
+        fiscal_year_start_month: data.fiscal_year_start_month,
+        reporting_frequency: data.reporting_frequency,
       });
+      
+      if (!error) {
+        toast({
+          title: "Success",
+          description: "Company preferences have been saved successfully",
+        });
+        await fetchCompanyData(); // Refresh company data
+      }
     } catch (error) {
       console.error("Error saving preferences:", error);
       toast({
