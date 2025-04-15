@@ -225,11 +225,6 @@ export const updateCompanyService = async (companyId: string, data: Partial<Comp
     return { error: null };
   } catch (error: any) {
     console.error("Error in updateCompanyService:", error);
-    toast({
-      title: "Error Updating Company",
-      description: error.message,
-      variant: "destructive",
-    });
     return { error };
   }
 };

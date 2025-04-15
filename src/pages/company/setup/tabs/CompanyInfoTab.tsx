@@ -1,3 +1,4 @@
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -6,6 +7,7 @@ import { useCompany } from "@/contexts/CompanyContext";
 import { CompanyFormValues } from "@/types";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useEffect } from "react";
+import { toast } from "@/components/ui/sonner";
 
 const formSchema = z.object({
   name: z.string().min(1, "Company name is required"),
@@ -28,9 +30,10 @@ const formSchema = z.object({
 interface CompanyInfoTabProps {
   isEditing: boolean;
   onSave: () => void;
+  setIsEditing: (isEditing: boolean) => void;
 }
 
-export default function CompanyInfoTab({ isEditing, onSave }: CompanyInfoTabProps) {
+export default function CompanyInfoTab({ isEditing, onSave, setIsEditing }: CompanyInfoTabProps) {
   const { company, updateCompany } = useCompany();
 
   const form = useForm<CompanyFormValues>({
@@ -74,19 +77,24 @@ export default function CompanyInfoTab({ isEditing, onSave }: CompanyInfoTabProp
         contact_email: company.contact_email || "",
       });
     }
-  }, [company, form, isEditing]);
+  }, [company, form]);
 
   const onSubmit = async (values: CompanyFormValues) => {
     try {
+      console.log("Submitting values:", values);
       const { error } = await updateCompany(values);
       
       if (error) {
+        console.error("Error updating company:", error);
+        toast.error("Failed to save company information");
         throw error;
       }
       
+      setIsEditing(false);
       onSave();
     } catch (error) {
       console.error("Error updating company:", error);
+      toast.error("Failed to save company information");
     }
   };
 
