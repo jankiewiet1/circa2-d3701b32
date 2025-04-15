@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import React, { useState } from "react";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";

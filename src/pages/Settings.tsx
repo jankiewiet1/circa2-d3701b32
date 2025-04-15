@@ -1,3 +1,4 @@
+
 import { MainLayout } from "@/components/MainLayout";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bell, Globe, PieChart, Shield } from "lucide-react";
+import { Bell, Globe, PieChart, Shield, Clock } from "lucide-react";
 
 export default function Settings() {
   const { loading: companyLoading, userRole } = useCompany();
