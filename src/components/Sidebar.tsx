@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import React, { useState } from "react";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -30,8 +31,8 @@ export const Sidebar = () => {
     <aside 
       className={cn(
         "bg-circa-green-dark text-white transition-all duration-300 ease-in-out",
-        isExpanded ? "w-[221px]" : "w-[60px]",
-        "h-full flex flex-col group/sidebar hover:w-[221px]"
+        isExpanded ? "w-[187px]" : "w-[60px]",
+        "h-full flex flex-col group/sidebar hover:w-[187px]"
       )}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
@@ -39,12 +40,12 @@ export const Sidebar = () => {
       {/* Logo */}
       <div className="p-4 flex items-center">
         <Link to="/dashboard" className="text-xl font-bold flex items-center">
-          <div className="h-8 w-8 rounded-full bg-white mr-2 flex items-center justify-center relative overflow-hidden group">
+          <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center relative overflow-hidden">
             <Leaf className="h-5 w-5 text-circa-green-dark transition-transform group-hover:scale-110" />
           </div>
           <span className={cn(
-            "text-lg transition-opacity duration-300",
-            isExpanded ? "opacity-100" : "opacity-0 group-hover/sidebar:opacity-100"
+            "text-lg ml-2 transition-all duration-300",
+            isExpanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 hidden"
           )}>
             Circa
           </span>
@@ -53,42 +54,60 @@ export const Sidebar = () => {
       
       {/* Navigation */}
       <nav className="flex-1 px-2 space-y-1">
-        <NavLink to="/dashboard" icon={<LayoutDashboard size={18} />} label="Dashboard" />
-        <NavLink to="/reports" icon={<FileText size={18} />} label="Reports" />
-        <NavLink to="/data-upload" icon={<Upload size={18} />} label="Data Upload" />
+        <NavLink to="/dashboard" icon={<LayoutDashboard size={18} />} label="Dashboard" isExpanded={isExpanded} />
+        <NavLink to="/reports" icon={<FileText size={18} />} label="Reports" isExpanded={isExpanded} />
+        <NavLink to="/data-upload" icon={<Upload size={18} />} label="Data Upload" isExpanded={isExpanded} />
         
         <div className="pt-2 pb-1">
-          <div className="px-3 text-xs font-medium text-white/60">Emissions</div>
+          <div className={cn(
+            "px-3 text-xs font-medium text-white/60 transition-opacity duration-300",
+            isExpanded ? "opacity-100" : "opacity-0"
+          )}>
+            Emissions
+          </div>
         </div>
         
-        <NavLink to="/emissions/scope1" icon={<Flame size={18} />} label="Scope 1" />
-        <NavLink to="/emissions/scope2" icon={<Wind size={18} />} label="Scope 2" />
-        <NavLink to="/emissions/scope3" icon={<Truck size={18} />} label="Scope 3" />
+        <NavLink to="/emissions/scope1" icon={<Flame size={18} />} label="Scope 1" isExpanded={isExpanded} />
+        <NavLink to="/emissions/scope2" icon={<Wind size={18} />} label="Scope 2" isExpanded={isExpanded} />
+        <NavLink to="/emissions/scope3" icon={<Truck size={18} />} label="Scope 3" isExpanded={isExpanded} />
         
         <div className="pt-2 pb-1">
-          <div className="px-3 text-xs font-medium text-white/60">Settings</div>
+          <div className={cn(
+            "px-3 text-xs font-medium text-white/60 transition-opacity duration-300",
+            isExpanded ? "opacity-100" : "opacity-0"
+          )}>
+            Settings
+          </div>
         </div>
         
         <NavLink
           to={company ? "/company/manage" : "/company/setup"}
           icon={<Building2 size={18} />}
           label="Your Company"
+          isExpanded={isExpanded}
         />
-        <NavLink to="/profile" icon={<UserRound size={18} />} label="Profile" />
-        <NavLink to="/settings" icon={<Settings size={18} />} label="Settings" />
+        <NavLink to="/profile" icon={<UserRound size={18} />} label="Profile" isExpanded={isExpanded} />
+        <NavLink to="/settings" icon={<Settings size={18} />} label="Settings" isExpanded={isExpanded} />
       </nav>
       
       {/* Footer */}
       <div className="p-2">
-        <NavLink to="/help" icon={<HelpCircle size={18} />} label="Help" />
-        <Button 
-          variant="ghost" 
-          className="w-full justify-start text-white hover:bg-white/10 hover:text-white mt-2" 
+        <NavLink to="/help" icon={<HelpCircle size={18} />} label="Help" isExpanded={isExpanded} />
+        <button 
+          className={cn(
+            "w-full flex items-center px-4 py-2.5 text-sm font-medium text-white/90 hover:bg-white/10 hover:text-white rounded-md",
+            "transition-all duration-300"
+          )}
           onClick={() => signOut()}
         >
-          <LogOut size={18} className="mr-2" />
-          Sign Out
-        </Button>
+          <LogOut size={18} className="text-white/70" />
+          <span className={cn(
+            "ml-3 transition-all duration-300",
+            isExpanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 hidden"
+          )}>
+            Sign Out
+          </span>
+        </button>
       </div>
     </aside>
   );
@@ -98,22 +117,25 @@ interface NavLinkProps {
   to: string;
   icon: React.ReactNode;
   label: string;
-  rightElement?: React.ReactNode;
+  isExpanded: boolean;
 }
 
-const NavLink = ({ to, icon, label, rightElement }: NavLinkProps) => {
+const NavLink = ({ to, icon, label, isExpanded }: NavLinkProps) => {
   return (
     <Link
       to={to}
       className={cn(
-        "flex items-center justify-between px-4 py-2.5 text-sm font-medium text-white/90 hover:bg-white/10 hover:text-white",
+        "flex items-center px-4 py-2.5 text-sm font-medium text-white/90 hover:bg-white/10 hover:text-white rounded-md",
+        "transition-all duration-300"
       )}
     >
-      <div className="flex items-center">
-        <span className="mr-3 text-white/70">{icon}</span>
+      <span className="text-white/70">{icon}</span>
+      <span className={cn(
+        "ml-3 transition-all duration-300",
+        isExpanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 hidden"
+      )}>
         {label}
-      </div>
-      {rightElement || <ChevronRight size={14} className="text-white/40" />}
+      </span>
     </Link>
   );
 };
