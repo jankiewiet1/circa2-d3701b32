@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -45,17 +44,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ValueType } from "recharts/types/component/DefaultTooltipContent";
 
-// Colors for charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
-// Define a type for emission sources
 interface EmissionSource {
   name: string;
   value: number;
 }
 
-// Define a type for our emissions data
-// Updated to match the actual structure from Supabase
 interface EmissionData {
   id: string;
   fuel_type?: string;
@@ -64,7 +59,7 @@ interface EmissionData {
   unit?: string;
   emissions_co2e?: number;
   date?: string;
-  emission_factor_source?: string; // Changed from emission_factor to match DB
+  emission_factor_source?: string;
   company_id?: string;
   created_at?: string;
   uploaded_by?: string;
@@ -85,7 +80,6 @@ export default function Scope1() {
   const companyId = company?.id;
   const canEdit = userRole === "admin" || userRole === "editor";
   
-  // State for data and filters
   const [emissionsData, setEmissionsData] = useState<EmissionData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -96,7 +90,6 @@ export default function Scope1() {
     unit: "all"
   });
 
-  // State for summary stats
   const [summaryStats, setSummaryStats] = useState({
     totalEmissions: 0,
     changeFromLastYear: 0,
@@ -105,12 +98,10 @@ export default function Scope1() {
     trendDirection: "up"
   });
   
-  // Fetch data from Supabase
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // For demonstration, we'll use sample data if Supabase connection fails
         const { data, error: fetchError } = await supabase
           .from('scope1_emissions')
           .select('*')
@@ -122,14 +113,12 @@ export default function Scope1() {
           setEmissionsData(data);
           calculateSummaryStats(data);
         } else {
-          // Fallback to mock data
           setEmissionsData(getMockData());
           calculateSummaryStats(getMockData());
         }
       } catch (err: any) {
         console.error("Error fetching emissions data:", err);
         setError(err.message);
-        // Fallback to mock data
         setEmissionsData(getMockData());
         calculateSummaryStats(getMockData());
       } finally {
@@ -140,7 +129,6 @@ export default function Scope1() {
     fetchData();
   }, [companyId, filters]);
   
-  // Helper function to safely format numeric values for tooltips
   const formatNumberForTooltip = (value: ValueType) => {
     if (typeof value === 'number') {
       return value.toFixed(2);
@@ -151,11 +139,9 @@ export default function Scope1() {
   const calculateSummaryStats = (data: EmissionData[]) => {
     if (!data || data.length === 0) return;
     
-    // Calculate total emissions
     const totalEmissions = data.reduce((sum, item) => 
       sum + (parseFloat(String(item.emissions_co2e)) || 0), 0).toFixed(2);
     
-    // Find most used fuel type
     const fuelTypeCounts = data.reduce<Record<string, number>>((acc, item) => {
       const fuelType = item.fuel_type || 'Unknown';
       acc[fuelType] = (acc[fuelType] || 0) + 1;
@@ -165,7 +151,6 @@ export default function Scope1() {
     const mostUsedFuelType = Object.keys(fuelTypeCounts).reduce((a, b) => 
       fuelTypeCounts[a] > fuelTypeCounts[b] ? a : b, '');
     
-    // Find top emission source
     const sourceEmissions = data.reduce<Record<string, number>>((acc, item) => {
       const source = item.source || 'Unknown';
       acc[source] = (acc[source] || 0) + (parseFloat(String(item.emissions_co2e)) || 0);
@@ -175,7 +160,6 @@ export default function Scope1() {
     const topEmissionSource = Object.keys(sourceEmissions).reduce((a, b) => 
       sourceEmissions[a] > sourceEmissions[b] ? a : b, '');
     
-    // Mock change from last year value
     const changeFromLastYear = 12.5;
     
     setSummaryStats({
@@ -187,7 +171,6 @@ export default function Scope1() {
     });
   };
 
-  // Prepare data for charts
   const prepareMonthlyData = () => {
     if (!emissionsData.length) return [];
     
@@ -259,7 +242,6 @@ export default function Scope1() {
     return Object.values(monthlySourceData);
   };
 
-  // Mock data generator function
   const getMockData = (): EmissionData[] => [
     { 
       id: '1',
@@ -339,12 +321,10 @@ export default function Scope1() {
     }
   ];
 
-  // Handle filter changes
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
   
-  // Prepare data for charts
   const monthlyData = prepareMonthlyData();
   const fuelTypeData = prepareFuelTypeData();
   const sourceData = prepareSourceData();
@@ -353,7 +333,6 @@ export default function Scope1() {
   return (
     <MainLayout>
       <div className="max-w-7xl">
-        {/* Header with title and action buttons */}
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold flex items-center">
@@ -379,7 +358,6 @@ export default function Scope1() {
           )}
         </div>
         
-        {/* Summary Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card>
             <CardHeader className="pb-2">
@@ -436,7 +414,6 @@ export default function Scope1() {
           </Card>
         </div>
         
-        {/* Filters Section */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -525,9 +502,7 @@ export default function Scope1() {
           </CardContent>
         </Card>
         
-        {/* Visualizations Section - Two column layout for charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Emissions Over Time */}
           <Card>
             <CardHeader>
               <CardTitle>Emissions Over Time</CardTitle>
@@ -549,7 +524,6 @@ export default function Scope1() {
             </CardContent>
           </Card>
           
-          {/* Fuel Type Breakdown */}
           <Card>
             <CardHeader>
               <CardTitle>Fuel Type Breakdown</CardTitle>
@@ -582,7 +556,6 @@ export default function Scope1() {
             </CardContent>
           </Card>
           
-          {/* Emission Source Contribution */}
           <Card>
             <CardHeader>
               <CardTitle>Emission Source Contribution</CardTitle>
@@ -604,7 +577,6 @@ export default function Scope1() {
             </CardContent>
           </Card>
           
-          {/* Monthly Trends */}
           <Card>
             <CardHeader>
               <CardTitle>Monthly Trends</CardTitle>
@@ -619,7 +591,6 @@ export default function Scope1() {
                     <YAxis unit=" tCO₂e" />
                     <RechartsTooltip />
                     <Legend />
-                    {/* Dynamically generate bars for each source */}
                     {sourceData.map((source, index) => (
                       <Bar 
                         key={source.name}
@@ -635,7 +606,6 @@ export default function Scope1() {
           </Card>
         </div>
         
-        {/* Insights Card */}
         <Card className="mb-6 bg-blue-50">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center text-blue-700">
@@ -667,7 +637,6 @@ export default function Scope1() {
           </CardContent>
         </Card>
         
-        {/* Data Table */}
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
@@ -739,7 +708,7 @@ export default function Scope1() {
                         <TableCell>{emission.amount || 'N/A'}</TableCell>
                         <TableCell>{emission.unit || 'N/A'}</TableCell>
                         <TableCell>{emission.emissions_co2e || 'N/A'}</TableCell>
-                        <TableCell>{emission.emission_factor || 'N/A'}</TableCell>
+                        <TableCell>{emission.emission_factor_source || 'N/A'}</TableCell>
                       </TableRow>
                     ))
                   )}
@@ -751,7 +720,6 @@ export default function Scope1() {
             <div className="text-sm text-gray-500">
               Showing {emissionsData.length} entries
             </div>
-            {/* Simple pagination placeholder - would be expanded in a real implementation */}
             <div className="flex space-x-2">
               <Button variant="outline" size="sm" disabled>Previous</Button>
               <Button variant="outline" size="sm" disabled>Next</Button>
