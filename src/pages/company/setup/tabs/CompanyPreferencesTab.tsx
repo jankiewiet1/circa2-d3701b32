@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2, Save } from "lucide-react";
+import { updateCompanyPreferences } from "@/services/companyPreferencesService";
 
 const formSchema = z.object({
   preferred_currency: z.string().min(1, "Currency is required"),
