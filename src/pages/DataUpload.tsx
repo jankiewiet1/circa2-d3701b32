@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileUploadZone } from "@/components/upload/FileUploadZone";
 import { ScopeDetectionPreview } from "@/components/upload/ScopeDetectionPreview";
-import { AlertCircle, Download } from "lucide-react";
+import { AlertCircle, Upload, Download } from "lucide-react";
 import { toast } from "sonner";
 import Papa from 'papaparse';
 import { useCompany } from "@/contexts/CompanyContext";
@@ -104,7 +104,7 @@ export default function DataUpload() {
 
       const tableName = `scope${previewData.detectedScope}_emissions`;
       const { error: uploadError } = await supabase
-        .from(tableName)
+        .from(tableName as 'scope1_emissions' | 'scope2_emissions' | 'scope3_emissions')
         .insert(rows);
 
       if (uploadError) throw uploadError;
