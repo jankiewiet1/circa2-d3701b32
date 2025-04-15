@@ -41,7 +41,14 @@ export const useSettings = (userId: string | undefined) => {
         .single();
 
       if (error) throw error;
-      setSettings(data);
+      
+      // Ensure theme is a valid type
+      const validTheme = validateTheme(data.theme);
+      
+      setSettings({
+        ...data,
+        theme: validTheme
+      });
     } catch (error) {
       console.error('Error fetching settings:', error);
       toast.error('Failed to load settings');
@@ -50,10 +57,23 @@ export const useSettings = (userId: string | undefined) => {
     }
   };
 
+  // Helper function to validate theme
+  const validateTheme = (theme: string | null | undefined): 'light' | 'dark' | 'system' => {
+    if (theme === 'light' || theme === 'dark' || theme === 'system') {
+      return theme;
+    }
+    return 'system'; // Default fallback
+  };
+
   const updateSettings = async (newSettings: Partial<Settings>) => {
     if (!userId) return;
     
     try {
+      // Validate theme if present
+      if (newSettings.theme) {
+        newSettings.theme = validateTheme(newSettings.theme);
+      }
+      
       const { error } = await supabase
         .from('settings')
         .upsert({ 
@@ -64,7 +84,12 @@ export const useSettings = (userId: string | undefined) => {
 
       if (error) throw error;
       
-      setSettings(prev => prev ? { ...prev, ...newSettings } : null);
+      setSettings(prev => prev ? { 
+        ...prev, 
+        ...newSettings,
+        theme: newSettings.theme ? validateTheme(newSettings.theme) : prev.theme
+      } : null);
+      
       toast.success('Settings updated successfully');
     } catch (error) {
       console.error('Error updating settings:', error);

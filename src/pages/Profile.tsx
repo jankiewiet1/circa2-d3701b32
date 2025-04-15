@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -38,10 +37,12 @@ export default function ProfilePage() {
   const { user } = useAuth();
   const { 
     profile, 
+    settings,
     loading, 
     isEditing,
     toggleEditMode,
     updateProfile, 
+    updatePreferences,
     changePassword
   } = useProfileSettings(user);
   const { company } = useCompany();
@@ -54,14 +55,12 @@ export default function ProfilePage() {
     department: '',
   });
 
-  // Password change state
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
 
-  // Update local profile state when profile data is loaded
   useEffect(() => {
     if (profile) {
       setLocalProfile({
@@ -84,7 +83,6 @@ export default function ProfilePage() {
     await updateProfile(localProfile);
   };
 
-  // Password change handler
   const handlePasswordChange = async () => {
     if (newPassword !== confirmPassword) {
       toast.error('Passwords do not match');
@@ -103,7 +101,6 @@ export default function ProfilePage() {
       
       if (error) throw error;
       
-      // Reset fields and close dialog on success
       setNewPassword('');
       setConfirmPassword('');
       setIsChangePasswordOpen(false);
@@ -312,7 +309,6 @@ export default function ProfilePage() {
         </Tabs>
       </div>
 
-      {/* Password Change Dialog */}
       <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>

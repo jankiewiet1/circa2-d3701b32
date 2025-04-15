@@ -30,7 +30,6 @@ import {
   CheckCircle,
   Loader2
 } from "lucide-react";
-import { useUserPreferences } from "@/hooks/useUserPreferences";
 
 export default function Settings() {
   const { loading: companyLoading, userRole } = useCompany();
@@ -261,8 +260,8 @@ export default function Settings() {
                   <div className="space-y-2">
                     <Label htmlFor="theme">Theme</Label>
                     <Select 
-                      value={displayForm.watch("theme")} 
-                      onValueChange={(value) => displayForm.setValue("theme", value)}
+                      value={displayForm.watch("theme") || "system"} 
+                      onValueChange={(value: 'light' | 'dark' | 'system') => displayForm.setValue("theme", value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select theme" />

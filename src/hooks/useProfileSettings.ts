@@ -2,11 +2,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
-import { UserWithProfile, UserPreferences } from '@/types';
+import { UserWithProfile } from '@/types';
+import { Settings } from './useSettings';
 
 export const useProfileSettings = (user: UserWithProfile | null) => {
   const [profile, setProfile] = useState<any>(null);
-  const [preferences, setPreferences] = useState<UserPreferences | null>(null);
+  const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -23,28 +24,26 @@ export const useProfileSettings = (user: UserWithProfile | null) => {
           .eq('id', user.id)
           .single();
 
-        // Fetch user preferences
-        const { data: preferencesData, error: preferencesError } = await supabase
-          .from('user_preferences')
+        // Fetch user settings
+        const { data: settingsData, error: settingsError } = await supabase
+          .from('settings')
           .select('*')
           .eq('user_id', user.id)
           .single();
 
         if (profileError) throw profileError;
-        if (preferencesError && preferencesError.code !== 'PGRST116') throw preferencesError;
+        if (settingsError && settingsError.code !== 'PGRST116') throw settingsError;
 
         console.log("Profile data loaded:", profileData);
         setProfile(profileData);
         
-        // Ensure theme is a valid value before setting state
-        if (preferencesData) {
-          const validTheme = validateTheme(preferencesData.theme);
-          const typedPreferences: UserPreferences = {
-            ...preferencesData,
-            theme: validTheme,
-            user_id: preferencesData.user_id
-          };
-          setPreferences(typedPreferences);
+        if (settingsData) {
+          // Ensure theme is a valid value
+          const validTheme = validateTheme(settingsData.theme);
+          setSettings({
+            ...settingsData,
+            theme: validTheme
+          });
         }
       } catch (error) {
         console.error('Error fetching profile data:', error);
@@ -85,7 +84,7 @@ export const useProfileSettings = (user: UserWithProfile | null) => {
     }
   };
 
-  const updatePreferences = async (updatedPreferences: Partial<UserPreferences>) => {
+  const updatePreferences = async (updatedPreferences: Partial<Settings>) => {
     if (!user) return;
 
     try {
@@ -94,24 +93,24 @@ export const useProfileSettings = (user: UserWithProfile | null) => {
         updatedPreferences.theme = validateTheme(updatedPreferences.theme);
       }
       
-      // First check if a preferences record exists
-      const { data: existingPreferences } = await supabase
-        .from('user_preferences')
+      // First check if a settings record exists
+      const { data: existingSettings } = await supabase
+        .from('settings')
         .select('*')
         .eq('user_id', user.id)
         .single();
 
       let result;
-      if (existingPreferences) {
+      if (existingSettings) {
         // Update existing record
         result = await supabase
-          .from('user_preferences')
+          .from('settings')
           .update(updatedPreferences)
           .eq('user_id', user.id);
       } else {
         // Insert new record
         result = await supabase
-          .from('user_preferences')
+          .from('settings')
           .insert({ 
             user_id: user.id, 
             ...updatedPreferences 
@@ -121,8 +120,8 @@ export const useProfileSettings = (user: UserWithProfile | null) => {
       const { error } = result;
       if (error) throw error;
 
-      if (preferences) {
-        setPreferences(prev => {
+      if (settings) {
+        setSettings(prev => {
           if (!prev) return null;
           return { 
             ...prev, 
@@ -161,7 +160,7 @@ export const useProfileSettings = (user: UserWithProfile | null) => {
 
   return {
     profile,
-    preferences,
+    settings,
     loading,
     isEditing,
     toggleEditMode,
