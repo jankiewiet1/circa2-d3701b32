@@ -100,27 +100,60 @@ export default function Scope1() {
   
   useEffect(() => {
     const fetchData = async () => {
+      if (!companyId) return;
+      
       setLoading(true);
       try {
-        const { data, error: fetchError } = await supabase
+        let query = supabase
           .from('scope1_emissions')
           .select('*')
           .eq('company_id', companyId);
           
+        // Apply date range filter
+        const today = new Date();
+        let startDate = new Date();
+        switch (filters.dateRange) {
+          case 'last3months':
+            startDate.setMonth(today.getMonth() - 3);
+            break;
+          case 'last6months':
+            startDate.setMonth(today.getMonth() - 6);
+            break;
+          case 'last12months':
+            startDate.setMonth(today.getMonth() - 12);
+            break;
+          case 'thisYear':
+            startDate = new Date(today.getFullYear(), 0, 1);
+            break;
+          case 'lastYear':
+            startDate = new Date(today.getFullYear() - 1, 0, 1);
+            break;
+        }
+        
+        query = query.gte('date', startDate.toISOString());
+        
+        // Apply other filters
+        if (filters.fuelType !== 'all') {
+          query = query.eq('fuel_type', filters.fuelType);
+        }
+        if (filters.source !== 'all') {
+          query = query.eq('source', filters.source);
+        }
+        if (filters.unit !== 'all') {
+          query = query.eq('unit', filters.unit);
+        }
+        
+        const { data, error: fetchError } = await query;
+          
         if (fetchError) throw fetchError;
         
-        if (data && data.length > 0) {
+        if (data) {
           setEmissionsData(data);
           calculateSummaryStats(data);
-        } else {
-          setEmissionsData(getMockData());
-          calculateSummaryStats(getMockData());
         }
       } catch (err: any) {
         console.error("Error fetching emissions data:", err);
         setError(err.message);
-        setEmissionsData(getMockData());
-        calculateSummaryStats(getMockData());
       } finally {
         setLoading(false);
       }
@@ -137,33 +170,65 @@ export default function Scope1() {
   };
   
   const calculateSummaryStats = (data: EmissionData[]) => {
-    if (!data || data.length === 0) return;
+    if (!data || data.length === 0) {
+      setSummaryStats({
+        totalEmissions: 0,
+        changeFromLastYear: 0,
+        topEmissionSource: "No data",
+        mostUsedFuelType: "No data",
+        trendDirection: "up"
+      });
+      return;
+    }
     
+    // Calculate total emissions
     const totalEmissions = data.reduce((sum, item) => 
-      sum + (parseFloat(String(item.emissions_co2e)) || 0), 0).toFixed(2);
+      sum + (item.emissions_co2e || 0), 0);
     
+    // Calculate most used fuel type
     const fuelTypeCounts = data.reduce<Record<string, number>>((acc, item) => {
       const fuelType = item.fuel_type || 'Unknown';
       acc[fuelType] = (acc[fuelType] || 0) + 1;
       return acc;
     }, {});
     
-    const mostUsedFuelType = Object.keys(fuelTypeCounts).reduce((a, b) => 
-      fuelTypeCounts[a] > fuelTypeCounts[b] ? a : b, '');
+    const mostUsedFuelType = Object.entries(fuelTypeCounts)
+      .sort(([,a], [,b]) => b - a)[0]?.[0] || "Unknown";
     
+    // Calculate top emission source
     const sourceEmissions = data.reduce<Record<string, number>>((acc, item) => {
       const source = item.source || 'Unknown';
-      acc[source] = (acc[source] || 0) + (parseFloat(String(item.emissions_co2e)) || 0);
+      acc[source] = (acc[source] || 0) + (item.emissions_co2e || 0);
       return acc;
     }, {});
     
-    const topEmissionSource = Object.keys(sourceEmissions).reduce((a, b) => 
-      sourceEmissions[a] > sourceEmissions[b] ? a : b, '');
+    const topEmissionSource = Object.entries(sourceEmissions)
+      .sort(([,a], [,b]) => b - a)[0]?.[0] || "Unknown";
     
-    const changeFromLastYear = 12.5;
+    // Calculate year over year change
+    const lastYearData = data.filter(item => {
+      const date = new Date(item.date || '');
+      return date.getFullYear() === new Date().getFullYear() - 1;
+    });
+    
+    const thisYearData = data.filter(item => {
+      const date = new Date(item.date || '');
+      return date.getFullYear() === new Date().getFullYear();
+    });
+    
+    const lastYearTotal = lastYearData.reduce((sum, item) => 
+      sum + (item.emissions_co2e || 0), 0);
+    
+    const thisYearTotal = thisYearData.reduce((sum, item) => 
+      sum + (item.emissions_co2e || 0), 0);
+    
+    let changeFromLastYear = 0;
+    if (lastYearTotal > 0) {
+      changeFromLastYear = ((thisYearTotal - lastYearTotal) / lastYearTotal) * 100;
+    }
     
     setSummaryStats({
-      totalEmissions: parseFloat(totalEmissions),
+      totalEmissions,
       changeFromLastYear,
       topEmissionSource,
       mostUsedFuelType,
