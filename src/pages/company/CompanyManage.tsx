@@ -78,7 +78,6 @@ export default function CompanyManage() {
   };
 
   const handleSave = async () => {
-    // This function will be called from CompanyInfoTab
     try {
       await fetchCompanyData();
       toast.success("Company information updated successfully");
@@ -89,12 +88,18 @@ export default function CompanyManage() {
     }
   };
 
+  const handleCancel = () => {
+    setIsEditing(false);
+    // Reset form values to original state
+    fetchCompanyData();
+  };
+
   return (
     <MainLayout>
       <div className="max-w-4xl mx-auto">
         <div className="mb-8 flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold">{company.name}</h1>
+            <h1 className="text-3xl font-bold">{company?.name}</h1>
             <p className="text-muted-foreground">
               Configure your company information for carbon accounting
             </p>
@@ -109,12 +114,12 @@ export default function CompanyManage() {
                     size="sm" 
                     className="flex items-center gap-2"
                   >
-                    <Save className="h-4 w-4" /> Save
+                    <Save className="h-4 w-4" /> Save Changes
                   </Button>
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    onClick={toggleEditMode}
+                    onClick={handleCancel}
                     className="flex items-center gap-2"
                   >
                     <X className="h-4 w-4" /> Cancel
@@ -122,7 +127,7 @@ export default function CompanyManage() {
                 </>
               ) : (
                 <Button 
-                  onClick={toggleEditMode} 
+                  onClick={() => setIsEditing(true)} 
                   variant="outline" 
                   size="sm"
                   className="flex items-center gap-2"
