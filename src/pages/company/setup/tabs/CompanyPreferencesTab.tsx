@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,6 +22,8 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { fetchCompanyPreferences, updateCompanyPreferences } from "@/services/companyPreferencesService";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const currencies = [
   { value: "EUR", label: "Euro (€)" },
@@ -82,6 +83,7 @@ const CompanyPreferencesTab = () => {
   const { company, fetchCompanyData } = useCompany();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [preferences, setPreferences] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
   const companyId = company?.id;
   
   const form = useForm<FormValues>({
@@ -109,6 +111,7 @@ const CompanyPreferencesTab = () => {
         });
       } else if (error) {
         console.error("Error loading company preferences:", error);
+        setError("Failed to load company preferences");
         toast.error("Failed to load company preferences");
       }
     }
@@ -125,6 +128,7 @@ const CompanyPreferencesTab = () => {
     }
 
     setIsSubmitting(true);
+    setError(null);
     
     try {
       const { error } = await updateCompanyPreferences(companyId, {
@@ -143,8 +147,9 @@ const CompanyPreferencesTab = () => {
       await fetchCompanyData();
       
       toast.success("Company preferences updated successfully");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving preferences:", error);
+      setError("Failed to save company preferences");
       toast.error("Failed to save company preferences");
     } finally {
       setIsSubmitting(false);
@@ -154,6 +159,13 @@ const CompanyPreferencesTab = () => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
         <Card>
           <CardContent className="pt-6 space-y-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

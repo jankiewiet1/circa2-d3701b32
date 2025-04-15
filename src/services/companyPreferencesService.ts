@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/sonner";
 
 export const fetchCompanyPreferences = async (companyId: string) => {
   try {
@@ -26,13 +26,38 @@ export const updateCompanyPreferences = async (companyId: string, preferences: {
   timezone?: string;
 }) => {
   try {
-    const { error } = await supabase
+    // First check if a record already exists
+    const { data: existingPrefs } = await supabase
       .from('company_preferences')
-      .upsert({
-        company_id: companyId,
-        ...preferences,
-        updated_at: new Date().toISOString(),
-      });
+      .select('id')
+      .eq('company_id', companyId)
+      .maybeSingle();
+    
+    let error;
+    
+    if (existingPrefs) {
+      // Update existing record
+      const result = await supabase
+        .from('company_preferences')
+        .update({
+          ...preferences,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('company_id', companyId);
+      
+      error = result.error;
+    } else {
+      // Insert new record
+      const result = await supabase
+        .from('company_preferences')
+        .insert({
+          company_id: companyId,
+          ...preferences,
+          updated_at: new Date().toISOString(),
+        });
+      
+      error = result.error;
+    }
 
     if (error) throw error;
     return { error: null };
