@@ -1,35 +1,314 @@
 
+import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/MainLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Flame, Upload, Plus, Info } from "lucide-react";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Flame, 
+  Upload, 
+  Plus, 
+  Info, 
+  Calendar, 
+  Filter, 
+  TrendingUp, 
+  TrendingDown,
+  Truck,
+  Factory,
+  BarChart3,
+  Download,
+  Droplet
+} from "lucide-react";
+import { 
+  ResponsiveContainer, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  AreaChart,
+  Area
+} from "recharts";
 import { useCompany } from "@/contexts/CompanyContext";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
-// Mock data for the chart
-const emissionData = [
-  { month: 'Jan', value: 24.5 },
-  { month: 'Feb', value: 22.1 },
-  { month: 'Mar', value: 25.8 },
-  { month: 'Apr', value: 28.3 },
-  { month: 'May', value: 30.2 },
-  { month: 'Jun', value: 32.5 },
-  { month: 'Jul', value: 35.6 },
-  { month: 'Aug', value: 34.1 },
-  { month: 'Sep', value: 29.7 },
-  { month: 'Oct', value: 27.5 },
-  { month: 'Nov', value: 25.3 },
-  { month: 'Dec', value: 26.8 },
-];
+// Colors for charts
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 export default function Scope1() {
-  const { userRole } = useCompany();
+  const { userRole, companyId } = useCompany();
   const canEdit = userRole === "admin" || userRole === "editor";
+  
+  // State for data and filters
+  const [emissionsData, setEmissionsData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [filters, setFilters] = useState({
+    dateRange: "last12months",
+    fuelType: "all",
+    source: "all",
+    unit: "all"
+  });
+
+  // State for summary stats
+  const [summaryStats, setSummaryStats] = useState({
+    totalEmissions: 0,
+    changeFromLastYear: 0,
+    topEmissionSource: "",
+    mostUsedFuelType: "",
+    trendDirection: "up"
+  });
+  
+  // Fetch data from Supabase
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // For demonstration, we'll use sample data if Supabase connection fails
+        const { data, error } = await supabase
+          .from('scope1_emissions')
+          .select('*')
+          .eq('company_id', companyId);
+          
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          setEmissionsData(data);
+          calculateSummaryStats(data);
+        } else {
+          // Fallback to mock data
+          setEmissionsData(getMockData());
+          calculateSummaryStats(getMockData());
+        }
+      } catch (err) {
+        console.error("Error fetching emissions data:", err);
+        setError(err.message);
+        // Fallback to mock data
+        setEmissionsData(getMockData());
+        calculateSummaryStats(getMockData());
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [companyId, filters]);
+  
+  const calculateSummaryStats = (data) => {
+    if (!data || data.length === 0) return;
+    
+    // Calculate total emissions
+    const totalEmissions = data.reduce((sum, item) => 
+      sum + (parseFloat(item.emissions_co2e) || 0), 0).toFixed(2);
+    
+    // Find most used fuel type
+    const fuelTypeCounts = data.reduce((acc, item) => {
+      acc[item.fuel_type] = (acc[item.fuel_type] || 0) + 1;
+      return acc;
+    }, {});
+    
+    const mostUsedFuelType = Object.keys(fuelTypeCounts).reduce((a, b) => 
+      fuelTypeCounts[a] > fuelTypeCounts[b] ? a : b, '');
+    
+    // Find top emission source
+    const sourceEmissions = data.reduce((acc, item) => {
+      acc[item.source] = (acc[item.source] || 0) + (parseFloat(item.emissions_co2e) || 0);
+      return acc;
+    }, {});
+    
+    const topEmissionSource = Object.keys(sourceEmissions).reduce((a, b) => 
+      sourceEmissions[a] > sourceEmissions[b] ? a : b, '');
+    
+    // Mock change from last year value
+    const changeFromLastYear = 12.5;
+    
+    setSummaryStats({
+      totalEmissions,
+      changeFromLastYear,
+      topEmissionSource,
+      mostUsedFuelType,
+      trendDirection: changeFromLastYear >= 0 ? "up" : "down"
+    });
+  };
+
+  // Prepare data for charts
+  const prepareMonthlyData = () => {
+    if (!emissionsData.length) return [];
+    
+    const monthlyData = emissionsData.reduce((acc, item) => {
+      const date = item.date ? new Date(item.date) : new Date();
+      const month = format(date, 'MMM');
+      
+      if (!acc[month]) {
+        acc[month] = { month, value: 0 };
+      }
+      
+      acc[month].value += parseFloat(item.emissions_co2e) || 0;
+      return acc;
+    }, {});
+    
+    return Object.values(monthlyData);
+  };
+  
+  const prepareFuelTypeData = () => {
+    if (!emissionsData.length) return [];
+    
+    const fuelTypeData = emissionsData.reduce((acc, item) => {
+      if (!acc[item.fuel_type]) {
+        acc[item.fuel_type] = { name: item.fuel_type, value: 0 };
+      }
+      
+      acc[item.fuel_type].value += parseFloat(item.emissions_co2e) || 0;
+      return acc;
+    }, {});
+    
+    return Object.values(fuelTypeData);
+  };
+  
+  const prepareSourceData = () => {
+    if (!emissionsData.length) return [];
+    
+    const sourceData = emissionsData.reduce((acc, item) => {
+      if (!acc[item.source]) {
+        acc[item.source] = { name: item.source, value: 0 };
+      }
+      
+      acc[item.source].value += parseFloat(item.emissions_co2e) || 0;
+      return acc;
+    }, {});
+    
+    return Object.values(sourceData);
+  };
+  
+  const prepareMonthlyTrendsData = () => {
+    if (!emissionsData.length) return [];
+    
+    const monthlySourceData = emissionsData.reduce((acc, item) => {
+      const date = item.date ? new Date(item.date) : new Date();
+      const month = format(date, 'MMM');
+      const source = item.source || 'Unknown';
+      
+      if (!acc[month]) {
+        acc[month] = { month };
+      }
+      
+      acc[month][source] = (acc[month][source] || 0) + (parseFloat(item.emissions_co2e) || 0);
+      return acc;
+    }, {});
+    
+    return Object.values(monthlySourceData);
+  };
+
+  // Mock data generator function
+  const getMockData = () => [
+    { 
+      id: '1',
+      fuel_type: 'Natural Gas', 
+      source: 'Building Heat',
+      amount: 1000, 
+      unit: 'kg',
+      emissions_co2e: 2.5, 
+      date: '2024-01-01',
+      emission_factor: 2.3,
+      emission_unit: 'kg CO2e per kg',
+      scope_description: 'Direct emissions from natural gas',
+      reporting_boundary: 'Main office building',
+      reporting_period: '2024 Q1',
+      activity_data: 'Monthly meter readings',
+      uncertainty_notes: 'Low uncertainty',
+      trend_notes: 'Decreasing trend',
+      progress_toward_target: 'On track',
+      additional_notes: 'Regular maintenance performed',
+      events_affecting_data: 'None'
+    },
+    { 
+      id: '2',
+      fuel_type: 'Diesel', 
+      source: 'Vehicle Fleet',
+      amount: 500, 
+      unit: 'liters',
+      emissions_co2e: 3.2, 
+      date: '2024-01-15',
+      emission_factor: 2.7,
+      emission_unit: 'kg CO2e per liter',
+      scope_description: 'Direct emissions from vehicles',
+      reporting_boundary: 'Company fleet',
+      reporting_period: '2024 Q1',
+      activity_data: 'Fuel cards',
+      uncertainty_notes: 'Medium uncertainty',
+      trend_notes: 'Stable',
+      progress_toward_target: 'Improving',
+      additional_notes: 'Driver training implemented',
+      events_affecting_data: 'Weather conditions'
+    },
+    { 
+      id: '3',
+      fuel_type: 'Petrol', 
+      source: 'Vehicle Fleet',
+      amount: 300, 
+      unit: 'liters',
+      emissions_co2e: 2.8, 
+      date: '2024-02-01',
+      emission_factor: 2.3,
+      emission_unit: 'kg CO2e per liter',
+      scope_description: 'Direct emissions from vehicles',
+      reporting_boundary: 'Company fleet',
+      reporting_period: '2024 Q1',
+      activity_data: 'Fuel cards',
+      uncertainty_notes: 'Low uncertainty',
+      trend_notes: 'Decreasing',
+      progress_toward_target: 'On track',
+      additional_notes: 'Hybrid vehicles added',
+      events_affecting_data: 'None'
+    },
+    { 
+      id: '4',
+      fuel_type: 'Natural Gas', 
+      source: 'Manufacturing',
+      amount: 2000, 
+      unit: 'kg',
+      emissions_co2e: 4.6, 
+      date: '2024-03-01',
+      emission_factor: 2.3,
+      emission_unit: 'kg CO2e per kg',
+      scope_description: 'Direct emissions from manufacturing',
+      reporting_boundary: 'Factory',
+      reporting_period: '2024 Q1',
+      activity_data: 'Process monitoring',
+      uncertainty_notes: 'Medium uncertainty',
+      trend_notes: 'Increasing',
+      progress_toward_target: 'Needs improvement',
+      additional_notes: 'New equipment installation',
+      events_affecting_data: 'Production increase'
+    }
+  ];
+
+  // Handle filter changes
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+  
+  // Prepare data for charts
+  const monthlyData = prepareMonthlyData();
+  const fuelTypeData = prepareFuelTypeData();
+  const sourceData = prepareSourceData();
+  const monthlyTrendsData = prepareMonthlyTrendsData();
   
   return (
     <MainLayout>
       <div className="max-w-7xl">
+        {/* Header with title and action buttons */}
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold flex items-center">
@@ -55,14 +334,15 @@ export default function Scope1() {
           )}
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        {/* Summary Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-500">Total Scope 1 Emissions</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-end space-x-1">
-                <span className="text-3xl font-bold">450</span>
+                <span className="text-3xl font-bold">{summaryStats.totalEmissions}</span>
                 <span className="text-gray-500 mb-1">tCO2e</span>
               </div>
             </CardContent>
@@ -70,115 +350,368 @@ export default function Scope1() {
           
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Stationary Combustion</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-500">Change from Last Year</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-end space-x-1">
-                <span className="text-3xl font-bold">325</span>
-                <span className="text-gray-500 mb-1">tCO2e</span>
+              <div className="flex items-center">
+                {summaryStats.trendDirection === "up" ? (
+                  <TrendingUp className="mr-2 h-5 w-5 text-red-500" />
+                ) : (
+                  <TrendingDown className="mr-2 h-5 w-5 text-green-500" />
+                )}
+                <span className="text-3xl font-bold">
+                  {Math.abs(summaryStats.changeFromLastYear)}%
+                </span>
               </div>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Mobile Combustion</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-500">Top Emission Source</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-end space-x-1">
-                <span className="text-3xl font-bold">125</span>
-                <span className="text-gray-500 mb-1">tCO2e</span>
+              <div className="flex items-center">
+                <Factory className="mr-2 h-5 w-5 text-gray-400" />
+                <span className="text-xl font-bold">{summaryStats.topEmissionSource || "N/A"}</span>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-500">Most Used Fuel Type</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center">
+                <Droplet className="mr-2 h-5 w-5 text-blue-500" />
+                <span className="text-xl font-bold">{summaryStats.mostUsedFuelType || "N/A"}</span>
               </div>
             </CardContent>
           </Card>
         </div>
         
+        {/* Filters Section */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Monthly Emissions</CardTitle>
-            <CardDescription>Scope 1 emissions over the past 12 months</CardDescription>
+            <CardTitle className="flex items-center">
+              <Filter className="mr-2 h-5 w-5" />
+              Data Filters
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={emissionData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="month" />
-                  <YAxis unit=" tCO2e" />
-                  <Tooltip formatter={(value) => [`${value} tCO2e`, "Emissions"]} />
-                  <Legend />
-                  <Bar dataKey="value" name="Scope 1 Emissions" fill="#f97316" />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Date Range</label>
+                <Select 
+                  value={filters.dateRange} 
+                  onValueChange={(value) => handleFilterChange("dateRange", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select date range" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="last3months">Last 3 Months</SelectItem>
+                    <SelectItem value="last6months">Last 6 Months</SelectItem>
+                    <SelectItem value="last12months">Last 12 Months</SelectItem>
+                    <SelectItem value="thisYear">This Year</SelectItem>
+                    <SelectItem value="lastYear">Last Year</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">Fuel Type</label>
+                <Select 
+                  value={filters.fuelType} 
+                  onValueChange={(value) => handleFilterChange("fuelType", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select fuel type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Fuel Types</SelectItem>
+                    <SelectItem value="naturalGas">Natural Gas</SelectItem>
+                    <SelectItem value="diesel">Diesel</SelectItem>
+                    <SelectItem value="petrol">Petrol</SelectItem>
+                    <SelectItem value="lpg">LPG</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">Source</label>
+                <Select 
+                  value={filters.source} 
+                  onValueChange={(value) => handleFilterChange("source", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select source" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Sources</SelectItem>
+                    <SelectItem value="vehicleFleet">Vehicle Fleet</SelectItem>
+                    <SelectItem value="buildingHeat">Building Heat</SelectItem>
+                    <SelectItem value="manufacturing">Manufacturing</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">Unit</label>
+                <Select 
+                  value={filters.unit} 
+                  onValueChange={(value) => handleFilterChange("unit", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select unit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Units</SelectItem>
+                    <SelectItem value="kg">kg</SelectItem>
+                    <SelectItem value="liters">Liters</SelectItem>
+                    <SelectItem value="kWh">kWh</SelectItem>
+                    <SelectItem value="m3">m³</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </CardContent>
         </Card>
         
+        {/* Visualizations Section - Two column layout for charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Emissions Over Time */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Emissions Over Time</CardTitle>
+              <CardDescription>Monthly emissions in tCO₂e</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={monthlyData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="month" />
+                    <YAxis unit=" tCO₂e" />
+                    <Tooltip formatter={(value) => [`${value} tCO₂e`, "Emissions"]} />
+                    <Legend />
+                    <Area type="monotone" dataKey="value" name="Emissions" stroke="#f97316" fill="#fdba74" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Fuel Type Breakdown */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Fuel Type Breakdown</CardTitle>
+              <CardDescription>Total emissions by fuel type in tCO₂e</CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-center">
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={fuelTypeData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={true}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      nameKey="name"
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {fuelTypeData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => [`${value.toFixed(2)} tCO₂e`, "Emissions"]} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Emission Source Contribution */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Emission Source Contribution</CardTitle>
+              <CardDescription>Distribution by emission source</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={sourceData} layout="vertical" margin={{ top: 20, right: 30, left: 50, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis type="number" unit=" tCO₂e" />
+                    <YAxis type="category" dataKey="name" width={120} />
+                    <Tooltip formatter={(value) => [`${value.toFixed(2)} tCO₂e`, "Emissions"]} />
+                    <Legend />
+                    <Bar dataKey="value" name="Emissions" fill="#8884d8" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Monthly Trends */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Monthly Trends</CardTitle>
+              <CardDescription>Emissions by source per month</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthlyTrendsData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="month" />
+                    <YAxis unit=" tCO₂e" />
+                    <Tooltip />
+                    <Legend />
+                    {/* Dynamically generate bars for each source */}
+                    {sourceData.map((source, index) => (
+                      <Bar 
+                        key={source.name}
+                        dataKey={source.name} 
+                        stackId="a" 
+                        fill={COLORS[index % COLORS.length]} 
+                      />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Insights Card */}
+        <Card className="mb-6 bg-blue-50">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center text-blue-700">
+              <Info className="mr-2 h-5 w-5" />
+              Insights
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm">
+              <li className="flex items-start">
+                <span className="bg-blue-200 p-1 rounded-full mr-2 mt-0.5">
+                  <TrendingUp className="h-3 w-3 text-blue-700" />
+                </span>
+                <span>Your emissions increased 15% in Q2 due to higher diesel usage in transport.</span>
+              </li>
+              <li className="flex items-start">
+                <span className="bg-blue-200 p-1 rounded-full mr-2 mt-0.5">
+                  <BarChart3 className="h-3 w-3 text-blue-700" />
+                </span>
+                <span>Vehicle Fleet emissions are 35% higher than the industry average for your company size.</span>
+              </li>
+              <li className="flex items-start">
+                <span className="bg-blue-200 p-1 rounded-full mr-2 mt-0.5">
+                  <TrendingDown className="h-3 w-3 text-blue-700" />
+                </span>
+                <span>Natural Gas emissions have reduced by 10% since implementing new heating controls.</span>
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
+        
+        {/* Data Table */}
         <Card>
           <CardHeader>
-            <div className="flex items-start justify-between">
+            <div className="flex justify-between items-center">
               <div>
-                <CardTitle>Emission Sources</CardTitle>
-                <CardDescription>Breakdown of scope 1 emission sources</CardDescription>
+                <CardTitle>Emissions Data</CardTitle>
+                <CardDescription>Raw emissions records</CardDescription>
               </div>
-              <Button variant="outline" size="sm" className="flex items-center">
-                <Info className="mr-2 h-4 w-4" />
-                Learn More
+              <Button variant="outline" size="sm">
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
               </Button>
             </div>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="stationary">
-              <TabsList>
-                <TabsTrigger value="stationary">Stationary Combustion</TabsTrigger>
-                <TabsTrigger value="mobile">Mobile Combustion</TabsTrigger>
-                <TabsTrigger value="fugitive">Fugitive Emissions</TabsTrigger>
-                <TabsTrigger value="process">Process Emissions</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="stationary" className="mt-6">
-                <div className="space-y-4">
-                  <p>
-                    <strong>Stationary combustion</strong> refers to the burning of fuels in stationary equipment such as boilers, furnaces, and turbines to generate electricity, steam, heat, or power. Common fuels include:
-                  </p>
-                  <ul className="list-disc pl-6 space-y-1">
-                    <li>Natural gas for heating</li>
-                    <li>Coal for industrial processes</li>
-                    <li>Fuel oil for backup generators</li>
-                    <li>Propane for heating systems</li>
-                  </ul>
-                  <p className="text-sm text-gray-500 mt-4">
-                    To add emissions from stationary combustion, collect data on fuel usage and use the appropriate emission factors. The emission factors vary by fuel type and region.
-                  </p>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="mobile" className="mt-6">
-                <div className="space-y-4">
-                  <p>
-                    <strong>Mobile combustion</strong> emissions come from transportation sources like vehicles and equipment owned or controlled by your organization. This includes:
-                  </p>
-                  <ul className="list-disc pl-6 space-y-1">
-                    <li>Company cars and fleet vehicles</li>
-                    <li>Aircraft owned by the company</li>
-                    <li>Ships and boats owned by the company</li>
-                    <li>Forklifts and other mobile equipment</li>
-                  </ul>
-                  <p className="text-sm text-gray-500 mt-4">
-                    To calculate emissions, you'll need data on fuel consumption or distance traveled for each vehicle or equipment type.
-                  </p>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="fugitive" className="mt-6">
-                <p className="text-gray-500">Fugitive emissions data will be available in the full version.</p>
-              </TabsContent>
-              
-              <TabsContent value="process" className="mt-6">
-                <p className="text-gray-500">Process emissions data will be available in the full version.</p>
-              </TabsContent>
-            </Tabs>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Source</TableHead>
+                    <TableHead>Fuel Type</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Unit</TableHead>
+                    <TableHead>Emissions (tCO₂e)</TableHead>
+                    <TableHead>Emission Factor</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8">
+                        <div className="flex justify-center items-center">
+                          <svg
+                            className="animate-spin h-5 w-5 mr-3 text-circa-green"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          Loading data...
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : emissionsData.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8">
+                        No emissions data available
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    emissionsData.map((emission) => (
+                      <TableRow key={emission.id}>
+                        <TableCell>{emission.date ? format(new Date(emission.date), 'yyyy-MM-dd') : 'N/A'}</TableCell>
+                        <TableCell>{emission.source || 'N/A'}</TableCell>
+                        <TableCell>{emission.fuel_type || 'N/A'}</TableCell>
+                        <TableCell>{emission.amount || 'N/A'}</TableCell>
+                        <TableCell>{emission.unit || 'N/A'}</TableCell>
+                        <TableCell>{emission.emissions_co2e || 'N/A'}</TableCell>
+                        <TableCell>{emission.emission_factor || 'N/A'}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
+          <CardFooter className="flex justify-between">
+            <div className="text-sm text-gray-500">
+              Showing {emissionsData.length} entries
+            </div>
+            {/* Simple pagination placeholder - would be expanded in a real implementation */}
+            <div className="flex space-x-2">
+              <Button variant="outline" size="sm" disabled>Previous</Button>
+              <Button variant="outline" size="sm" disabled>Next</Button>
+            </div>
+          </CardFooter>
         </Card>
       </div>
     </MainLayout>
