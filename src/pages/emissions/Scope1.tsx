@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -43,13 +44,9 @@ import { useCompany } from "@/contexts/CompanyContext";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ValueType } from "recharts/types/component/DefaultTooltipContent";
+import { toast } from "sonner";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
-
-interface EmissionSource {
-  name: string;
-  value: number;
-}
 
 interface EmissionData {
   id: string;
@@ -75,6 +72,11 @@ interface EmissionData {
   ratio_indicators?: string;
 }
 
+interface ChartDataPoint {
+  name: string;
+  value: number;
+}
+
 export default function Scope1() {
   const { userRole, company } = useCompany();
   const companyId = company?.id;
@@ -89,6 +91,10 @@ export default function Scope1() {
     source: "all",
     unit: "all"
   });
+
+  const [availableFuelTypes, setAvailableFuelTypes] = useState<string[]>([]);
+  const [availableSources, setAvailableSources] = useState<string[]>([]);
+  const [availableUnits, setAvailableUnits] = useState<string[]>([]);
 
   const [summaryStats, setSummaryStats] = useState({
     totalEmissions: 0,
@@ -130,7 +136,7 @@ export default function Scope1() {
             break;
         }
         
-        query = query.gte('date', startDate.toISOString());
+        query = query.gte('date', startDate.toISOString().split('T')[0]);
         
         // Apply other filters
         if (filters.fuelType !== 'all') {
@@ -148,12 +154,27 @@ export default function Scope1() {
         if (fetchError) throw fetchError;
         
         if (data) {
-          setEmissionsData(data);
-          calculateSummaryStats(data);
+          setEmissionsData(data as EmissionData[]);
+          calculateSummaryStats(data as EmissionData[]);
+          extractFilterOptions(data as EmissionData[]);
+        } else {
+          // If no data, use mock data for demonstration
+          const mockData = getMockData();
+          setEmissionsData(mockData);
+          calculateSummaryStats(mockData);
+          extractFilterOptions(mockData);
+          toast.info("Using demonstration data as no emissions data was found.");
         }
       } catch (err: any) {
         console.error("Error fetching emissions data:", err);
         setError(err.message);
+        
+        // Use mock data on error
+        const mockData = getMockData();
+        setEmissionsData(mockData);
+        calculateSummaryStats(mockData);
+        extractFilterOptions(mockData);
+        toast.error("Error loading data. Using demonstration data instead.");
       } finally {
         setLoading(false);
       }
@@ -161,6 +182,17 @@ export default function Scope1() {
     
     fetchData();
   }, [companyId, filters]);
+  
+  const extractFilterOptions = (data: EmissionData[]) => {
+    // Extract unique fuel types, sources, and units for filter dropdowns
+    const fuelTypes = [...new Set(data.map(item => item.fuel_type || 'Unknown').filter(Boolean))];
+    const sources = [...new Set(data.map(item => item.source || 'Unknown').filter(Boolean))];
+    const units = [...new Set(data.map(item => item.unit || 'Unknown').filter(Boolean))];
+    
+    setAvailableFuelTypes(fuelTypes);
+    setAvailableSources(sources);
+    setAvailableUnits(units);
+  };
   
   const formatNumberForTooltip = (value: ValueType) => {
     if (typeof value === 'number') {
@@ -206,14 +238,17 @@ export default function Scope1() {
       .sort(([,a], [,b]) => b - a)[0]?.[0] || "Unknown";
     
     // Calculate year over year change
+    const currentYear = new Date().getFullYear();
+    const lastYear = currentYear - 1;
+    
     const lastYearData = data.filter(item => {
       const date = new Date(item.date || '');
-      return date.getFullYear() === new Date().getFullYear() - 1;
+      return date.getFullYear() === lastYear;
     });
     
     const thisYearData = data.filter(item => {
       const date = new Date(item.date || '');
-      return date.getFullYear() === new Date().getFullYear();
+      return date.getFullYear() === currentYear;
     });
     
     const lastYearTotal = lastYearData.reduce((sum, item) => 
@@ -239,34 +274,43 @@ export default function Scope1() {
   const prepareMonthlyData = () => {
     if (!emissionsData.length) return [];
     
-    const monthlyData = emissionsData.reduce<Record<string, { month: string; value: number }>>((acc, item) => {
-      const date = item.date ? new Date(item.date) : new Date();
+    // Group by month
+    const monthlyData: Record<string, { month: string; value: number }> = {};
+    
+    emissionsData.forEach(item => {
+      if (!item.date) return;
+      
+      const date = new Date(item.date);
       const month = format(date, 'MMM');
       
-      if (!acc[month]) {
-        acc[month] = { month, value: 0 };
+      if (!monthlyData[month]) {
+        monthlyData[month] = { month, value: 0 };
       }
       
-      acc[month].value += parseFloat(String(item.emissions_co2e)) || 0;
-      return acc;
-    }, {});
+      monthlyData[month].value += Number(item.emissions_co2e || 0);
+    });
     
-    return Object.values(monthlyData);
+    // Convert to array and sort by month
+    const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return Object.values(monthlyData).sort((a, b) => 
+      monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month)
+    );
   };
   
   const prepareFuelTypeData = () => {
     if (!emissionsData.length) return [];
     
-    const fuelTypeData = emissionsData.reduce<Record<string, EmissionSource>>((acc, item) => {
+    const fuelTypeData: Record<string, ChartDataPoint> = {};
+    
+    emissionsData.forEach(item => {
       const fuelType = item.fuel_type || 'Unknown';
       
-      if (!acc[fuelType]) {
-        acc[fuelType] = { name: fuelType, value: 0 };
+      if (!fuelTypeData[fuelType]) {
+        fuelTypeData[fuelType] = { name: fuelType, value: 0 };
       }
       
-      acc[fuelType].value += parseFloat(String(item.emissions_co2e)) || 0;
-      return acc;
-    }, {});
+      fuelTypeData[fuelType].value += Number(item.emissions_co2e || 0);
+    });
     
     return Object.values(fuelTypeData);
   };
@@ -274,16 +318,17 @@ export default function Scope1() {
   const prepareSourceData = () => {
     if (!emissionsData.length) return [];
     
-    const sourceData = emissionsData.reduce<Record<string, EmissionSource>>((acc, item) => {
+    const sourceData: Record<string, ChartDataPoint> = {};
+    
+    emissionsData.forEach(item => {
       const source = item.source || 'Unknown';
       
-      if (!acc[source]) {
-        acc[source] = { name: source, value: 0 };
+      if (!sourceData[source]) {
+        sourceData[source] = { name: source, value: 0 };
       }
       
-      acc[source].value += parseFloat(String(item.emissions_co2e)) || 0;
-      return acc;
-    }, {});
+      sourceData[source].value += Number(item.emissions_co2e || 0);
+    });
     
     return Object.values(sourceData);
   };
@@ -291,20 +336,37 @@ export default function Scope1() {
   const prepareMonthlyTrendsData = () => {
     if (!emissionsData.length) return [];
     
-    const monthlySourceData = emissionsData.reduce<Record<string, Record<string, any>>>((acc, item) => {
-      const date = item.date ? new Date(item.date) : new Date();
+    // Group by month and source
+    const monthlySourceData: Record<string, Record<string, any>> = {};
+    
+    // First get unique sources
+    const sources = [...new Set(emissionsData.map(item => item.source || 'Unknown'))];
+    
+    // Then process data
+    emissionsData.forEach(item => {
+      if (!item.date) return;
+      
+      const date = new Date(item.date);
       const month = format(date, 'MMM');
       const source = item.source || 'Unknown';
       
-      if (!acc[month]) {
-        acc[month] = { month };
+      if (!monthlySourceData[month]) {
+        monthlySourceData[month] = { month };
+        
+        // Initialize all sources with zero
+        sources.forEach(s => {
+          monthlySourceData[month][s] = 0;
+        });
       }
       
-      acc[month][source] = (acc[month][source] || 0) + (parseFloat(String(item.emissions_co2e)) || 0);
-      return acc;
-    }, {});
+      monthlySourceData[month][source] = (monthlySourceData[month][source] || 0) + (Number(item.emissions_co2e) || 0);
+    });
     
-    return Object.values(monthlySourceData);
+    // Convert to array and sort by month
+    const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return Object.values(monthlySourceData).sort((a, b) => 
+      monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month)
+    );
   };
 
   const getMockData = (): EmissionData[] => [
@@ -415,7 +477,7 @@ export default function Scope1() {
                 <Upload className="mr-2 h-4 w-4" />
                 Import Data
               </Button>
-              <Button className="bg-circa-green hover:bg-circa-green-dark">
+              <Button className="bg-green-600 hover:bg-green-700 text-white">
                 <Plus className="mr-2 h-4 w-4" />
                 Add Entry
               </Button>
@@ -430,8 +492,8 @@ export default function Scope1() {
             </CardHeader>
             <CardContent>
               <div className="flex items-end space-x-1">
-                <span className="text-3xl font-bold">{summaryStats.totalEmissions}</span>
-                <span className="text-gray-500 mb-1">tCO2e</span>
+                <span className="text-3xl font-bold">{summaryStats.totalEmissions.toFixed(2)}</span>
+                <span className="text-gray-500 mb-1">tCO₂e</span>
               </div>
             </CardContent>
           </Card>
@@ -448,7 +510,7 @@ export default function Scope1() {
                   <TrendingDown className="mr-2 h-5 w-5 text-green-500" />
                 )}
                 <span className="text-3xl font-bold">
-                  {Math.abs(summaryStats.changeFromLastYear)}%
+                  {Math.abs(summaryStats.changeFromLastYear).toFixed(0)}%
                 </span>
               </div>
             </CardContent>
@@ -518,10 +580,9 @@ export default function Scope1() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Fuel Types</SelectItem>
-                    <SelectItem value="naturalGas">Natural Gas</SelectItem>
-                    <SelectItem value="diesel">Diesel</SelectItem>
-                    <SelectItem value="petrol">Petrol</SelectItem>
-                    <SelectItem value="lpg">LPG</SelectItem>
+                    {availableFuelTypes.map(type => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -537,10 +598,9 @@ export default function Scope1() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Sources</SelectItem>
-                    <SelectItem value="vehicleFleet">Vehicle Fleet</SelectItem>
-                    <SelectItem value="buildingHeat">Building Heat</SelectItem>
-                    <SelectItem value="manufacturing">Manufacturing</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    {availableSources.map(source => (
+                      <SelectItem key={source} value={source}>{source}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -556,10 +616,9 @@ export default function Scope1() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Units</SelectItem>
-                    <SelectItem value="kg">kg</SelectItem>
-                    <SelectItem value="liters">Liters</SelectItem>
-                    <SelectItem value="kWh">kWh</SelectItem>
-                    <SelectItem value="m3">m³</SelectItem>
+                    {availableUnits.map(unit => (
+                      <SelectItem key={unit} value={unit}>{unit}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -596,27 +655,33 @@ export default function Scope1() {
             </CardHeader>
             <CardContent className="flex justify-center">
               <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={fuelTypeData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={true}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                      nameKey="name"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {fuelTypeData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <RechartsTooltip formatter={(value: ValueType) => [`${formatNumberForTooltip(value)} tCO₂e`, "Emissions"]} />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
+                {fuelTypeData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={fuelTypeData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={true}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                        nameKey="name"
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {fuelTypeData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip formatter={(value: ValueType) => [`${formatNumberForTooltip(value)} tCO₂e`, "Emissions"]} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    No fuel type data available
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -628,16 +693,22 @@ export default function Scope1() {
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={sourceData} layout="vertical" margin={{ top: 20, right: 30, left: 50, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis type="number" unit=" tCO₂e" />
-                    <YAxis type="category" dataKey="name" width={120} />
-                    <RechartsTooltip formatter={(value: ValueType) => [`${formatNumberForTooltip(value)} tCO₂e`, "Emissions"]} />
-                    <Legend />
-                    <Bar dataKey="value" name="Emissions" fill="#8884d8" />
-                  </BarChart>
-                </ResponsiveContainer>
+                {sourceData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={sourceData} layout="vertical" margin={{ top: 20, right: 30, left: 50, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis type="number" unit=" tCO₂e" />
+                      <YAxis type="category" dataKey="name" width={120} />
+                      <RechartsTooltip formatter={(value: ValueType) => [`${formatNumberForTooltip(value)} tCO₂e`, "Emissions"]} />
+                      <Legend />
+                      <Bar dataKey="value" name="Emissions" fill="#8884d8" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    No source data available
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -649,23 +720,29 @@ export default function Scope1() {
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyTrendsData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="month" />
-                    <YAxis unit=" tCO₂e" />
-                    <RechartsTooltip />
-                    <Legend />
-                    {sourceData.map((source, index) => (
-                      <Bar 
-                        key={source.name}
-                        dataKey={source.name} 
-                        stackId="a" 
-                        fill={COLORS[index % COLORS.length]} 
-                      />
-                    ))}
-                  </BarChart>
-                </ResponsiveContainer>
+                {monthlyTrendsData.length > 0 && sourceData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={monthlyTrendsData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="month" />
+                      <YAxis unit=" tCO₂e" />
+                      <RechartsTooltip />
+                      <Legend />
+                      {sourceData.map((source, index) => (
+                        <Bar 
+                          key={source.name}
+                          dataKey={source.name} 
+                          stackId="a" 
+                          fill={COLORS[index % COLORS.length]} 
+                        />
+                      ))}
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    No monthly trends data available
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -679,26 +756,37 @@ export default function Scope1() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2 text-sm">
-              <li className="flex items-start">
-                <span className="bg-blue-200 p-1 rounded-full mr-2 mt-0.5">
-                  <TrendingUp className="h-3 w-3 text-blue-700" />
-                </span>
-                <span>Your emissions increased 15% in Q2 due to higher diesel usage in transport.</span>
-              </li>
-              <li className="flex items-start">
-                <span className="bg-blue-200 p-1 rounded-full mr-2 mt-0.5">
-                  <BarChart3 className="h-3 w-3 text-blue-700" />
-                </span>
-                <span>Vehicle Fleet emissions are 35% higher than the industry average for your company size.</span>
-              </li>
-              <li className="flex items-start">
-                <span className="bg-blue-200 p-1 rounded-full mr-2 mt-0.5">
-                  <TrendingDown className="h-3 w-3 text-blue-700" />
-                </span>
-                <span>Natural Gas emissions have reduced by 10% since implementing new heating controls.</span>
-              </li>
-            </ul>
+            {emissionsData.length > 0 ? (
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-start">
+                  <span className="bg-blue-200 p-1 rounded-full mr-2 mt-0.5">
+                    <TrendingUp className="h-3 w-3 text-blue-700" />
+                  </span>
+                  <span>
+                    {summaryStats.trendDirection === "up" 
+                      ? `Emissions increased ${Math.abs(summaryStats.changeFromLastYear).toFixed(0)}% compared to last year.`
+                      : `Emissions decreased ${Math.abs(summaryStats.changeFromLastYear).toFixed(0)}% compared to last year.`
+                    }
+                  </span>
+                </li>
+                <li className="flex items-start">
+                  <span className="bg-blue-200 p-1 rounded-full mr-2 mt-0.5">
+                    <BarChart3 className="h-3 w-3 text-blue-700" />
+                  </span>
+                  <span>{summaryStats.topEmissionSource} is your largest source of emissions, contributing significantly to your total.</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="bg-blue-200 p-1 rounded-full mr-2 mt-0.5">
+                    <Droplet className="h-3 w-3 text-blue-700" />
+                  </span>
+                  <span>{summaryStats.mostUsedFuelType} is your most used fuel type across operations.</span>
+                </li>
+              </ul>
+            ) : (
+              <div className="text-center py-2 text-blue-700">
+                No data available to generate insights.
+              </div>
+            )}
           </CardContent>
         </Card>
         
@@ -726,7 +814,7 @@ export default function Scope1() {
                     <TableHead>Amount</TableHead>
                     <TableHead>Unit</TableHead>
                     <TableHead>Emissions (tCO₂e)</TableHead>
-                    <TableHead>Emission Factor</TableHead>
+                    <TableHead>Emission Factor Source</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -735,7 +823,7 @@ export default function Scope1() {
                       <TableCell colSpan={7} className="text-center py-8">
                         <div className="flex justify-center items-center">
                           <svg
-                            className="animate-spin h-5 w-5 mr-3 text-circa-green"
+                            className="animate-spin h-5 w-5 mr-3 text-green-600"
                             xmlns="http://www.w3.org/2000/svg"
                             fill="none"
                             viewBox="0 0 24 24"
@@ -772,7 +860,7 @@ export default function Scope1() {
                         <TableCell>{emission.fuel_type || 'N/A'}</TableCell>
                         <TableCell>{emission.amount || 'N/A'}</TableCell>
                         <TableCell>{emission.unit || 'N/A'}</TableCell>
-                        <TableCell>{emission.emissions_co2e || 'N/A'}</TableCell>
+                        <TableCell>{emission.emissions_co2e?.toFixed(2) || 'N/A'}</TableCell>
                         <TableCell>{emission.emission_factor_source || 'N/A'}</TableCell>
                       </TableRow>
                     ))

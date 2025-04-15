@@ -4,6 +4,13 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Scope1 from "@/pages/emissions/Scope1";
 import Scope2 from "@/pages/emissions/Scope2";
 import Scope3 from "@/pages/emissions/Scope3";
+import { toast } from "sonner";
+
+// Show notification if data loading errors occur
+const handleRouteError = (err: Error) => {
+  toast.error(`Data loading error: ${err.message}`);
+  console.error('Route error:', err);
+};
 
 export const emissionRoutes = (
   <>
@@ -14,6 +21,7 @@ export const emissionRoutes = (
           <Scope1 />
         </ProtectedRoute>
       }
+      errorElement={handleRouteError}
     />
     <Route
       path="/emissions/scope2"
@@ -22,6 +30,7 @@ export const emissionRoutes = (
           <Scope2 />
         </ProtectedRoute>
       }
+      errorElement={handleRouteError}
     />
     <Route
       path="/emissions/scope3"
@@ -30,6 +39,7 @@ export const emissionRoutes = (
           <Scope3 />
         </ProtectedRoute>
       }
+      errorElement={handleRouteError}
     />
   </>
 );
