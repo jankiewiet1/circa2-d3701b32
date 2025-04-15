@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -858,10 +857,24 @@ export default function Scope1() {
                         <TableCell>{emission.date ? format(new Date(emission.date), 'yyyy-MM-dd') : 'N/A'}</TableCell>
                         <TableCell>{emission.source || 'N/A'}</TableCell>
                         <TableCell>{emission.fuel_type || 'N/A'}</TableCell>
-                        <TableCell>{emission.amount || 'N/A'}</TableCell>
+                        <TableCell>{emission.amount?.toFixed(2) || 'N/A'}</TableCell>
                         <TableCell>{emission.unit || 'N/A'}</TableCell>
-                        <TableCell>{emission.emissions_co2e?.toFixed(2) || 'N/A'}</TableCell>
-                        <TableCell>{emission.emission_factor_source || 'N/A'}</TableCell>
+                        <TableCell>
+                          {emission.emissions_co2e ? (
+                            <span className="font-medium">{emission.emissions_co2e.toFixed(3)}</span>
+                          ) : (
+                            'N/A'
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {emission.emission_factor_source ? (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {emission.emission_factor_source}
+                            </span>
+                          ) : (
+                            'N/A'
+                          )}
+                        </TableCell>
                       </TableRow>
                     ))
                   )}

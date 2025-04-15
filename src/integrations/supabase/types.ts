@@ -164,6 +164,7 @@ export type Database = {
           id: string
           language: string | null
           preferred_currency: string | null
+          preferred_emission_source: string | null
           reporting_frequency: string | null
           timezone: string | null
           updated_at: string | null
@@ -177,6 +178,7 @@ export type Database = {
           id?: string
           language?: string | null
           preferred_currency?: string | null
+          preferred_emission_source?: string | null
           reporting_frequency?: string | null
           timezone?: string | null
           updated_at?: string | null
@@ -190,6 +192,7 @@ export type Database = {
           id?: string
           language?: string | null
           preferred_currency?: string | null
+          preferred_emission_source?: string | null
           reporting_frequency?: string | null
           timezone?: string | null
           updated_at?: string | null
@@ -203,6 +206,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      emission_factors: {
+        Row: {
+          created_at: string | null
+          factor_per_unit: number
+          fuel_type: string
+          id: string
+          source: string
+          unit: string
+          updated_at: string | null
+          year: number
+        }
+        Insert: {
+          created_at?: string | null
+          factor_per_unit: number
+          fuel_type: string
+          id?: string
+          source: string
+          unit: string
+          updated_at?: string | null
+          year: number
+        }
+        Update: {
+          created_at?: string | null
+          factor_per_unit?: number
+          fuel_type?: string
+          id?: string
+          source?: string
+          unit?: string
+          updated_at?: string | null
+          year?: number
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
