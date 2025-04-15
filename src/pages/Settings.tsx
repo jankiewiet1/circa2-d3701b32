@@ -147,24 +147,24 @@ export default function Settings() {
 
   return (
     <MainLayout>
-      <div className="max-w-3xl">
-        <div className="mb-6">
+      <div className="max-w-3xl mx-auto"> {/* Center the content */}
+        <div className="mb-6 text-center"> {/* Center the title */}
           <h1 className="text-3xl font-bold">Settings</h1>
           <p className="text-gray-500 mt-2">Manage application settings and preferences</p>
         </div>
         
-        <Tabs defaultValue="notifications">
-          <TabsList className="mb-6">
-            <TabsTrigger value="notifications" className="flex items-center">
+        <Tabs defaultValue="notifications" className="max-w-xl mx-auto"> {/* Center tabs and limit width */}
+          <TabsList className="mb-6 w-full"> {/* Make tabs full width */}
+            <TabsTrigger value="notifications" className="flex-1 flex items-center">
               <Bell className="mr-2 h-4 w-4" />
               Notifications
             </TabsTrigger>
-            <TabsTrigger value="display" className="flex items-center">
+            <TabsTrigger value="display" className="flex-1 flex items-center">
               <Globe className="mr-2 h-4 w-4" />
               Display
             </TabsTrigger>
             {isAdmin && (
-              <TabsTrigger value="admin" className="flex items-center">
+              <TabsTrigger value="admin" className="flex-1 flex items-center">
                 <Shield className="mr-2 h-4 w-4" />
                 Admin
               </TabsTrigger>
