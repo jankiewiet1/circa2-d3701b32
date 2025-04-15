@@ -83,16 +83,38 @@ export const useSettings = (userId: string | undefined) => {
         newSettings.theme = validateTheme(newSettings.theme);
       }
       
-      const { error } = await supabase
+      // First check if a record exists
+      const { data: existingSettings } = await supabase
         .from('settings')
-        .upsert({ 
-          user_id: userId,
-          ...newSettings
-        })
-        .eq('user_id', userId);
-
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+      
+      let error;
+      
+      if (existingSettings) {
+        // Update existing record
+        const result = await supabase
+          .from('settings')
+          .update(newSettings)
+          .eq('user_id', userId);
+        
+        error = result.error;
+      } else {
+        // Insert new record
+        const result = await supabase
+          .from('settings')
+          .insert({ 
+            user_id: userId,
+            ...newSettings
+          });
+        
+        error = result.error;
+      }
+      
       if (error) throw error;
       
+      // Update local state with new settings
       setSettings(prev => prev ? { 
         ...prev, 
         ...newSettings,
