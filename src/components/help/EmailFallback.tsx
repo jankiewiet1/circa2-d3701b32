@@ -28,31 +28,30 @@ export const EmailFallback = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p>
-          If you can't find what you're looking for or need personal assistance, you
-          can always email us directly at:
+        <p className="text-muted-foreground">
+          Can't find what you're looking for? Email us directly.
         </p>
-        <div className="p-3 bg-gray-50 rounded-md flex items-center justify-between">
-          <span className="font-medium">{email}</span>
+        <div className="bg-accent/50 rounded-md flex items-center justify-between p-2">
+          <span className="font-medium text-sm">{email}</span>
           <Button 
-            variant="outline" 
+            variant="ghost" 
             size="sm" 
-            className={copied ? "text-green-600" : ""}
+            className={`
+              ${copied ? "text-green-600" : "text-muted-foreground"} 
+              hover:bg-accent hover:text-foreground
+            `}
             onClick={handleCopyEmail}
           >
             {copied ? (
-              <>
-                <Check className="h-4 w-4 mr-1" /> Copied
-              </>
+              <Check className="h-4 w-4" />
             ) : (
-              <>
-                <Copy className="h-4 w-4 mr-1" /> Copy Email
-              </>
+              <Copy className="h-4 w-4" />
             )}
+            <span className="sr-only">{copied ? "Copied" : "Copy Email"}</span>
           </Button>
         </div>
-        <p className="text-sm text-gray-500">
-          Our support team typically responds within 24 hours during business days.
+        <p className="text-xs text-muted-foreground">
+          Support responds within 24 hours on business days.
         </p>
       </CardContent>
     </Card>
