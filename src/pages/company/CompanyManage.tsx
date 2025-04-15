@@ -11,10 +11,11 @@ import { Building2, Users, Settings, Pencil, Save, X } from "lucide-react";
 import CompanyInfoTab from "./setup/tabs/CompanyInfoTab";
 import CompanyTeamTab from "./setup/tabs/CompanyTeamTab";
 import CompanyPreferencesTab from "./setup/tabs/CompanyPreferencesTab";
+import { toast } from "@/components/ui/sonner";
 
 export default function CompanyManage() {
   const { user } = useAuth();
-  const { company, loading } = useCompany();
+  const { company, loading, fetchCompanyData } = useCompany();
   const [activeTab, setActiveTab] = useState("info");
   const [isEditing, setIsEditing] = useState(false);
   
@@ -76,8 +77,19 @@ export default function CompanyManage() {
     setIsEditing(!isEditing);
   };
 
-  const handleSave = () => {
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      // Leave actual saving logic to the CompanyInfoTab component
+      // Just toggle edit mode here
+      setIsEditing(false);
+      
+      // Refresh company data after saving
+      await fetchCompanyData();
+      toast.success("Company information updated successfully");
+    } catch (error) {
+      console.error("Error saving company:", error);
+      toast.error("Failed to save company information");
+    }
   };
 
   return (

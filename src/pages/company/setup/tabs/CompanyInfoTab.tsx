@@ -1,12 +1,11 @@
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useCompany } from "@/contexts/CompanyContext";
 import { CompanyFormValues } from "@/types";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useEffect } from "react";
 
 const formSchema = z.object({
   name: z.string().min(1, "Company name is required"),
@@ -16,14 +15,14 @@ const formSchema = z.object({
   vat_number: z.string().optional(),
   iban: z.string().optional(),
   bank_name: z.string().optional(),
-  billing_email: z.string().email().optional(),
+  billing_email: z.string().email().optional().or(z.string().length(0)),
   phone_number: z.string().optional(),
   billing_address: z.string().optional(),
   postal_code: z.string().optional(),
   city: z.string().optional(),
   contact_name: z.string().optional(),
   contact_title: z.string().optional(),
-  contact_email: z.string().email().optional(),
+  contact_email: z.string().email().optional().or(z.string().length(0)),
 });
 
 interface CompanyInfoTabProps {
@@ -55,10 +54,39 @@ export default function CompanyInfoTab({ isEditing, onSave }: CompanyInfoTabProp
     },
   });
 
+  useEffect(() => {
+    if (company) {
+      form.reset({
+        name: company.name || "",
+        industry: company.industry || "",
+        country: company.country || "",
+        kvk_number: company.kvk_number || "",
+        vat_number: company.vat_number || "",
+        iban: company.iban || "",
+        bank_name: company.bank_name || "",
+        billing_email: company.billing_email || "",
+        phone_number: company.phone_number || "",
+        billing_address: company.billing_address || "",
+        postal_code: company.postal_code || "",
+        city: company.city || "",
+        contact_name: company.contact_name || "",
+        contact_title: company.contact_title || "",
+        contact_email: company.contact_email || "",
+      });
+    }
+  }, [company, form, isEditing]);
+
   const onSubmit = async (values: CompanyFormValues) => {
-    const { error } = await updateCompany(values);
-    if (!error) {
+    try {
+      const { error } = await updateCompany(values);
+      
+      if (error) {
+        throw error;
+      }
+      
       onSave();
+    } catch (error) {
+      console.error("Error updating company:", error);
     }
   };
 
