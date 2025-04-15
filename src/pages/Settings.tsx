@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -15,9 +16,18 @@ import {
   Shield, 
   Lock,
   Users,
-  Loader2
+  Loader2,
+  Palette
 } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
+import { useForm } from "react-hook-form";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 
 export default function Settings() {
   const { loading: companyLoading, userRole } = useCompany();
@@ -31,6 +41,70 @@ export default function Settings() {
   const [loadingAdmin, setLoadingAdmin] = useState(false);
   
   const loading = companyLoading || settingsLoading;
+
+  // Add display form using react-hook-form
+  const displayForm = useForm({
+    defaultValues: {
+      theme: settings?.theme || 'system',
+      language: settings?.language || 'en',
+      timezone: settings?.timezone || 'Europe/Amsterdam',
+      date_format: settings?.date_format || 'YYYY-MM-DD',
+      preferred_currency: settings?.preferred_currency || 'EUR'
+    }
+  });
+
+  // Add admin form using react-hook-form
+  const adminForm = useForm({
+    defaultValues: {
+      lock_team_changes: settings?.lock_team_changes || false,
+      require_reviewer: settings?.require_reviewer || false,
+      audit_logging_enabled: settings?.audit_logging_enabled || true,
+      default_member_role: settings?.default_member_role || 'viewer'
+    }
+  });
+
+  // Display form submission handler
+  const handleDisplaySubmit = async (data: any) => {
+    if (!user?.id) return;
+    
+    setLoadingDisplay(true);
+    try {
+      await updateSettings({
+        theme: data.theme,
+        language: data.language,
+        timezone: data.timezone,
+        date_format: data.date_format,
+        preferred_currency: data.preferred_currency
+      });
+      toast.success('Display preferences updated successfully');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to update display preferences');
+    } finally {
+      setLoadingDisplay(false);
+    }
+  };
+
+  // Admin form submission handler
+  const handleAdminSubmit = async (data: any) => {
+    if (!user?.id || !isAdmin) return;
+    
+    setLoadingAdmin(true);
+    try {
+      await updateSettings({
+        lock_team_changes: data.lock_team_changes,
+        require_reviewer: data.require_reviewer,
+        audit_logging_enabled: data.audit_logging_enabled,
+        default_member_role: data.default_member_role
+      });
+      toast.success('Admin settings updated successfully');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to update admin settings');
+    } finally {
+      setLoadingAdmin(false);
+    }
+  };
 
   const handleNotificationsSubmit = async () => {
     if (!user?.id) return;
@@ -50,6 +124,28 @@ export default function Settings() {
       setLoadingNotifications(false);
     }
   };
+
+  // Update form values when settings load
+  React.useEffect(() => {
+    if (settings && !loading) {
+      displayForm.reset({
+        theme: settings.theme || 'system',
+        language: settings.language || 'en',
+        timezone: settings.timezone || 'Europe/Amsterdam',
+        date_format: settings.date_format || 'YYYY-MM-DD',
+        preferred_currency: settings.preferred_currency || 'EUR'
+      });
+
+      if (isAdmin) {
+        adminForm.reset({
+          lock_team_changes: settings.lock_team_changes || false,
+          require_reviewer: settings.require_reviewer || false,
+          audit_logging_enabled: settings.audit_logging_enabled || true,
+          default_member_role: settings.default_member_role || 'viewer'
+        });
+      }
+    }
+  }, [settings, loading]);
 
   return (
     <MainLayout>
