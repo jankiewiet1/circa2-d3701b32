@@ -15,9 +15,9 @@ export const Header = () => {
   };
   
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b bg-white/90 backdrop-blur-md px-6 py-3 flex items-center justify-between shadow-sm">
-      <div className="flex-1">
-        <div className="relative max-w-md">
+    <header className="fixed top-0 right-0 z-40 border-b bg-white/90 backdrop-blur-md h-16 flex items-center justify-between pl-[60px] pr-6">
+      <div className="absolute left-1/2 -translate-x-1/2 max-w-md w-full px-4">
+        <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
           <Input
             type="search"
@@ -26,6 +26,8 @@ export const Header = () => {
           />
         </div>
       </div>
+      
+      <div className="flex-1" />
       
       <div className="flex items-center space-x-4">
         <Button variant="ghost" size="icon" asChild>
