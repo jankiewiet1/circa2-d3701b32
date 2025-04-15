@@ -15,40 +15,42 @@ export const Header = () => {
   };
   
   return (
-    <header className="fixed top-0 right-0 z-40 border-b bg-white/90 backdrop-blur-md h-16 flex items-center justify-between pl-[60px] pr-6">
-      <div className="absolute left-1/2 -translate-x-1/2 max-w-md w-full px-4">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-          <Input
-            type="search"
-            placeholder="Search..."
-            className="w-full pl-9 bg-gray-50 border-gray-200 focus-visible:bg-white rounded-full"
-          />
+    <header className="fixed top-0 right-0 left-0 z-40 h-16 border-b bg-white/90 backdrop-blur-md">
+      <div className="flex h-full items-center justify-between pl-[60px] pr-6">
+        <div className="flex-1" />
+        
+        <div className="absolute left-1/2 -translate-x-1/2">
+          <div className="relative w-[400px]">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+            <Input
+              type="search"
+              placeholder="Search..."
+              className="w-full pl-9 bg-gray-50 border-gray-200 focus-visible:bg-white rounded-full"
+            />
+          </div>
         </div>
-      </div>
-      
-      <div className="flex-1" />
-      
-      <div className="flex items-center space-x-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link to="/help">
-            <HelpCircle size={20} className="text-gray-600 hover:text-gray-800" />
-            <span className="sr-only">Help</span>
+        
+        <div className="flex items-center space-x-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link to="/help">
+              <HelpCircle size={20} className="text-gray-600 hover:text-gray-800" />
+              <span className="sr-only">Help</span>
+            </Link>
+          </Button>
+          
+          <Button variant="ghost" size="icon">
+            <Bell size={20} className="text-gray-600 hover:text-gray-800" />
+            <span className="sr-only">Notifications</span>
+          </Button>
+          
+          <Link to="/profile">
+            <Avatar className="cursor-pointer hover:scale-105 transition-transform">
+              <AvatarFallback className="bg-circa-green text-white">
+                {getInitials()}
+              </AvatarFallback>
+            </Avatar>
           </Link>
-        </Button>
-        
-        <Button variant="ghost" size="icon">
-          <Bell size={20} className="text-gray-600 hover:text-gray-800" />
-          <span className="sr-only">Notifications</span>
-        </Button>
-        
-        <Link to="/profile">
-          <Avatar className="cursor-pointer hover:scale-105 transition-transform">
-            <AvatarFallback className="bg-circa-green text-white">
-              {getInitials()}
-            </AvatarFallback>
-          </Avatar>
-        </Link>
+        </div>
       </div>
     </header>
   );

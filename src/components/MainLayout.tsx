@@ -10,12 +10,12 @@ interface MainLayoutProps {
 export const MainLayout = ({ children }: MainLayoutProps) => {
   return (
     <div className="min-h-screen flex">
-      <div className="fixed h-screen z-50">
+      <div className="fixed inset-y-0 left-0 z-50">
         <Sidebar />
       </div>
-      <div className="flex-1 ml-[60px]">
+      <div className="flex-1 pl-[60px]">
         <Header />
-        <main className="flex-1 p-6 pt-24 overflow-y-auto min-h-[calc(100vh-64px)]">
+        <main className="flex-1 p-6 pt-20 overflow-y-auto min-h-[calc(100vh-64px)]">
           {children}
         </main>
       </div>
