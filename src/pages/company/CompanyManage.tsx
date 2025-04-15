@@ -78,6 +78,7 @@ export default function CompanyManage() {
   };
 
   const handleSave = async () => {
+    // This function will be called from CompanyInfoTab
     try {
       await fetchCompanyData();
       toast.success("Company information updated successfully");
@@ -169,9 +170,9 @@ export default function CompanyManage() {
               
               <TabsContent value="info">
                 <CompanyInfoTab 
-                  isEditing={isEditing} 
-                  onSave={handleSave} 
-                  setIsEditing={setIsEditing} 
+                  isEditing={isEditing}
+                  onSave={handleSave}
+                  setIsEditing={setIsEditing}
                 />
               </TabsContent>
               

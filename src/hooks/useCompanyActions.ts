@@ -1,7 +1,7 @@
 
 import { useCallback } from "react";
 import { Company, UserRole } from "@/types";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/sonner";
 import {
   createCompanyService,
   updateCompanyService,
@@ -17,16 +17,9 @@ export const useCompanyActions = (userId: string | undefined, companyId: string 
     const { error, company } = await createCompanyService(name, industry, userId);
     
     if (error) {
-      toast({
-        title: "Company Creation Failed",
-        description: error.message || "An unexpected error occurred",
-        variant: "destructive"
-      });
+      toast.error(error.message || "An unexpected error occurred");
     } else if (company) {
-      toast({
-        title: "Company Created",
-        description: `${company.name} has been successfully created`,
-      });
+      toast.success(`${company.name} has been successfully created`);
     }
     
     return { error, company };
@@ -38,16 +31,9 @@ export const useCompanyActions = (userId: string | undefined, companyId: string 
     const { error } = await updateCompanyService(companyId, data);
     
     if (error) {
-      toast({
-        title: "Update Failed",
-        description: error.message,
-        variant: "destructive"
-      });
+      toast.error(error.message || "Failed to update company details");
     } else {
-      toast({
-        title: "Company Updated",
-        description: "Company details have been updated successfully"
-      });
+      toast.success("Company details have been updated successfully");
     }
     
     return { error };
@@ -61,16 +47,9 @@ export const useCompanyActions = (userId: string | undefined, companyId: string 
     const { error } = await inviteMemberService(companyId, email, role, userId);
     
     if (error) {
-      toast({
-        title: "Invitation Failed",
-        description: error.message,
-        variant: "destructive"
-      });
+      toast.error(error.message || "Failed to send invitation");
     } else {
-      toast({
-        title: "Invitation Sent",
-        description: `Invitation has been sent to ${email}`
-      });
+      toast.success(`Invitation has been sent to ${email}`);
     }
     
     return { error };
@@ -80,16 +59,9 @@ export const useCompanyActions = (userId: string | undefined, companyId: string 
     const { error } = await updateMemberRoleService(memberId, role);
     
     if (error) {
-      toast({
-        title: "Role Update Failed",
-        description: error.message,
-        variant: "destructive"
-      });
+      toast.error(error.message || "Failed to update member role");
     } else {
-      toast({
-        title: "Role Updated",
-        description: "Member role has been updated successfully"
-      });
+      toast.success("Member role has been updated successfully");
     }
     
     return { error };
@@ -99,16 +71,9 @@ export const useCompanyActions = (userId: string | undefined, companyId: string 
     const { error } = await removeMemberService(memberId);
     
     if (error) {
-      toast({
-        title: "Remove Member Failed",
-        description: error.message,
-        variant: "destructive"
-      });
+      toast.error(error.message || "Failed to remove member");
     } else {
-      toast({
-        title: "Member Removed",
-        description: "Member has been removed from the company"
-      });
+      toast.success("Member has been removed from the company");
     }
     
     return { error };

@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -90,7 +89,6 @@ export default function CompanyInfoTab({ isEditing, onSave, setIsEditing }: Comp
         throw error;
       }
       
-      setIsEditing(false);
       onSave();
     } catch (error) {
       console.error("Error updating company:", error);

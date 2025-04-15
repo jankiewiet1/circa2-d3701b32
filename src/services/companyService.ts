@@ -1,5 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
 import { Company, CompanyMember, UserRole } from "@/types";
 
 export const fetchCompanyDataService = async (userId: string) => {
@@ -186,11 +185,6 @@ export const createCompanyService = async (name: string, industry: string, userI
     return { error: null, company: newCompany };
   } catch (error: any) {
     console.error("Error in createCompanyService:", error);
-    toast({
-      title: "Error Creating Company",
-      description: error.message,
-      variant: "destructive",
-    });
     return { error, company: null };
   }
 };
@@ -217,10 +211,6 @@ export const updateCompanyService = async (companyId: string, data: Partial<Comp
     }
     
     console.log("Company updated successfully");
-    toast({
-      title: "Success",
-      description: "Company information updated successfully",
-    });
     
     return { error: null };
   } catch (error: any) {

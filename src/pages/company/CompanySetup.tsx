@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -35,6 +34,8 @@ export default function CompanySetup() {
     try {
       await fetchCompanyData();
       toast.success("Company information updated successfully");
+      // Don't set isEditing to false in setup mode
+      // We want to keep the form editable during setup
     } catch (error) {
       console.error("Error saving company:", error);
       toast.error("Failed to save company information");
