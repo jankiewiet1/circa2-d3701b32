@@ -409,6 +409,7 @@ export type Database = {
           company_id: string | null
           created_at: string | null
           date: string | null
+          emission_factor: number | null
           emission_factor_source: string | null
           emissions_co2e: number | null
           events_affecting_data: string | null
@@ -434,6 +435,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string | null
           date?: string | null
+          emission_factor?: number | null
           emission_factor_source?: string | null
           emissions_co2e?: number | null
           events_affecting_data?: string | null
@@ -459,6 +461,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string | null
           date?: string | null
+          emission_factor?: number | null
           emission_factor_source?: string | null
           emissions_co2e?: number | null
           events_affecting_data?: string | null

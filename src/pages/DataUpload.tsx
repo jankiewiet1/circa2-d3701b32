@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { Card } from "@/components/ui/card";
@@ -45,9 +44,7 @@ export default function DataUpload() {
     Papa.parse(file, {
       header: true,
       complete: (results) => {
-        // Get the headers from the first row
         const headers = results.meta.fields || [];
-        // Convert data to array format for preview
         const rows = results.data.filter(row => Object.keys(row).length > 0).map(row => {
           return headers.map(header => (row as any)[header] || '');
         });
@@ -69,9 +66,7 @@ export default function DataUpload() {
     });
   };
 
-  // Map CSV headers to database column names
   const mapHeadersToColumns = (headers: string[], scope: '1' | '2' | '3') => {
-    // Define mapping based on scope
     const columnMappings: Record<string, Record<string, string>> = {
       '1': {
         'fuel_type': 'fuel_type',
@@ -101,6 +96,10 @@ export default function DataUpload() {
         'annual_spend': 'annual_spend',
         'emissions_co2e': 'emissions_co2e',
         'date': 'date',
+        'supplier_address': 'supplier_address',
+        'procurement_contact': 'procurement_contact',
+        'emission_factor': 'emission_factor',
+        'emission_unit': 'ratio_indicators',
       }
     };
     
@@ -111,7 +110,6 @@ export default function DataUpload() {
       if (mapping && mapping[lowerHeader]) {
         acc[header] = mapping[lowerHeader];
       } else {
-        // Use the header as is if no mapping exists
         acc[header] = lowerHeader.replace(/\s+/g, '_');
       }
       
@@ -127,7 +125,6 @@ export default function DataUpload() {
 
     setIsProcessing(true);
     try {
-      // Create upload session
       const { data: session, error: sessionError } = await supabase
         .from('upload_sessions')
         .insert({
@@ -143,10 +140,8 @@ export default function DataUpload() {
 
       if (sessionError) throw sessionError;
 
-      // Get the column mapping for this scope
       const headerMapping = mapHeadersToColumns(previewData.headers, previewData.detectedScope);
 
-      // Process the file data according to the detected scope
       const rows = previewData.rows.map((row) => {
         const rowData: Record<string, any> = {
           company_id: company.id,
@@ -156,10 +151,8 @@ export default function DataUpload() {
         previewData.headers.forEach((header, index) => {
           const columnName = headerMapping[header];
           if (columnName) {
-            // For date columns, ensure proper format
             if (columnName === 'date' && row[index]) {
               try {
-                // Try to parse the date
                 const date = new Date(row[index]);
                 if (!isNaN(date.getTime())) {
                   rowData[columnName] = date.toISOString().split('T')[0];
@@ -167,16 +160,13 @@ export default function DataUpload() {
                   rowData[columnName] = row[index];
                 }
               } catch (e) {
-                // If date parsing fails, use as is
                 rowData[columnName] = row[index];
               }
             } 
-            // For numeric columns, convert to number if possible
-            else if (['amount', 'emissions_co2e', 'annual_spend'].includes(columnName) && row[index]) {
+            else if (['amount', 'emissions_co2e', 'annual_spend', 'emission_factor'].includes(columnName) && row[index]) {
               const num = parseFloat(row[index]);
               rowData[columnName] = isNaN(num) ? null : num;
             } 
-            // For everything else, use as is
             else if (row[index] !== undefined && row[index] !== '') {
               rowData[columnName] = row[index];
             }
@@ -186,9 +176,7 @@ export default function DataUpload() {
         return rowData;
       });
 
-      // Filter out any rows that don't have enough data
       const validRows = rows.filter(row => {
-        // Require at least some essential data depending on scope
         if (previewData.detectedScope === '1') {
           return row.fuel_type || row.source;
         } else if (previewData.detectedScope === '2') {
@@ -198,26 +186,21 @@ export default function DataUpload() {
         }
       });
 
-      // Only proceed if we have some valid rows
       if (validRows.length === 0) {
         throw new Error('No valid data rows found in the file');
       }
 
-      // Use type-safe table names instead of string interpolation
       const tableNames = {
         '1': 'scope1_emissions',
         '2': 'scope2_emissions',
         '3': 'scope3_emissions'
       } as const;
       
-      // Get the appropriate table name based on the detected scope
       const tableName = tableNames[previewData.detectedScope];
       
-      // Insert rows with error handling for each row
       let successCount = 0;
       let failCount = 0;
       
-      // Use Promise.allSettled to attempt inserting each row
       await Promise.allSettled(
         validRows.map(async (rowData) => {
           try {
@@ -241,7 +224,6 @@ export default function DataUpload() {
         })
       );
 
-      // Update session status
       await supabase
         .from('upload_sessions')
         .update({ 
@@ -274,7 +256,6 @@ export default function DataUpload() {
       '3': '/src/data/scope3Template.csv'
     };
 
-    // Create a link element and trigger download
     const link = document.createElement('a');
     link.href = templates[scope];
     link.download = `scope${scope}_template.csv`;
