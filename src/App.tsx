@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,6 +21,7 @@ import Dashboard from "@/pages/Dashboard";
 import Reports from "@/pages/Reports";
 import DataUpload from "@/pages/DataUpload";
 import Profile from "@/pages/Profile";
+import Help from "@/pages/Help";
 
 // Emissions Pages
 import Scope1 from "@/pages/emissions/Scope1";
@@ -93,6 +95,9 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              
+              {/* Help Page - Public */}
+              <Route path="/help" element={<Help />} />
               
               {/* Protected Routes - Requires both authentication and company membership */}
               <Route
