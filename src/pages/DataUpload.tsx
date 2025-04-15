@@ -29,7 +29,7 @@ export default function DataUpload() {
     if (headerSet.has('fuel_type') || headerSet.has('source')) {
       return '1';
     }
-    if (headerSet.has('energy_type') || headerSet.has('kwh')) {
+    if (headerSet.has('energy_type')) {
       return '2';
     }
     if (headerSet.has('supplier_name') || headerSet.has('commodity_type')) {
@@ -77,15 +77,16 @@ export default function DataUpload() {
         'fuel_type': 'fuel_type',
         'source': 'source',
         'amount': 'amount',
+        'unit': 'unit',
         'emissions_co2e': 'emissions_co2e',
         'date': 'date',
-        'unit': 'unit',
         'emission_factor': 'emission_factor_source',
         'emission_unit': 'ratio_indicators',
       },
       '2': {
         'energy_type': 'energy_type',
-        'kwh': 'kwh',  // Changed from 'amount' to match the database schema
+        'amount': 'amount',
+        'unit': 'unit', 
         'emissions_co2e': 'emissions_co2e',
         'date': 'date',
         'supplier': 'supplier',
@@ -162,21 +163,18 @@ export default function DataUpload() {
                 const date = new Date(row[index]);
                 if (!isNaN(date.getTime())) {
                   rowData[columnName] = date.toISOString().split('T')[0];
+                } else {
+                  rowData[columnName] = row[index];
                 }
               } catch (e) {
                 // If date parsing fails, use as is
                 rowData[columnName] = row[index];
               }
             } 
-            // Special handling for kwh in scope 2 (previously mapped from 'amount')
-            else if (columnName === 'kwh' && row[index]) {
-              const num = parseFloat(row[index]);
-              rowData[columnName] = isNaN(num) ? row[index] : num;
-            }
-            // For other numeric columns, convert to number if possible
+            // For numeric columns, convert to number if possible
             else if (['amount', 'emissions_co2e', 'annual_spend'].includes(columnName) && row[index]) {
               const num = parseFloat(row[index]);
-              rowData[columnName] = isNaN(num) ? row[index] : num;
+              rowData[columnName] = isNaN(num) ? null : num;
             } 
             // For everything else, use as is
             else if (row[index] !== undefined && row[index] !== '') {
@@ -205,7 +203,7 @@ export default function DataUpload() {
         throw new Error('No valid data rows found in the file');
       }
 
-      // Fix: Use type-safe table names instead of string interpolation
+      // Use type-safe table names instead of string interpolation
       const tableNames = {
         '1': 'scope1_emissions',
         '2': 'scope2_emissions',

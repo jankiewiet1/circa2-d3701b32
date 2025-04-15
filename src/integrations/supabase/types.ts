@@ -321,6 +321,7 @@ export type Database = {
         Row: {
           activity_data: string | null
           additional_notes: string | null
+          amount: number | null
           company_id: string | null
           created_at: string | null
           date: string | null
@@ -329,7 +330,6 @@ export type Database = {
           energy_type: string | null
           events_affecting_data: string | null
           id: string
-          kwh: number | null
           location: string | null
           progress_toward_target: string | null
           ratio_indicators: string | null
@@ -339,11 +339,13 @@ export type Database = {
           supplier: string | null
           trend_notes: string | null
           uncertainty_notes: string | null
+          unit: string | null
           uploaded_by: string | null
         }
         Insert: {
           activity_data?: string | null
           additional_notes?: string | null
+          amount?: number | null
           company_id?: string | null
           created_at?: string | null
           date?: string | null
@@ -352,7 +354,6 @@ export type Database = {
           energy_type?: string | null
           events_affecting_data?: string | null
           id?: string
-          kwh?: number | null
           location?: string | null
           progress_toward_target?: string | null
           ratio_indicators?: string | null
@@ -362,11 +363,13 @@ export type Database = {
           supplier?: string | null
           trend_notes?: string | null
           uncertainty_notes?: string | null
+          unit?: string | null
           uploaded_by?: string | null
         }
         Update: {
           activity_data?: string | null
           additional_notes?: string | null
+          amount?: number | null
           company_id?: string | null
           created_at?: string | null
           date?: string | null
@@ -375,7 +378,6 @@ export type Database = {
           energy_type?: string | null
           events_affecting_data?: string | null
           id?: string
-          kwh?: number | null
           location?: string | null
           progress_toward_target?: string | null
           ratio_indicators?: string | null
@@ -385,6 +387,7 @@ export type Database = {
           supplier?: string | null
           trend_notes?: string | null
           uncertainty_notes?: string | null
+          unit?: string | null
           uploaded_by?: string | null
         }
         Relationships: [
