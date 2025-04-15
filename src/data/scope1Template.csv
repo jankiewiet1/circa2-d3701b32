@@ -1,0 +1,3 @@
+
+fuel_type,source,amount,emissions_co2e,date,unit,scope_description,reporting_boundary,reporting_period,activity_data,emission_factor_source,uncertainty_notes,trend_notes,progress_toward_target,ratio_indicators,additional_notes,events_affecting_data
+Natural Gas,Building Heat,1000,2.5,2024-01-01,kg,Direct emissions from natural gas,Main office building,2024 Q1,Monthly meter readings,EPA 2024,Low uncertainty,Decreasing trend,On track,kg CO2e per sqft,Regular maintenance performed,None

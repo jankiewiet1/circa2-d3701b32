@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { Card } from "@/components/ui/card";
@@ -129,6 +128,24 @@ export default function DataUpload() {
     }
   };
 
+  const handleTemplateDownload = (scope: '1' | '2' | '3') => {
+    const templates = {
+      '1': '/src/data/scope1Template.csv',
+      '2': '/src/data/scope2Template.csv',
+      '3': '/src/data/scope3Template.csv'
+    };
+
+    // Create a link element and trigger download
+    const link = document.createElement('a');
+    link.href = templates[scope];
+    link.download = `scope${scope}_template.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success(`Scope ${scope} template downloaded successfully`);
+  };
+
   return (
     <MainLayout>
       <div className="max-w-5xl mx-auto">
@@ -149,15 +166,41 @@ export default function DataUpload() {
             <FileUploadZone onFileSelect={handleFileSelect} />
             
             {!file && (
-              <div className="mt-4 flex items-start gap-2 text-sm bg-circa-green-light/20 p-3 rounded-lg">
-                <AlertCircle className="h-5 w-5 text-circa-green-dark shrink-0 mt-0.5" />
-                <p className="text-gray-600">
-                  Make sure your data follows our template format.
-                  <Button variant="link" className="text-circa-green-dark p-0 h-auto ml-1">
-                    <Download className="h-4 w-4 mr-1" />
-                    Download template
-                  </Button>
-                </p>
+              <div className="mt-4">
+                <div className="flex items-start gap-2 text-sm bg-circa-green-light/20 p-3 rounded-lg">
+                  <AlertCircle className="h-5 w-5 text-circa-green-dark shrink-0 mt-0.5" />
+                  <div className="space-y-2">
+                    <p className="text-gray-600">
+                      Make sure your data follows our template format. Download the appropriate template:
+                    </p>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleTemplateDownload('1')}
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        Scope 1 Template
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleTemplateDownload('2')}
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        Scope 2 Template
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleTemplateDownload('3')}
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        Scope 3 Template
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 

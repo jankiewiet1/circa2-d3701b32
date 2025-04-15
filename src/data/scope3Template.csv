@@ -1,0 +1,3 @@
+
+supplier_name,supplier_type,commodity_type,supplier_address,procurement_contact,scope_description,reporting_boundary,reporting_period,activity_data,emission_factor_source,annual_spend,emissions_co2e,date,uncertainty_notes,trend_notes,progress_toward_target,ratio_indicators,additional_notes
+ABC Logistics,Transport,Freight,123 Business St,john@abclog.com,Upstream transportation,Global operations,2024 Q1,Shipping records,GHG Protocol,50000,3.2,2024-01-01,Low uncertainty,Improving,On track,kg CO2e per shipment,New fleet vehicles
