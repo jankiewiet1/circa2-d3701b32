@@ -85,11 +85,13 @@ export default function DataUpload() {
       },
       '2': {
         'energy_type': 'energy_type',
-        'kwh': 'kwh',
+        'kwh': 'kwh',  // Changed from 'amount' to match the database schema
         'emissions_co2e': 'emissions_co2e',
         'date': 'date',
         'supplier': 'supplier',
         'location': 'location',
+        'emission_factor': 'emission_factor_source',
+        'emission_unit': 'ratio_indicators',
       },
       '3': {
         'supplier_name': 'supplier_name',
@@ -166,8 +168,13 @@ export default function DataUpload() {
                 rowData[columnName] = row[index];
               }
             } 
-            // For numeric columns, convert to number if possible
-            else if (['amount', 'emissions_co2e', 'kwh', 'annual_spend'].includes(columnName) && row[index]) {
+            // Special handling for kwh in scope 2 (previously mapped from 'amount')
+            else if (columnName === 'kwh' && row[index]) {
+              const num = parseFloat(row[index]);
+              rowData[columnName] = isNaN(num) ? row[index] : num;
+            }
+            // For other numeric columns, convert to number if possible
+            else if (['amount', 'emissions_co2e', 'annual_spend'].includes(columnName) && row[index]) {
               const num = parseFloat(row[index]);
               rowData[columnName] = isNaN(num) ? row[index] : num;
             } 
