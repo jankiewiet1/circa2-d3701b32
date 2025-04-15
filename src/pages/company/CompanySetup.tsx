@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -101,7 +102,11 @@ export default function CompanySetup() {
               </TabsList>
               
               <TabsContent value="info">
-                <CompanyInfoTab isEditing={isEditing} onSave={handleSave} />
+                <CompanyInfoTab 
+                  isEditing={isEditing} 
+                  onSave={handleSave} 
+                  setIsEditing={setIsEditing} 
+                />
               </TabsContent>
               
               <TabsContent value="team">
