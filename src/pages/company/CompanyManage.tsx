@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, Users, Settings, Pencil, Save, X } from "lucide-react";
+import { Building2, Users, Settings, Save } from "lucide-react";
 import CompanyInfoTab from "./setup/tabs/CompanyInfoTab";
 import CompanyTeamTab from "./setup/tabs/CompanyTeamTab";
 import CompanyPreferencesTab from "./setup/tabs/CompanyPreferencesTab";
@@ -73,27 +72,14 @@ export default function CompanyManage() {
     );
   }
   
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
-
   const handleSave = async () => {
-    // This will be called from the CompanyInfoTab component
-    // when form is successfully submitted
     try {
       await fetchCompanyData();
       toast.success("Company information updated successfully");
-      setIsEditing(false);
     } catch (error) {
       console.error("Error saving company:", error);
       toast.error("Failed to save company information");
     }
-  };
-
-  const handleCancel = () => {
-    setIsEditing(false);
-    // Reset form values to original state by refetching company data
-    fetchCompanyData();
   };
 
   return (
@@ -107,37 +93,14 @@ export default function CompanyManage() {
             </p>
           </div>
           {activeTab === "info" && (
-            <div className="flex gap-2">
-              {!isEditing ? (
-                <Button 
-                  onClick={handleEdit} 
-                  variant="outline" 
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <Pencil className="h-4 w-4" /> Edit Company
-                </Button>
-              ) : (
-                <>
-                  <Button 
-                    type="submit" 
-                    form="company-form"
-                    size="sm" 
-                    className="flex items-center gap-2"
-                  >
-                    <Save className="h-4 w-4" /> Save Changes
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleCancel}
-                    className="flex items-center gap-2"
-                  >
-                    <X className="h-4 w-4" /> Cancel
-                  </Button>
-                </>
-              )}
-            </div>
+            <Button 
+              type="submit" 
+              form="company-form"
+              size="sm" 
+              className="flex items-center gap-2"
+            >
+              <Save className="h-4 w-4" /> Save Changes
+            </Button>
           )}
         </div>
         
@@ -152,12 +115,7 @@ export default function CompanyManage() {
             <Tabs 
               defaultValue="info"
               value={activeTab} 
-              onValueChange={(value) => {
-                setActiveTab(value);
-                if (isEditing) {
-                  setIsEditing(false);
-                }
-              }}
+              onValueChange={setActiveTab}
               className="space-y-6"
             >
               <TabsList className="grid grid-cols-3 w-full">
@@ -177,9 +135,7 @@ export default function CompanyManage() {
               
               <TabsContent value="info">
                 <CompanyInfoTab 
-                  isEditing={isEditing}
                   onSave={handleSave}
-                  setIsEditing={setIsEditing}
                 />
               </TabsContent>
               

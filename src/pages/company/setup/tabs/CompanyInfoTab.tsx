@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -30,12 +29,10 @@ const formSchema = z.object({
 });
 
 interface CompanyInfoTabProps {
-  isEditing: boolean;
   onSave: () => void;
-  setIsEditing: (isEditing: boolean) => void;
 }
 
-export default function CompanyInfoTab({ isEditing, onSave, setIsEditing }: CompanyInfoTabProps) {
+export default function CompanyInfoTab({ onSave }: CompanyInfoTabProps) {
   const { company, updateCompany } = useCompany();
 
   const form = useForm<CompanyFormValues>({
@@ -59,7 +56,6 @@ export default function CompanyInfoTab({ isEditing, onSave, setIsEditing }: Comp
     },
   });
 
-  // Reset form when company data changes or when exiting edit mode
   useEffect(() => {
     if (company) {
       form.reset({
@@ -80,7 +76,7 @@ export default function CompanyInfoTab({ isEditing, onSave, setIsEditing }: Comp
         contact_email: company.contact_email || "",
       });
     }
-  }, [company, form, isEditing]);
+  }, [company, form]);
 
   const onSubmit = async (values: CompanyFormValues) => {
     try {
@@ -94,10 +90,10 @@ export default function CompanyInfoTab({ isEditing, onSave, setIsEditing }: Comp
   return (
     <Form {...form}>
       <form id="company-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <ContactInfoSection form={form} isEditing={isEditing} />
-        <BusinessInfoSection form={form} isEditing={isEditing} />
-        <BankingInfoSection form={form} isEditing={isEditing} />
-        <BillingInfoSection form={form} isEditing={isEditing} />
+        <ContactInfoSection form={form} isEditing={true} />
+        <BusinessInfoSection form={form} isEditing={true} />
+        <BankingInfoSection form={form} isEditing={true} />
+        <BillingInfoSection form={form} isEditing={true} />
       </form>
     </Form>
   );
