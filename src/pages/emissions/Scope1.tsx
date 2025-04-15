@@ -29,7 +29,7 @@ import {
   XAxis, 
   YAxis, 
   CartesianGrid, 
-  Tooltip, 
+  Tooltip as RechartsTooltip, 
   Legend,
   LineChart,
   Line,
@@ -37,23 +37,54 @@ import {
   Pie,
   Cell,
   AreaChart,
-  Area
+  Area,
+  TooltipProps
 } from "recharts";
 import { useCompany } from "@/contexts/CompanyContext";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { ValueType } from "recharts/types/component/DefaultTooltipContent";
 
 // Colors for charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
+// Define a type for emission sources
+interface EmissionSource {
+  name: string;
+  value: number;
+}
+
+// Define a type for our emissions data
+interface EmissionData {
+  id: string;
+  fuel_type: string;
+  source: string;
+  amount: number;
+  unit: string;
+  emissions_co2e: number;
+  date: string;
+  emission_factor: number;
+  emission_unit: string;
+  scope_description?: string;
+  reporting_boundary?: string;
+  reporting_period?: string;
+  activity_data?: string;
+  uncertainty_notes?: string;
+  trend_notes?: string;
+  progress_toward_target?: string;
+  additional_notes?: string;
+  events_affecting_data?: string;
+}
+
 export default function Scope1() {
-  const { userRole, companyId } = useCompany();
+  const { userRole, company } = useCompany();
+  const companyId = company?.id;
   const canEdit = userRole === "admin" || userRole === "editor";
   
   // State for data and filters
-  const [emissionsData, setEmissionsData] = useState([]);
+  const [emissionsData, setEmissionsData] = useState<EmissionData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     dateRange: "last12months",
     fuelType: "all",
@@ -76,22 +107,22 @@ export default function Scope1() {
       setLoading(true);
       try {
         // For demonstration, we'll use sample data if Supabase connection fails
-        const { data, error } = await supabase
+        const { data, error: fetchError } = await supabase
           .from('scope1_emissions')
           .select('*')
           .eq('company_id', companyId);
           
-        if (error) throw error;
+        if (fetchError) throw fetchError;
         
         if (data && data.length > 0) {
-          setEmissionsData(data);
-          calculateSummaryStats(data);
+          setEmissionsData(data as EmissionData[]);
+          calculateSummaryStats(data as EmissionData[]);
         } else {
           // Fallback to mock data
           setEmissionsData(getMockData());
           calculateSummaryStats(getMockData());
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error fetching emissions data:", err);
         setError(err.message);
         // Fallback to mock data
@@ -105,16 +136,17 @@ export default function Scope1() {
     fetchData();
   }, [companyId, filters]);
   
-  const calculateSummaryStats = (data) => {
+  const calculateSummaryStats = (data: EmissionData[]) => {
     if (!data || data.length === 0) return;
     
     // Calculate total emissions
     const totalEmissions = data.reduce((sum, item) => 
-      sum + (parseFloat(item.emissions_co2e) || 0), 0).toFixed(2);
+      sum + (parseFloat(String(item.emissions_co2e)) || 0), 0).toFixed(2);
     
     // Find most used fuel type
-    const fuelTypeCounts = data.reduce((acc, item) => {
-      acc[item.fuel_type] = (acc[item.fuel_type] || 0) + 1;
+    const fuelTypeCounts = data.reduce<Record<string, number>>((acc, item) => {
+      const fuelType = item.fuel_type || 'Unknown';
+      acc[fuelType] = (acc[fuelType] || 0) + 1;
       return acc;
     }, {});
     
@@ -122,8 +154,9 @@ export default function Scope1() {
       fuelTypeCounts[a] > fuelTypeCounts[b] ? a : b, '');
     
     // Find top emission source
-    const sourceEmissions = data.reduce((acc, item) => {
-      acc[item.source] = (acc[item.source] || 0) + (parseFloat(item.emissions_co2e) || 0);
+    const sourceEmissions = data.reduce<Record<string, number>>((acc, item) => {
+      const source = item.source || 'Unknown';
+      acc[source] = (acc[source] || 0) + (parseFloat(String(item.emissions_co2e)) || 0);
       return acc;
     }, {});
     
@@ -134,7 +167,7 @@ export default function Scope1() {
     const changeFromLastYear = 12.5;
     
     setSummaryStats({
-      totalEmissions,
+      totalEmissions: parseFloat(totalEmissions),
       changeFromLastYear,
       topEmissionSource,
       mostUsedFuelType,
@@ -146,7 +179,7 @@ export default function Scope1() {
   const prepareMonthlyData = () => {
     if (!emissionsData.length) return [];
     
-    const monthlyData = emissionsData.reduce((acc, item) => {
+    const monthlyData = emissionsData.reduce<Record<string, { month: string; value: number }>>((acc, item) => {
       const date = item.date ? new Date(item.date) : new Date();
       const month = format(date, 'MMM');
       
@@ -154,7 +187,7 @@ export default function Scope1() {
         acc[month] = { month, value: 0 };
       }
       
-      acc[month].value += parseFloat(item.emissions_co2e) || 0;
+      acc[month].value += parseFloat(String(item.emissions_co2e)) || 0;
       return acc;
     }, {});
     
@@ -164,12 +197,14 @@ export default function Scope1() {
   const prepareFuelTypeData = () => {
     if (!emissionsData.length) return [];
     
-    const fuelTypeData = emissionsData.reduce((acc, item) => {
-      if (!acc[item.fuel_type]) {
-        acc[item.fuel_type] = { name: item.fuel_type, value: 0 };
+    const fuelTypeData = emissionsData.reduce<Record<string, EmissionSource>>((acc, item) => {
+      const fuelType = item.fuel_type || 'Unknown';
+      
+      if (!acc[fuelType]) {
+        acc[fuelType] = { name: fuelType, value: 0 };
       }
       
-      acc[item.fuel_type].value += parseFloat(item.emissions_co2e) || 0;
+      acc[fuelType].value += parseFloat(String(item.emissions_co2e)) || 0;
       return acc;
     }, {});
     
@@ -179,12 +214,14 @@ export default function Scope1() {
   const prepareSourceData = () => {
     if (!emissionsData.length) return [];
     
-    const sourceData = emissionsData.reduce((acc, item) => {
-      if (!acc[item.source]) {
-        acc[item.source] = { name: item.source, value: 0 };
+    const sourceData = emissionsData.reduce<Record<string, EmissionSource>>((acc, item) => {
+      const source = item.source || 'Unknown';
+      
+      if (!acc[source]) {
+        acc[source] = { name: source, value: 0 };
       }
       
-      acc[item.source].value += parseFloat(item.emissions_co2e) || 0;
+      acc[source].value += parseFloat(String(item.emissions_co2e)) || 0;
       return acc;
     }, {});
     
@@ -194,7 +231,7 @@ export default function Scope1() {
   const prepareMonthlyTrendsData = () => {
     if (!emissionsData.length) return [];
     
-    const monthlySourceData = emissionsData.reduce((acc, item) => {
+    const monthlySourceData = emissionsData.reduce<Record<string, Record<string, any>>>((acc, item) => {
       const date = item.date ? new Date(item.date) : new Date();
       const month = format(date, 'MMM');
       const source = item.source || 'Unknown';
@@ -203,15 +240,23 @@ export default function Scope1() {
         acc[month] = { month };
       }
       
-      acc[month][source] = (acc[month][source] || 0) + (parseFloat(item.emissions_co2e) || 0);
+      acc[month][source] = (acc[month][source] || 0) + (parseFloat(String(item.emissions_co2e)) || 0);
       return acc;
     }, {});
     
     return Object.values(monthlySourceData);
   };
 
+  // Format number for tooltip
+  const formatNumberForTooltip = (value: ValueType) => {
+    if (typeof value === 'number') {
+      return value.toFixed(2);
+    }
+    return value;
+  };
+
   // Mock data generator function
-  const getMockData = () => [
+  const getMockData = (): EmissionData[] => [
     { 
       id: '1',
       fuel_type: 'Natural Gas', 
@@ -295,7 +340,7 @@ export default function Scope1() {
   ];
 
   // Handle filter changes
-  const handleFilterChange = (key, value) => {
+  const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
   
@@ -495,7 +540,7 @@ export default function Scope1() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis dataKey="month" />
                     <YAxis unit=" tCO₂e" />
-                    <Tooltip formatter={(value) => [`${value} tCO₂e`, "Emissions"]} />
+                    <RechartsTooltip formatter={(value: ValueType) => [`${formatNumberForTooltip(value)} tCO₂e`, "Emissions"]} />
                     <Legend />
                     <Area type="monotone" dataKey="value" name="Emissions" stroke="#f97316" fill="#fdba74" />
                   </AreaChart>
@@ -529,7 +574,7 @@ export default function Scope1() {
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => [`${value.toFixed(2)} tCO₂e`, "Emissions"]} />
+                    <RechartsTooltip formatter={(value: ValueType) => [`${formatNumberForTooltip(value)} tCO₂e`, "Emissions"]} />
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
@@ -550,7 +595,7 @@ export default function Scope1() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis type="number" unit=" tCO₂e" />
                     <YAxis type="category" dataKey="name" width={120} />
-                    <Tooltip formatter={(value) => [`${value.toFixed(2)} tCO₂e`, "Emissions"]} />
+                    <RechartsTooltip formatter={(value: ValueType) => [`${formatNumberForTooltip(value)} tCO₂e`, "Emissions"]} />
                     <Legend />
                     <Bar dataKey="value" name="Emissions" fill="#8884d8" />
                   </BarChart>
@@ -572,7 +617,7 @@ export default function Scope1() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis dataKey="month" />
                     <YAxis unit=" tCO₂e" />
-                    <Tooltip />
+                    <RechartsTooltip />
                     <Legend />
                     {/* Dynamically generate bars for each source */}
                     {sourceData.map((source, index) => (
