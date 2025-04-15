@@ -5,11 +5,28 @@ import Scope1 from "@/pages/emissions/Scope1";
 import Scope2 from "@/pages/emissions/Scope2";
 import Scope3 from "@/pages/emissions/Scope3";
 import { toast } from "sonner";
+import { useRouteError } from "react-router-dom";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
-// Show notification if data loading errors occur
-const handleRouteError = (err: Error) => {
-  toast.error(`Data loading error: ${err.message}`);
-  console.error('Route error:', err);
+// Error boundary component for route errors
+const RouteErrorBoundary = () => {
+  const error = useRouteError() as Error;
+  
+  // Show notification if data loading errors occur
+  React.useEffect(() => {
+    toast.error(`Data loading error: ${error?.message || 'Unknown error'}`);
+    console.error('Route error:', error);
+  }, [error]);
+  
+  return (
+    <div className="p-6">
+      <Alert variant="destructive">
+        <AlertDescription>
+          Error loading data: {error?.message || 'Unknown error'}. Please try again later.
+        </AlertDescription>
+      </Alert>
+    </div>
+  );
 };
 
 export const emissionRoutes = (
@@ -21,7 +38,7 @@ export const emissionRoutes = (
           <Scope1 />
         </ProtectedRoute>
       }
-      errorElement={handleRouteError}
+      errorElement={<RouteErrorBoundary />}
     />
     <Route
       path="/emissions/scope2"
@@ -30,7 +47,7 @@ export const emissionRoutes = (
           <Scope2 />
         </ProtectedRoute>
       }
-      errorElement={handleRouteError}
+      errorElement={<RouteErrorBoundary />}
     />
     <Route
       path="/emissions/scope3"
@@ -39,7 +56,7 @@ export const emissionRoutes = (
           <Scope3 />
         </ProtectedRoute>
       }
-      errorElement={handleRouteError}
+      errorElement={<RouteErrorBoundary />}
     />
   </>
 );
