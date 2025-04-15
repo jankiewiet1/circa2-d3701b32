@@ -8,28 +8,16 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useForm } from "react-hook-form";
-import { toast } from "@/components/ui/sonner";
 import { 
   Bell, 
   Globe, 
-  PieChart, 
   Shield, 
-  Clock,
-  Calendar,
-  Languages,
-  Palette,
-  DollarSign,
   Lock,
   Users,
-  AlertTriangle,
-  CheckCircle,
   Loader2
 } from "lucide-react";
+import { toast } from "@/components/ui/sonner";
 
 export default function Settings() {
   const { loading: companyLoading, userRole } = useCompany();
@@ -43,37 +31,6 @@ export default function Settings() {
   const [loadingAdmin, setLoadingAdmin] = useState(false);
   
   const loading = companyLoading || settingsLoading;
-  
-  const displayForm = useForm({
-    defaultValues: {
-      theme: settings?.theme || "system",
-      language: settings?.language || "en",
-      timezone: settings?.timezone || "Europe/Amsterdam",
-      date_format: settings?.date_format || "YYYY-MM-DD",
-      preferred_currency: settings?.preferred_currency || "EUR"
-    }
-  });
-
-  React.useEffect(() => {
-    if (settings) {
-      displayForm.reset({
-        theme: settings.theme,
-        language: settings.language,
-        timezone: settings.timezone,
-        date_format: settings?.date_format,
-        preferred_currency: settings?.preferred_currency
-      });
-    }
-  }, [settings]);
-
-  const adminForm = useForm({
-    defaultValues: {
-      lock_team_changes: false,
-      require_reviewer: false,
-      audit_logging_enabled: true,
-      default_member_role: "viewer"
-    }
-  });
 
   const handleNotificationsSubmit = async () => {
     if (!user?.id) return;
@@ -85,78 +42,15 @@ export default function Settings() {
         receive_deadline_notifications: settings?.receive_deadline_notifications,
         receive_newsletter: settings?.receive_newsletter
       });
+      toast.success('Notification preferences updated successfully');
     } catch (error) {
       console.error(error);
+      toast.error('Failed to update notification preferences');
     } finally {
       setLoadingNotifications(false);
     }
   };
 
-  const handleDisplaySubmit = async (data: any) => {
-    if (!user?.id) return;
-    
-    setLoadingDisplay(true);
-    try {
-      const validTheme = 
-        data.theme === 'light' || data.theme === 'dark' || data.theme === 'system' 
-          ? data.theme as 'light' | 'dark' | 'system'
-          : 'system';
-
-      await updateSettings({
-        theme: validTheme,
-        language: data.language,
-        timezone: data.timezone,
-        date_format: data.date_format,
-        preferred_currency: data.preferred_currency
-      });
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoadingDisplay(false);
-    }
-  };
-
-  const handleAdminSubmit = async (data: any) => {
-    if (!user?.id || !isAdmin) return;
-    
-    setLoadingAdmin(true);
-    try {
-      await updateSettings({
-        lock_team_changes: data.lock_team_changes,
-        require_reviewer: data.require_reviewer,
-        audit_logging_enabled: data.audit_logging_enabled,
-        default_member_role: data.default_member_role
-      });
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoadingAdmin(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <MainLayout>
-        <div className="max-w-3xl space-y-6">
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-4 w-64" />
-          </div>
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-24" />
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </CardContent>
-          </Card>
-        </div>
-      </MainLayout>
-    );
-  }
-  
   return (
     <MainLayout>
       <div className="max-w-3xl">
@@ -199,7 +93,9 @@ export default function Settings() {
                     <Switch 
                       id="upload-alerts"
                       checked={settings?.receive_upload_alerts}
-                      onCheckedChange={(checked) => updateSettings({ receive_upload_alerts: checked })}
+                      onCheckedChange={(checked) => {
+                        updateSettings({ receive_upload_alerts: checked });
+                      }}
                     />
                   </div>
                   
@@ -211,7 +107,9 @@ export default function Settings() {
                     <Switch 
                       id="deadline-notifications"
                       checked={settings?.receive_deadline_notifications}
-                      onCheckedChange={(checked) => updateSettings({ receive_deadline_notifications: checked })}
+                      onCheckedChange={(checked) => {
+                        updateSettings({ receive_deadline_notifications: checked });
+                      }}
                     />
                   </div>
                   
@@ -223,7 +121,9 @@ export default function Settings() {
                     <Switch 
                       id="newsletter"
                       checked={settings?.receive_newsletter}
-                      onCheckedChange={(checked) => updateSettings({ receive_newsletter: checked })}
+                      onCheckedChange={(checked) => {
+                        updateSettings({ receive_newsletter: checked });
+                      }}
                     />
                   </div>
                 </div>
