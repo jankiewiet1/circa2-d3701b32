@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -5,16 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfileSettings } from '@/hooks/useProfileSettings';
-import { UserPreferences } from '@/types';
 import { 
   UserRound, 
   Lock, 
-  Settings, 
   Loader2, 
   Mail, 
   Phone, 
@@ -41,12 +38,10 @@ export default function ProfilePage() {
   const { user } = useAuth();
   const { 
     profile, 
-    preferences, 
     loading, 
     isEditing,
     toggleEditMode,
     updateProfile, 
-    updatePreferences,
     changePassword
   } = useProfileSettings(user);
   const { company } = useCompany();
@@ -57,9 +52,6 @@ export default function ProfilePage() {
     phone_number: '',
     job_title: '',
     department: '',
-    receive_deadline_notifications: false,
-    receive_upload_alerts: false,
-    receive_newsletter: false,
   });
 
   // Password change state
@@ -78,35 +70,18 @@ export default function ProfilePage() {
         phone_number: profile.phone_number || '',
         job_title: profile.job_title || '',
         department: profile.department || '',
-        receive_deadline_notifications: profile.receive_deadline_notifications || false,
-        receive_upload_alerts: profile.receive_upload_alerts || false,
-        receive_newsletter: profile.receive_newsletter || false,
       });
     }
   }, [profile]);
 
   const getInitials = () => {
-    if (!user?.profile) return 'U';
-    return `${user.profile.first_name?.[0] || ''}${user.profile.last_name?.[0] || ''}`;
+    if (!profile) return 'U';
+    return `${profile.first_name?.[0] || ''}${profile.last_name?.[0] || ''}`;
   };
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await updateProfile(localProfile);
-  };
-
-  const handlePreferencesSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Ensure theme is one of the allowed values
-    const theme = validateTheme(preferences?.theme);
-    
-    await updatePreferences({
-      language: preferences?.language || 'en',
-      timezone: preferences?.timezone || 'Europe/Amsterdam',
-      theme: theme,
-      user_id: user?.id || ''
-    });
   };
 
   // Password change handler
@@ -139,14 +114,6 @@ export default function ProfilePage() {
     }
   };
 
-  // Helper function to validate theme
-  const validateTheme = (theme?: string | null): UserPreferences['theme'] => {
-    if (theme === 'light' || theme === 'dark' || theme === 'system') {
-      return theme;
-    }
-    return 'system'; // Default fallback
-  };
-
   if (loading) {
     return (
       <MainLayout>
@@ -161,15 +128,12 @@ export default function ProfilePage() {
     <MainLayout>
       <div className="max-w-4xl mx-auto space-y-6 p-6">
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <UserRound className="h-4 w-4" /> Profile
             </TabsTrigger>
             <TabsTrigger value="security" className="flex items-center gap-2">
               <Lock className="h-4 w-4" /> Security
-            </TabsTrigger>
-            <TabsTrigger value="preferences" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" /> Preferences
             </TabsTrigger>
           </TabsList>
 
@@ -342,72 +306,6 @@ export default function ProfilePage() {
                     Change Password
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="preferences">
-            <Card>
-              <CardHeader>
-                <CardTitle>User Preferences</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handlePreferencesSubmit} className="space-y-6">
-                  <div className="space-y-2">
-                    <Label>Language</Label>
-                    <Select 
-                      value={preferences?.language || 'en'}
-                      onValueChange={(value) => updatePreferences({ language: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Language" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="en">English</SelectItem>
-                        <SelectItem value="es">Spanish</SelectItem>
-                        <SelectItem value="fr">French</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Timezone</Label>
-                    <Select 
-                      value={preferences?.timezone || 'Europe/Amsterdam'}
-                      onValueChange={(value) => updatePreferences({ timezone: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Timezone" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Europe/Amsterdam">Amsterdam</SelectItem>
-                        <SelectItem value="America/New_York">New York</SelectItem>
-                        <SelectItem value="Asia/Tokyo">Tokyo</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Theme</Label>
-                    <Select 
-                      value={validateTheme(preferences?.theme)}
-                      onValueChange={(value: 'light' | 'dark' | 'system') => updatePreferences({ theme: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Theme" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="system">System</SelectItem>
-                        <SelectItem value="light">Light</SelectItem>
-                        <SelectItem value="dark">Dark</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <Button type="submit" className="w-full">
-                    Save Preferences
-                  </Button>
-                </form>
               </CardContent>
             </Card>
           </TabsContent>

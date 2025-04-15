@@ -31,21 +31,21 @@ export const Sidebar = () => {
     <aside 
       className={cn(
         "bg-circa-green-dark text-white transition-all duration-300 ease-in-out",
-        isExpanded ? "w-[187px]" : "w-[60px]",
-        "h-full flex flex-col group/sidebar hover:w-[187px]"
+        isExpanded ? "w-[220px]" : "w-[60px]",
+        "h-full flex flex-col group/sidebar hover:w-[220px]"
       )}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
     >
       {/* Logo */}
-      <div className="p-4 flex items-center">
-        <Link to="/dashboard" className="text-xl font-bold flex items-center">
+      <div className="p-4 flex items-center justify-center">
+        <Link to="/dashboard" className="flex items-center">
           <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center relative overflow-hidden">
             <Leaf className="h-5 w-5 text-circa-green-dark transition-transform group-hover:scale-110" />
           </div>
           <span className={cn(
             "text-lg ml-2 transition-all duration-300",
-            isExpanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 hidden"
+            isExpanded ? "opacity-100 translate-x-0" : "opacity-0 absolute -translate-x-4 pointer-events-none"
           )}>
             Circa
           </span>
@@ -53,15 +53,15 @@ export const Sidebar = () => {
       </div>
       
       {/* Navigation */}
-      <nav className="flex-1 px-2 space-y-1">
+      <nav className="flex-1 px-2 py-4 space-y-1">
         <NavLink to="/dashboard" icon={<LayoutDashboard size={18} />} label="Dashboard" isExpanded={isExpanded} />
         <NavLink to="/reports" icon={<FileText size={18} />} label="Reports" isExpanded={isExpanded} />
         <NavLink to="/data-upload" icon={<Upload size={18} />} label="Data Upload" isExpanded={isExpanded} />
         
-        <div className="pt-2 pb-1">
+        <div className="pt-4 pb-1">
           <div className={cn(
-            "px-3 text-xs font-medium text-white/60 transition-opacity duration-300",
-            isExpanded ? "opacity-100" : "opacity-0"
+            "px-3 text-xs font-medium text-white/60 transition-all duration-300",
+            isExpanded ? "opacity-100" : "opacity-0 hidden"
           )}>
             Emissions
           </div>
@@ -71,10 +71,10 @@ export const Sidebar = () => {
         <NavLink to="/emissions/scope2" icon={<Wind size={18} />} label="Scope 2" isExpanded={isExpanded} />
         <NavLink to="/emissions/scope3" icon={<Truck size={18} />} label="Scope 3" isExpanded={isExpanded} />
         
-        <div className="pt-2 pb-1">
+        <div className="pt-4 pb-1">
           <div className={cn(
-            "px-3 text-xs font-medium text-white/60 transition-opacity duration-300",
-            isExpanded ? "opacity-100" : "opacity-0"
+            "px-3 text-xs font-medium text-white/60 transition-all duration-300",
+            isExpanded ? "opacity-100" : "opacity-0 hidden"
           )}>
             Settings
           </div>
@@ -95,15 +95,15 @@ export const Sidebar = () => {
         <NavLink to="/help" icon={<HelpCircle size={18} />} label="Help" isExpanded={isExpanded} />
         <button 
           className={cn(
-            "w-full flex items-center px-4 py-2.5 text-sm font-medium text-white/90 hover:bg-white/10 hover:text-white rounded-md",
-            "transition-all duration-300"
+            "w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-md",
+            "transition-all duration-300 text-white/80 hover:bg-white/10 hover:text-white"
           )}
           onClick={() => signOut()}
         >
-          <LogOut size={18} className="text-white/70" />
+          <LogOut size={18} />
           <span className={cn(
             "ml-3 transition-all duration-300",
-            isExpanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 hidden"
+            isExpanded ? "opacity-100 translate-x-0" : "opacity-0 absolute -translate-x-4 pointer-events-none"
           )}>
             Sign Out
           </span>
@@ -125,14 +125,14 @@ const NavLink = ({ to, icon, label, isExpanded }: NavLinkProps) => {
     <Link
       to={to}
       className={cn(
-        "flex items-center px-4 py-2.5 text-sm font-medium text-white/90 hover:bg-white/10 hover:text-white rounded-md",
-        "transition-all duration-300"
+        "flex items-center px-4 py-2.5 text-sm font-medium rounded-md",
+        "transition-all duration-300 text-white/80 hover:bg-white/10 hover:text-white"
       )}
     >
-      <span className="text-white/70">{icon}</span>
+      <span className="flex-shrink-0">{icon}</span>
       <span className={cn(
-        "ml-3 transition-all duration-300",
-        isExpanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 hidden"
+        "ml-3 transition-all duration-300 whitespace-nowrap",
+        isExpanded ? "opacity-100 translate-x-0" : "opacity-0 absolute -translate-x-4 pointer-events-none"
       )}>
         {label}
       </span>
