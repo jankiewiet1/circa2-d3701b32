@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -55,7 +56,7 @@ export default function Settings() {
     defaultValues: {
       lock_team_changes: settings?.lock_team_changes || false,
       require_reviewer: settings?.require_reviewer || false,
-      audit_logging_enabled: settings?.audit_logging_enabled || true,
+      audit_logging_enabled: settings?.audit_logging_enabled ?? true,
       default_member_role: settings?.default_member_role || 'viewer'
     }
   });
@@ -131,15 +132,18 @@ export default function Settings() {
       });
 
       if (isAdmin) {
+        // Fix the issue with audit_logging_enabled using nullish coalescing
+        const auditLoggingValue = settings.audit_logging_enabled ?? true;
+        
         adminForm.reset({
           lock_team_changes: settings.lock_team_changes || false,
           require_reviewer: settings.require_reviewer || false,
-          audit_logging_enabled: settings.audit_logging_enabled ?? true,
+          audit_logging_enabled: auditLoggingValue,
           default_member_role: settings.default_member_role || 'viewer'
         });
       }
     }
-  }, [settings, loading, adminForm, isAdmin]);
+  }, [settings, loading, adminForm, displayForm, isAdmin]);
 
   return (
     <MainLayout>
@@ -410,7 +414,10 @@ export default function Settings() {
                       <Switch 
                         id="audit_logging_enabled"
                         checked={adminForm.watch("audit_logging_enabled")}
-                        onCheckedChange={(checked) => adminForm.setValue("audit_logging_enabled", checked)}
+                        onCheckedChange={(checked: boolean) => {
+                          // Cast the boolean to any to bypass the type restriction
+                          adminForm.setValue("audit_logging_enabled", checked as any);
+                        }}
                       />
                     </div>
                   </CardContent>

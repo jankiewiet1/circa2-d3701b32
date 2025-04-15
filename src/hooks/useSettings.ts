@@ -45,10 +45,19 @@ export const useSettings = (userId: string | undefined) => {
       // Ensure theme is a valid type
       const validTheme = validateTheme(data.theme);
       
-      setSettings({
+      // Ensure all boolean settings have proper boolean values
+      const sanitizedSettings = {
         ...data,
-        theme: validTheme
-      });
+        theme: validTheme,
+        receive_upload_alerts: data.receive_upload_alerts ?? true,
+        receive_deadline_notifications: data.receive_deadline_notifications ?? true,
+        receive_newsletter: data.receive_newsletter ?? false,
+        lock_team_changes: data.lock_team_changes ?? false,
+        require_reviewer: data.require_reviewer ?? false,
+        audit_logging_enabled: data.audit_logging_enabled ?? true
+      };
+      
+      setSettings(sanitizedSettings);
     } catch (error) {
       console.error('Error fetching settings:', error);
       toast.error('Failed to load settings');
