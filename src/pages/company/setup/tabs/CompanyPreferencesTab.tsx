@@ -1,10 +1,11 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useToast } from "@/hooks/use-toast";
-import { useCompany } from "@/contexts/CompanyContext";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/sonner";
+import { useCompany } from "@/contexts/CompanyContext";
 import {
   Form,
   FormControl,
@@ -20,18 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Save } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { fetchCompanyPreferences, updateCompanyPreferences } from "@/services/companyPreferencesService";
-
-const formSchema = z.object({
-  preferred_currency: z.string().min(1, "Currency is required"),
-  fiscal_year_start_month: z.string().min(1, "Fiscal year start month is required"),
-  reporting_frequency: z.string().min(1, "Reporting frequency is required"),
-  language: z.string().min(1, "Language is required"),
-  timezone: z.string().min(1, "Timezone is required"),
-});
-
-type FormValues = z.infer<typeof formSchema>;
 
 const currencies = [
   { value: "EUR", label: "Euro (€)" },
@@ -77,157 +68,136 @@ const timezones = [
   { value: "Australia/Sydney", label: "Sydney (UTC+10/+11)" },
 ];
 
-export default function CompanyPreferencesTab() {
-  const { toast } = useToast();
-  const { company } = useCompany();
+const formSchema = z.object({
+  preferredCurrency: z.string().min(1, "Currency is required"),
+  fiscalYearStartMonth: z.string().min(1, "Fiscal year start month is required"),
+  reportingFrequency: z.string().min(1, "Reporting frequency is required"),
+  language: z.string().min(1, "Language is required"),
+  timezone: z.string().optional(),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+const CompanyPreferencesTab = () => {
+  const { company, fetchCompanyData } = useCompany();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [preferences, setPreferences] = useState<any>(null);
+  const companyId = company?.id;
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      preferred_currency: preferences?.preferred_currency || "EUR",
-      fiscal_year_start_month: preferences?.fiscal_year_start_month || "1",
-      reporting_frequency: preferences?.reporting_frequency || "monthly",
-      language: preferences?.language || "en",
-      timezone: preferences?.timezone || "Europe/Amsterdam",
+      preferredCurrency: "EUR",
+      fiscalYearStartMonth: "1",
+      reportingFrequency: "monthly",
+      language: "en",
+      timezone: "Europe/Amsterdam",
     },
   });
 
-  useEffect(() => {
-    if (company?.id) {
-      fetchCompanyPreferences(company.id).then(({ data }) => {
-        if (data) {
-          setPreferences(data);
-          form.reset({
-            preferred_currency: data.preferred_currency,
-            fiscal_year_start_month: data.fiscal_year_start_month,
-            reporting_frequency: data.reporting_frequency,
-            language: data.language,
-            timezone: data.timezone,
-          });
-        }
-      });
+  const loadCompanyPreferences = async () => {
+    if (companyId) {
+      const { data, error } = await fetchCompanyPreferences(companyId);
+      if (data) {
+        setPreferences(data);
+        form.reset({
+          preferredCurrency: data.preferred_currency || "EUR",
+          fiscalYearStartMonth: data.fiscal_year_start_month || "1",
+          reportingFrequency: data.reporting_frequency || "monthly",
+          language: data.language || "en",
+          timezone: data.timezone || "Europe/Amsterdam",
+        });
+      } else if (error) {
+        console.error("Error loading company preferences:", error);
+        toast.error("Failed to load company preferences");
+      }
     }
-  }, [company?.id]);
+  };
+
+  useEffect(() => {
+    loadCompanyPreferences();
+  }, [companyId]);
 
   const onSubmit = async (data: FormValues) => {
-    if (!company?.id) return;
+    if (!companyId) {
+      toast.error("Company ID not found");
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
-      const { error } = await updateCompanyPreferences(company.id, {
-        preferred_currency: data.preferred_currency,
-        fiscal_year_start_month: data.fiscal_year_start_month,
-        reporting_frequency: data.reporting_frequency,
+      const { error } = await updateCompanyPreferences(companyId, {
+        preferred_currency: data.preferredCurrency,
+        fiscal_year_start_month: data.fiscalYearStartMonth,
+        reporting_frequency: data.reportingFrequency,
         language: data.language,
         timezone: data.timezone,
       });
       
-      if (!error) {
-        toast({
-          title: "Success",
-          description: "Company preferences have been saved successfully",
-        });
-        const { data: newPreferences } = await fetchCompanyPreferences(company.id);
-        if (newPreferences) {
-          setPreferences(newPreferences);
-        }
+      if (error) {
+        throw error;
       }
+      
+      // Refresh company data to get updated preferences
+      await fetchCompanyData();
+      
+      toast.success("Company preferences updated successfully");
     } catch (error) {
       console.error("Error saving preferences:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save company preferences",
-        variant: "destructive",
-      });
+      toast.error("Failed to save company preferences");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium">Company Preferences</h3>
-        <p className="text-sm text-muted-foreground">
-          Set your reporting and display preferences
-        </p>
-      </div>
-      
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div>
-            <h4 className="text-md font-medium mb-2">Reporting Preferences</h4>
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="preferred_currency"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Preferred Currency</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select currency" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {currencies.map((currency) => (
-                            <SelectItem key={currency.value} value={currency.value}>
-                              {currency.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="fiscal_year_start_month"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Fiscal Year Start</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select month" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {months.map((month) => (
-                            <SelectItem key={month.value} value={month.value}>
-                              {month.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <Card>
+          <CardContent className="pt-6 space-y-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <FormField
                 control={form.control}
-                name="reporting_frequency"
+                name="preferredCurrency"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Reporting Frequency</FormLabel>
+                    <FormLabel>Preferred Currency</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select reporting frequency" />
+                          <SelectValue placeholder="Select currency" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {reportingFrequencies.map((frequency) => (
-                          <SelectItem key={frequency.value} value={frequency.value}>
-                            {frequency.label}
+                        {currencies.map((currency) => (
+                          <SelectItem key={currency.value} value={currency.value}>
+                            {currency.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="fiscalYearStartMonth"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Fiscal Year Start</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select month" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {months.map((month) => (
+                          <SelectItem key={month.value} value={month.value}>
+                            {month.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -237,10 +207,32 @@ export default function CompanyPreferencesTab() {
                 )}
               />
             </div>
-          </div>
-          
-          <div>
-            <h4 className="text-md font-medium mb-2">Display Preferences</h4>
+            
+            <FormField
+              control={form.control}
+              name="reportingFrequency"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Reporting Frequency</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select reporting frequency" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {reportingFrequencies.map((frequency) => (
+                        <SelectItem key={frequency.value} value={frequency.value}>
+                          {frequency.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <FormField
                 control={form.control}
@@ -292,29 +284,21 @@ export default function CompanyPreferencesTab() {
                 )}
               />
             </div>
-          </div>
-          
-          <div className="flex justify-end">
-            <Button
-              type="submit"
-              className="bg-circa-green hover:bg-circa-green-dark"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Preferences
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
-      </Form>
-    </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex justify-end">
+          <Button
+            type="submit"
+            className="bg-circa-green hover:bg-circa-green-dark"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Saving..." : "Save Preferences"}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
-}
+};
+
+export default CompanyPreferencesTab;

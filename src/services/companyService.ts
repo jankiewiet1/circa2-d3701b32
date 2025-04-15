@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Company, CompanyMember, UserRole } from "@/types";
 
@@ -31,11 +32,6 @@ export const fetchCompanyDataService = async (userId: string) => {
           contact_name,
           contact_title,
           contact_email,
-          preferred_currency,
-          fiscal_year_start_month,
-          reporting_frequency,
-          language,
-          timezone,
           setup_completed
         )
       `)
@@ -50,6 +46,29 @@ export const fetchCompanyDataService = async (userId: string) => {
     console.log("Member data received:", memberData);
     
     if (memberData?.company) {
+      const companyId = memberData.company.id;
+      
+      // Get company preferences
+      const { data: preferences, error: preferencesError } = await supabase
+        .from('company_preferences')
+        .select('*')
+        .eq('company_id', companyId)
+        .maybeSingle();
+      
+      if (preferencesError) {
+        console.error("Error fetching company preferences:", preferencesError);
+      }
+      
+      // Merge company data with preferences
+      const companyWithPreferences = {
+        ...memberData.company,
+        preferred_currency: preferences?.preferred_currency,
+        fiscal_year_start_month: preferences?.fiscal_year_start_month,
+        reporting_frequency: preferences?.reporting_frequency,
+        language: preferences?.language,
+        timezone: preferences?.timezone
+      };
+      
       // Get all members of the company
       const { data: allMembers, error: membersError } = await supabase
         .from('company_members')
@@ -59,7 +78,7 @@ export const fetchCompanyDataService = async (userId: string) => {
           role, 
           company_id
         `)
-        .eq('company_id', memberData.company.id);
+        .eq('company_id', companyId);
       
       if (membersError) {
         console.error("Members list error:", membersError);
@@ -114,7 +133,7 @@ export const fetchCompanyDataService = async (userId: string) => {
       }) || [];
       
       return {
-        company: memberData.company,
+        company: companyWithPreferences,
         members: processedMembers,
         userRole: memberData.role as UserRole,
         error: null
@@ -197,25 +216,57 @@ export const updateCompanyService = async (companyId: string, data: Partial<Comp
       throw new Error("Company ID is required to update a company");
     }
     
-    // Remove preference-related fields from the update
+    // Extract preference-related fields from the update data
     const {
       preferred_currency,
       fiscal_year_start_month,
       reporting_frequency,
+      language,
+      timezone,
       ...companyData
     } = data;
     
-    const { error } = await supabase
-      .from('companies')
-      .update({
-        ...companyData,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', companyId);
+    // Update company data
+    if (Object.keys(companyData).length > 0) {
+      const { error } = await supabase
+        .from('companies')
+        .update({
+          ...companyData,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', companyId);
+      
+      if (error) {
+        console.error("Error updating company:", error);
+        throw error;
+      }
+    }
     
-    if (error) {
-      console.error("Error updating company:", error);
-      throw error;
+    // Update preferences if any preference fields are provided
+    const preferenceFields = { preferred_currency, fiscal_year_start_month, reporting_frequency, language, timezone };
+    const hasPreferenceUpdates = Object.values(preferenceFields).some(value => value !== undefined);
+    
+    if (hasPreferenceUpdates) {
+      // Filter out undefined values
+      const preferencesToUpdate = Object.entries(preferenceFields)
+        .filter(([_, value]) => value !== undefined)
+        .reduce((obj, [key, value]) => {
+          obj[key] = value;
+          return obj;
+        }, {} as Record<string, any>);
+      
+      const { error } = await supabase
+        .from('company_preferences')
+        .upsert({
+          company_id: companyId,
+          ...preferencesToUpdate,
+          updated_at: new Date().toISOString(),
+        });
+      
+      if (error) {
+        console.error("Error updating company preferences:", error);
+        throw error;
+      }
     }
     
     console.log("Company updated successfully");
