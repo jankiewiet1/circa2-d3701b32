@@ -1,10 +1,11 @@
+
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { useCompany } from "@/contexts/CompanyContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building2, Users, Settings, AlertCircle, Pencil, Save, X } from "lucide-react";
+import { Building2, Users, Settings, AlertCircle, Save } from "lucide-react";
 import CompanyInfoTab from "./setup/tabs/CompanyInfoTab";
 import CompanyTeamTab from "./setup/tabs/CompanyTeamTab";
 import CompanyPreferencesTab from "./setup/tabs/CompanyPreferencesTab";
@@ -17,7 +18,6 @@ export default function CompanySetup() {
   const { company, loading, error, fetchCompanyData } = useCompany();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("info");
-  const [isEditing, setIsEditing] = useState(true); // Default to editing mode for setup
   
   useEffect(() => {
     // If the user already has completed the setup, redirect to dashboard
@@ -34,16 +34,10 @@ export default function CompanySetup() {
     try {
       await fetchCompanyData();
       toast.success("Company information updated successfully");
-      // Don't set isEditing to false in setup mode
-      // We want to keep the form editable during setup
     } catch (error) {
       console.error("Error saving company:", error);
       toast.error("Failed to save company information");
     }
-  };
-  
-  const toggleEditMode = () => {
-    setIsEditing(!isEditing);
   };
   
   if (loading) {
@@ -73,35 +67,14 @@ export default function CompanySetup() {
             </div>
             {activeTab === "info" && (
               <div className="flex gap-2">
-                {isEditing ? (
-                  <>
-                    <Button 
-                      type="submit" 
-                      form="company-form"
-                      size="sm" 
-                      className="flex items-center gap-2"
-                    >
-                      <Save className="h-4 w-4" /> Save
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={toggleEditMode}
-                      className="flex items-center gap-2"
-                    >
-                      <X className="h-4 w-4" /> Cancel
-                    </Button>
-                  </>
-                ) : (
-                  <Button 
-                    onClick={toggleEditMode} 
-                    variant="outline" 
-                    size="sm"
-                    className="flex items-center gap-2"
-                  >
-                    <Pencil className="h-4 w-4" /> Edit Company
-                  </Button>
-                )}
+                <Button 
+                  type="submit" 
+                  form="company-form"
+                  size="sm" 
+                  className="flex items-center gap-2"
+                >
+                  <Save className="h-4 w-4" /> Save
+                </Button>
               </div>
             )}
           </div>
@@ -149,11 +122,7 @@ export default function CompanySetup() {
               </TabsList>
               
               <TabsContent value="info">
-                <CompanyInfoTab 
-                  isEditing={isEditing} 
-                  onSave={handleSave} 
-                  setIsEditing={setIsEditing} 
-                />
+                <CompanyInfoTab onSave={handleSave} />
               </TabsContent>
               
               <TabsContent value="team">

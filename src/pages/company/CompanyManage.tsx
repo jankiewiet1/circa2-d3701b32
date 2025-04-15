@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,7 +17,6 @@ export default function CompanyManage() {
   const { user } = useAuth();
   const { company, loading, fetchCompanyData } = useCompany();
   const [activeTab, setActiveTab] = useState("info");
-  const [isEditing, setIsEditing] = useState(false);
   
   if (loading) {
     return (
@@ -134,9 +134,7 @@ export default function CompanyManage() {
               </TabsList>
               
               <TabsContent value="info">
-                <CompanyInfoTab 
-                  onSave={handleSave}
-                />
+                <CompanyInfoTab onSave={handleSave} />
               </TabsContent>
               
               <TabsContent value="team">
