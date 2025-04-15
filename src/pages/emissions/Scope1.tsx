@@ -55,16 +55,19 @@ interface EmissionSource {
 }
 
 // Define a type for our emissions data
+// Updated to match the actual structure from Supabase
 interface EmissionData {
   id: string;
-  fuel_type: string;
-  source: string;
-  amount: number;
-  unit: string;
-  emissions_co2e: number;
-  date: string;
-  emission_factor: number;
-  emission_unit: string;
+  fuel_type?: string;
+  source?: string;
+  amount?: number;
+  unit?: string;
+  emissions_co2e?: number;
+  date?: string;
+  emission_factor_source?: string; // Changed from emission_factor to match DB
+  company_id?: string;
+  created_at?: string;
+  uploaded_by?: string;
   scope_description?: string;
   reporting_boundary?: string;
   reporting_period?: string;
@@ -74,6 +77,7 @@ interface EmissionData {
   progress_toward_target?: string;
   additional_notes?: string;
   events_affecting_data?: string;
+  ratio_indicators?: string;
 }
 
 export default function Scope1() {
@@ -115,8 +119,8 @@ export default function Scope1() {
         if (fetchError) throw fetchError;
         
         if (data && data.length > 0) {
-          setEmissionsData(data as EmissionData[]);
-          calculateSummaryStats(data as EmissionData[]);
+          setEmissionsData(data);
+          calculateSummaryStats(data);
         } else {
           // Fallback to mock data
           setEmissionsData(getMockData());
@@ -135,6 +139,14 @@ export default function Scope1() {
     
     fetchData();
   }, [companyId, filters]);
+  
+  // Helper function to safely format numeric values for tooltips
+  const formatNumberForTooltip = (value: ValueType) => {
+    if (typeof value === 'number') {
+      return value.toFixed(2);
+    }
+    return value;
+  };
   
   const calculateSummaryStats = (data: EmissionData[]) => {
     if (!data || data.length === 0) return;
@@ -247,14 +259,6 @@ export default function Scope1() {
     return Object.values(monthlySourceData);
   };
 
-  // Format number for tooltip
-  const formatNumberForTooltip = (value: ValueType) => {
-    if (typeof value === 'number') {
-      return value.toFixed(2);
-    }
-    return value;
-  };
-
   // Mock data generator function
   const getMockData = (): EmissionData[] => [
     { 
@@ -265,8 +269,7 @@ export default function Scope1() {
       unit: 'kg',
       emissions_co2e: 2.5, 
       date: '2024-01-01',
-      emission_factor: 2.3,
-      emission_unit: 'kg CO2e per kg',
+      emission_factor_source: 'Standard emission factors',
       scope_description: 'Direct emissions from natural gas',
       reporting_boundary: 'Main office building',
       reporting_period: '2024 Q1',
@@ -285,8 +288,7 @@ export default function Scope1() {
       unit: 'liters',
       emissions_co2e: 3.2, 
       date: '2024-01-15',
-      emission_factor: 2.7,
-      emission_unit: 'kg CO2e per liter',
+      emission_factor_source: 'Standard emission factors',
       scope_description: 'Direct emissions from vehicles',
       reporting_boundary: 'Company fleet',
       reporting_period: '2024 Q1',
@@ -305,8 +307,7 @@ export default function Scope1() {
       unit: 'liters',
       emissions_co2e: 2.8, 
       date: '2024-02-01',
-      emission_factor: 2.3,
-      emission_unit: 'kg CO2e per liter',
+      emission_factor_source: 'Standard emission factors',
       scope_description: 'Direct emissions from vehicles',
       reporting_boundary: 'Company fleet',
       reporting_period: '2024 Q1',
@@ -325,8 +326,7 @@ export default function Scope1() {
       unit: 'kg',
       emissions_co2e: 4.6, 
       date: '2024-03-01',
-      emission_factor: 2.3,
-      emission_unit: 'kg CO2e per kg',
+      emission_factor_source: 'Standard emission factors',
       scope_description: 'Direct emissions from manufacturing',
       reporting_boundary: 'Factory',
       reporting_period: '2024 Q1',
