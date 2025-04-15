@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -102,8 +103,14 @@ export default function Settings() {
     
     setLoadingDisplay(true);
     try {
+      // Explicitly validate and cast the theme
+      const validTheme = 
+        data.theme === 'light' || data.theme === 'dark' || data.theme === 'system' 
+          ? data.theme 
+          : 'system'; // Default to system if invalid
+
       await updatePreferences({
-        theme: data.theme as "light" | "dark" | "system",
+        theme: validTheme,
         language: data.language,
         timezone: data.timezone,
         date_format: data.date_format,
