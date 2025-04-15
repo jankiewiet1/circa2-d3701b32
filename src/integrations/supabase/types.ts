@@ -237,6 +237,252 @@ export type Database = {
         }
         Relationships: []
       }
+      scope1_emissions: {
+        Row: {
+          activity_data: string | null
+          additional_notes: string | null
+          amount: number | null
+          company_id: string | null
+          created_at: string | null
+          date: string | null
+          emission_factor_source: string | null
+          emissions_co2e: number | null
+          events_affecting_data: string | null
+          fuel_type: string | null
+          id: string
+          progress_toward_target: string | null
+          ratio_indicators: string | null
+          reporting_boundary: string | null
+          reporting_period: string | null
+          scope_description: string | null
+          source: string | null
+          trend_notes: string | null
+          uncertainty_notes: string | null
+          unit: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          activity_data?: string | null
+          additional_notes?: string | null
+          amount?: number | null
+          company_id?: string | null
+          created_at?: string | null
+          date?: string | null
+          emission_factor_source?: string | null
+          emissions_co2e?: number | null
+          events_affecting_data?: string | null
+          fuel_type?: string | null
+          id?: string
+          progress_toward_target?: string | null
+          ratio_indicators?: string | null
+          reporting_boundary?: string | null
+          reporting_period?: string | null
+          scope_description?: string | null
+          source?: string | null
+          trend_notes?: string | null
+          uncertainty_notes?: string | null
+          unit?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          activity_data?: string | null
+          additional_notes?: string | null
+          amount?: number | null
+          company_id?: string | null
+          created_at?: string | null
+          date?: string | null
+          emission_factor_source?: string | null
+          emissions_co2e?: number | null
+          events_affecting_data?: string | null
+          fuel_type?: string | null
+          id?: string
+          progress_toward_target?: string | null
+          ratio_indicators?: string | null
+          reporting_boundary?: string | null
+          reporting_period?: string | null
+          scope_description?: string | null
+          source?: string | null
+          trend_notes?: string | null
+          uncertainty_notes?: string | null
+          unit?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scope1_emissions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scope2_emissions: {
+        Row: {
+          activity_data: string | null
+          additional_notes: string | null
+          company_id: string | null
+          created_at: string | null
+          date: string | null
+          emission_factor_source: string | null
+          emissions_co2e: number | null
+          energy_type: string | null
+          events_affecting_data: string | null
+          id: string
+          kwh: number | null
+          location: string | null
+          progress_toward_target: string | null
+          ratio_indicators: string | null
+          reporting_boundary: string | null
+          reporting_period: string | null
+          scope_description: string | null
+          supplier: string | null
+          trend_notes: string | null
+          uncertainty_notes: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          activity_data?: string | null
+          additional_notes?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          date?: string | null
+          emission_factor_source?: string | null
+          emissions_co2e?: number | null
+          energy_type?: string | null
+          events_affecting_data?: string | null
+          id?: string
+          kwh?: number | null
+          location?: string | null
+          progress_toward_target?: string | null
+          ratio_indicators?: string | null
+          reporting_boundary?: string | null
+          reporting_period?: string | null
+          scope_description?: string | null
+          supplier?: string | null
+          trend_notes?: string | null
+          uncertainty_notes?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          activity_data?: string | null
+          additional_notes?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          date?: string | null
+          emission_factor_source?: string | null
+          emissions_co2e?: number | null
+          energy_type?: string | null
+          events_affecting_data?: string | null
+          id?: string
+          kwh?: number | null
+          location?: string | null
+          progress_toward_target?: string | null
+          ratio_indicators?: string | null
+          reporting_boundary?: string | null
+          reporting_period?: string | null
+          scope_description?: string | null
+          supplier?: string | null
+          trend_notes?: string | null
+          uncertainty_notes?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scope2_emissions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scope3_emissions: {
+        Row: {
+          activity_data: string | null
+          additional_notes: string | null
+          annual_spend: number | null
+          commodity_type: string | null
+          company_id: string | null
+          created_at: string | null
+          date: string | null
+          emission_factor_source: string | null
+          emissions_co2e: number | null
+          events_affecting_data: string | null
+          id: string
+          procurement_contact: string | null
+          progress_toward_target: string | null
+          ratio_indicators: string | null
+          reporting_boundary: string | null
+          reporting_period: string | null
+          scope_description: string | null
+          supplier_address: string | null
+          supplier_name: string | null
+          supplier_type: string | null
+          trend_notes: string | null
+          uncertainty_notes: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          activity_data?: string | null
+          additional_notes?: string | null
+          annual_spend?: number | null
+          commodity_type?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          date?: string | null
+          emission_factor_source?: string | null
+          emissions_co2e?: number | null
+          events_affecting_data?: string | null
+          id?: string
+          procurement_contact?: string | null
+          progress_toward_target?: string | null
+          ratio_indicators?: string | null
+          reporting_boundary?: string | null
+          reporting_period?: string | null
+          scope_description?: string | null
+          supplier_address?: string | null
+          supplier_name?: string | null
+          supplier_type?: string | null
+          trend_notes?: string | null
+          uncertainty_notes?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          activity_data?: string | null
+          additional_notes?: string | null
+          annual_spend?: number | null
+          commodity_type?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          date?: string | null
+          emission_factor_source?: string | null
+          emissions_co2e?: number | null
+          events_affecting_data?: string | null
+          id?: string
+          procurement_contact?: string | null
+          progress_toward_target?: string | null
+          ratio_indicators?: string | null
+          reporting_boundary?: string | null
+          reporting_period?: string | null
+          scope_description?: string | null
+          supplier_address?: string | null
+          supplier_name?: string | null
+          supplier_type?: string | null
+          trend_notes?: string | null
+          uncertainty_notes?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scope3_emissions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       settings: {
         Row: {
           audit_logging_enabled: boolean | null
@@ -293,6 +539,50 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      upload_sessions: {
+        Row: {
+          company_id: string | null
+          completed_at: string | null
+          created_at: string | null
+          detected_scope: string | null
+          filename: string | null
+          id: string
+          row_count: number | null
+          status: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          detected_scope?: string | null
+          filename?: string | null
+          id?: string
+          row_count?: number | null
+          status?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          detected_scope?: string | null
+          filename?: string | null
+          id?: string
+          row_count?: number | null
+          status?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "upload_sessions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_activities: {
         Row: {
