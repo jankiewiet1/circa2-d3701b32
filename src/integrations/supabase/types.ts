@@ -246,6 +246,63 @@ export type Database = {
         }
         Relationships: []
       }
+      settings: {
+        Row: {
+          audit_logging_enabled: boolean | null
+          created_at: string | null
+          date_format: string | null
+          default_member_role: string | null
+          id: string
+          language: string | null
+          lock_team_changes: boolean | null
+          preferred_currency: string | null
+          receive_deadline_notifications: boolean | null
+          receive_newsletter: boolean | null
+          receive_upload_alerts: boolean | null
+          require_reviewer: boolean | null
+          theme: string | null
+          timezone: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          audit_logging_enabled?: boolean | null
+          created_at?: string | null
+          date_format?: string | null
+          default_member_role?: string | null
+          id?: string
+          language?: string | null
+          lock_team_changes?: boolean | null
+          preferred_currency?: string | null
+          receive_deadline_notifications?: boolean | null
+          receive_newsletter?: boolean | null
+          receive_upload_alerts?: boolean | null
+          require_reviewer?: boolean | null
+          theme?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          audit_logging_enabled?: boolean | null
+          created_at?: string | null
+          date_format?: string | null
+          default_member_role?: string | null
+          id?: string
+          language?: string | null
+          lock_team_changes?: boolean | null
+          preferred_currency?: string | null
+          receive_deadline_notifications?: boolean | null
+          receive_newsletter?: boolean | null
+          receive_upload_alerts?: boolean | null
+          require_reviewer?: boolean | null
+          theme?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_activities: {
         Row: {
           activity_type: string
@@ -277,74 +334,6 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_notification_settings: {
-        Row: {
-          created_at: string | null
-          id: string
-          receive_deadline_notifications: boolean | null
-          receive_newsletter: boolean | null
-          receive_upload_alerts: boolean | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          receive_deadline_notifications?: boolean | null
-          receive_newsletter?: boolean | null
-          receive_upload_alerts?: boolean | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          receive_deadline_notifications?: boolean | null
-          receive_newsletter?: boolean | null
-          receive_upload_alerts?: boolean | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      user_preferences: {
-        Row: {
-          created_at: string | null
-          id: string
-          language: string | null
-          theme: string | null
-          timezone: string | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          language?: string | null
-          theme?: string | null
-          timezone?: string | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          language?: string | null
-          theme?: string | null
-          timezone?: string | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_preferences_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

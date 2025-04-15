@@ -1,10 +1,8 @@
-
 import React, { useState } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNotificationSettings } from "@/hooks/useNotificationSettings";
-import { useProfileSettings } from "@/hooks/useProfileSettings";
+import { useSettings } from "@/hooks/useSettings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -37,8 +35,7 @@ import { useUserPreferences } from "@/hooks/useUserPreferences";
 export default function Settings() {
   const { loading: companyLoading, userRole } = useCompany();
   const { user } = useAuth();
-  const { settings, loading: settingsLoading, updateSettings } = useNotificationSettings(user?.id);
-  const { preferences, loading: preferencesLoading, updatePreferences } = useUserPreferences(user?.id);
+  const { settings, loading: settingsLoading, updateSettings } = useSettings(user?.id);
   
   const isAdmin = userRole === 'admin';
   
@@ -46,29 +43,29 @@ export default function Settings() {
   const [loadingDisplay, setLoadingDisplay] = useState(false);
   const [loadingAdmin, setLoadingAdmin] = useState(false);
   
-  const loading = companyLoading || settingsLoading || preferencesLoading;
+  const loading = companyLoading || settingsLoading;
   
   const displayForm = useForm({
     defaultValues: {
-      theme: preferences?.theme || "system",
-      language: preferences?.language || "en",
-      timezone: preferences?.timezone || "Europe/Amsterdam",
-      date_format: preferences?.date_format || "YYYY-MM-DD",
-      preferred_currency: preferences?.preferred_currency || "EUR"
+      theme: settings?.theme || "system",
+      language: settings?.language || "en",
+      timezone: settings?.timezone || "Europe/Amsterdam",
+      date_format: settings?.date_format || "YYYY-MM-DD",
+      preferred_currency: settings?.preferred_currency || "EUR"
     }
   });
 
   React.useEffect(() => {
-    if (preferences) {
+    if (settings) {
       displayForm.reset({
-        theme: preferences.theme || "system",
-        language: preferences.language || "en",
-        timezone: preferences.timezone || "Europe/Amsterdam",
-        date_format: preferences?.date_format || "YYYY-MM-DD",
-        preferred_currency: preferences?.preferred_currency || "EUR"
+        theme: settings.theme,
+        language: settings.language,
+        timezone: settings.timezone,
+        date_format: settings?.date_format,
+        preferred_currency: settings?.preferred_currency
       });
     }
-  }, [preferences]);
+  }, [settings]);
 
   const adminForm = useForm({
     defaultValues: {
@@ -89,9 +86,7 @@ export default function Settings() {
         receive_deadline_notifications: settings?.receive_deadline_notifications,
         receive_newsletter: settings?.receive_newsletter
       });
-      toast.success("Notification settings updated successfully");
     } catch (error) {
-      toast.error("Failed to update notification settings");
       console.error(error);
     } finally {
       setLoadingNotifications(false);
@@ -103,22 +98,19 @@ export default function Settings() {
     
     setLoadingDisplay(true);
     try {
-      // Explicitly validate and cast the theme
       const validTheme = 
         data.theme === 'light' || data.theme === 'dark' || data.theme === 'system' 
-          ? data.theme 
-          : 'system'; // Default to system if invalid
+          ? data.theme as 'light' | 'dark' | 'system'
+          : 'system';
 
-      await updatePreferences({
+      await updateSettings({
         theme: validTheme,
         language: data.language,
         timezone: data.timezone,
         date_format: data.date_format,
-        preferred_currency: data.preferred_currency,
+        preferred_currency: data.preferred_currency
       });
-      toast.success("Display settings updated successfully");
     } catch (error) {
-      toast.error("Failed to update display settings");
       console.error(error);
     } finally {
       setLoadingDisplay(false);
@@ -126,11 +118,17 @@ export default function Settings() {
   };
 
   const handleAdminSubmit = async (data: any) => {
+    if (!user?.id || !isAdmin) return;
+    
     setLoadingAdmin(true);
     try {
-      toast.success("Admin settings updated successfully");
+      await updateSettings({
+        lock_team_changes: data.lock_team_changes,
+        require_reviewer: data.require_reviewer,
+        audit_logging_enabled: data.audit_logging_enabled,
+        default_member_role: data.default_member_role
+      });
     } catch (error) {
-      toast.error("Failed to update admin settings");
       console.error(error);
     } finally {
       setLoadingAdmin(false);
