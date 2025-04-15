@@ -61,9 +61,37 @@ export const updateCompanyPreferences = async (companyId: string, preferences: {
     }
 
     if (error) throw error;
+    
+    // After successfully updating preferences, we need to recalculate emissions
+    await recalculateScope1Emissions(companyId);
+    
     return { error: null };
   } catch (error: any) {
     console.error("Error updating company preferences:", error);
     return { error };
+  }
+};
+
+// Function to trigger recalculation of all scope 1 emissions
+const recalculateScope1Emissions = async (companyId: string) => {
+  try {
+    const { data: emissions } = await supabase
+      .from('scope1_emissions')
+      .select('*')
+      .eq('company_id', companyId);
+
+    if (emissions && emissions.length > 0) {
+      // Update each emission record to trigger the calculation
+      for (const emission of emissions) {
+        await supabase
+          .from('scope1_emissions')
+          .update({
+            amount: emission.amount, // Update with same value to trigger calculation
+          })
+          .eq('id', emission.id);
+      }
+    }
+  } catch (error) {
+    console.error("Error recalculating emissions:", error);
   }
 };

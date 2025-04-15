@@ -9,7 +9,7 @@ import {
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useFormContext } from "react-hook-form";
 
-const EMISSION_SOURCES = [
+export const EMISSION_SOURCES = [
   "DEFRA",
   "EPA",
   "ADEME",
@@ -30,7 +30,7 @@ export const EmissionSourceSelect = () => {
       render={({ field }) => (
         <FormItem>
           <FormLabel>Preferred Emission Source</FormLabel>
-          <Select onValueChange={field.onChange} value={field.value}>
+          <Select onValueChange={field.onChange} value={field.value || "DEFRA"}>
             <FormControl>
               <SelectTrigger>
                 <SelectValue placeholder="Select emission source" />
