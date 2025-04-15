@@ -24,6 +24,7 @@ export const updateCompanyPreferences = async (companyId: string, preferences: {
   reporting_frequency?: string;
   language?: string;
   timezone?: string;
+  preferred_emission_source?: string;
 }) => {
   try {
     // First check if a record already exists

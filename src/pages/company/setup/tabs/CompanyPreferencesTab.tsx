@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -5,12 +6,19 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
 import { useCompany } from "@/contexts/CompanyContext";
-import { Form } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent } from "@/components/ui/card";
 import { fetchCompanyPreferences, updateCompanyPreferences } from "@/services/companyPreferencesService";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { EmissionSourceSelect } from "@/components/preferences/EmissionSourceSelect";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const currencies = [
   { value: "EUR", label: "Euro (€)" },
@@ -82,7 +90,7 @@ const CompanyPreferencesTab = () => {
       reportingFrequency: "monthly",
       language: "en",
       timezone: "Europe/Amsterdam",
-      preferred_emission_source: "default",
+      preferred_emission_source: "DEFRA",
     },
   });
 
@@ -97,7 +105,7 @@ const CompanyPreferencesTab = () => {
           reportingFrequency: data.reporting_frequency || "monthly",
           language: data.language || "en",
           timezone: data.timezone || "Europe/Amsterdam",
-          preferred_emission_source: data.preferred_emission_source || "default",
+          preferred_emission_source: data.preferred_emission_source || "DEFRA",
         });
       } else if (error) {
         console.error("Error loading company preferences:", error);
