@@ -29,6 +29,8 @@ export const useEmissionsCalculations = (companyId: string) => {
   const [calculationLogs, setCalculationLogs] = useState<CalculationLog[]>([]);
 
   const fetchCalculatedEmissions = async () => {
+    if (!companyId) return;
+    
     setIsLoading(true);
     try {
       const { data: emissions, error } = await supabase
@@ -50,6 +52,8 @@ export const useEmissionsCalculations = (companyId: string) => {
   };
 
   const calculateEmissions = async () => {
+    if (!companyId) return;
+    
     setIsLoading(true);
     try {
       const { data, error } = await supabase.rpc(
