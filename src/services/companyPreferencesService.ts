@@ -76,7 +76,7 @@ export const updateCompanyPreferences = async (companyId: string, preferences: {
 export const recalculateCompanyEmissions = async (companyId: string) => {
   try {
     const { data, error } = await supabase.rpc(
-      'recalculate_company_emissions', 
+      'recalculate_scope1_emissions', 
       { p_company_id: companyId }
     );
     
