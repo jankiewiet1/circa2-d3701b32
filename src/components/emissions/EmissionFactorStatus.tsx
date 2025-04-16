@@ -40,7 +40,7 @@ export const EmissionFactorStatus = () => {
           .from('company_preferences')
           .select('preferred_emission_source')
           .eq('company_id', company.id)
-          .single();
+          .maybeSingle();
           
         if (preferences?.preferred_emission_source) {
           setPreferredSource(preferences.preferred_emission_source);
@@ -74,8 +74,8 @@ export const EmissionFactorStatus = () => {
           // Process statuses
           const statuses = uniqueCombinations.map(combination => {
             const fuelFactors = factorsData?.filter(factor => 
-              factor.fuel_type === combination.fuel_type && 
-              factor.unit === combination.unit
+              factor.fuel_type?.toLowerCase().trim() === combination.fuel_type?.toLowerCase().trim() && 
+              factor.unit?.toLowerCase().trim() === combination.unit?.toLowerCase().trim()
             ) || [];
             
             // Find latest year for preferred source
@@ -152,7 +152,7 @@ export const EmissionFactorStatus = () => {
               .eq('source', preferredSource);
               
             if (!factorMatch || factorMatch.length === 0) {
-              // Find similar matches to help user
+              // Let's try case-insensitive matches to help debug
               const { data: similarFactors } = await supabase
                 .from('emission_factors')
                 .select('fuel_type, unit, source')
@@ -251,10 +251,10 @@ export const EmissionFactorStatus = () => {
             </div>
             
             {factorStatus.some(status => !status[`has${preferredSource.replace(' ', '')}`]) && (
-              <Alert variant="destructive" className="mt-4 bg-yellow-50 border-yellow-200">
-                <AlertCircle className="h-4 w-4 text-yellow-500" />
-                <AlertTitle className="text-yellow-800">Missing Emission Factors</AlertTitle>
-                <AlertDescription className="text-yellow-700">
+              <Alert variant="warning" className="mt-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Missing Emission Factors</AlertTitle>
+                <AlertDescription>
                   Some of your emissions data may not be calculated correctly because of missing emission factors for your preferred source ({preferredSource}).
                   Consider changing your preferred emission source or adding the missing factors.
                 </AlertDescription>

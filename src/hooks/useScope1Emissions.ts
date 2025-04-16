@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 
 export interface Scope1EmissionData {
   id: string;
@@ -156,44 +156,58 @@ export const useScope1Emissions = (companyId: string) => {
         .from('company_preferences')
         .select('preferred_emission_source')
         .eq('company_id', companyId)
-        .single();
+        .maybeSingle();
       
       const preferredSource = prefs?.preferred_emission_source || 'DEFRA';
       
-      // Get a sample emission to verify factors exist
-      const { data: sampleEmissions } = await supabase
-        .from('scope1_emissions')
-        .select('fuel_type, unit')
-        .eq('company_id', companyId)
-        .limit(1);
-        
-      if (sampleEmissions && sampleEmissions.length > 0) {
-        const { fuel_type, unit } = sampleEmissions[0];
-        
-        // Check if factors exist for this combination
-        const { data: factors } = await supabase
-          .from('emission_factors')
-          .select('*')
-          .eq('fuel_type', fuel_type)
-          .eq('unit', unit)
-          .eq('source', preferredSource);
-          
-        if (!factors || factors.length === 0) {
-          toast.warning(`Warning: No emission factors found for ${fuel_type} - ${unit} - ${preferredSource}. Please check your emission factors or change your preferred source.`);
-        }
-      }
-      
       // Cast the parameters and function name to any to bypass TypeScript checking
-      // This is necessary because the Supabase TypeScript definitions may not include
-      // custom RPC functions defined in your project
       await (supabase.rpc as any)(
         'recalculate_scope1_emissions', 
         { p_company_id: companyId }
       );
+
+      // Check for any logs after recalculation
+      const { data: logs } = await supabase
+        .from('calculation_logs')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      // Look for the summary log
+      const summaryLog = logs?.find(log => 
+        log.log_type === 'info' && 
+        log.log_message?.includes('Recalculation completed')
+      );
+      
+      if (summaryLog) {
+        toast.success(summaryLog.log_message);
+      } else {
+        toast.success('Emissions recalculated successfully');
+      }
+      
+      // Check for fallbacks used
+      const fallbackLogs = logs?.filter(log => 
+        log.log_type === 'info' && 
+        log.log_message?.includes('Used fallback source')
+      );
+      
+      if (fallbackLogs && fallbackLogs.length > 0) {
+        toast.info(`${fallbackLogs.length} emissions used fallback source due to missing ${preferredSource} factors`);
+      }
+      
+      // Check for failures
+      const failureLogs = logs?.filter(log => 
+        log.log_type === 'warning' && 
+        log.log_message?.includes('No matching emission factor found')
+      );
+      
+      if (failureLogs && failureLogs.length > 0) {
+        toast.warning(`${failureLogs.length} emissions could not be calculated due to missing factors`);
+      }
       
       await fetchEmissions();
       
-      toast.success('Emissions recalculated successfully');
       return { data: null, error: null };
     } catch (error: any) {
       console.error('Error recalculating emissions:', error);
