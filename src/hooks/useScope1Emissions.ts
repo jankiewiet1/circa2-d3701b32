@@ -32,7 +32,7 @@ export const useScope1Emissions = (companyId: string) => {
     try {
       let query = supabase
         .from('scope1_emissions_with_calculation')
-        .select('*')
+        .select('*, id:scope1_emission_id')
         .eq('company_id', companyId);
         
       if (filters) {
@@ -78,8 +78,22 @@ export const useScope1Emissions = (companyId: string) => {
       
       if (error) throw error;
       
-      setEmissions(data || []);
-      return { data, error: null };
+      // Ensure the data conforms to the Scope1EmissionData interface by mapping it
+      const formattedData: Scope1EmissionData[] = data?.map(item => ({
+        id: item.id || `temp-${Date.now()}-${Math.random()}`,
+        fuel_type: item.fuel_type || '',
+        source: item.source || '',
+        amount: item.amount || 0,
+        unit: item.unit || '',
+        date: item.date || '',
+        emissions_co2e: item.emissions_co2e,
+        emission_factor_source: item.emission_factor_source,
+        emission_factor: item.emission_factor,
+        company_id: item.company_id
+      })) || [];
+      
+      setEmissions(formattedData);
+      return { data: formattedData, error: null };
     } catch (error: any) {
       console.error('Error fetching emissions:', error);
       toast.error('Failed to load emission data');
