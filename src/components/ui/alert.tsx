@@ -22,9 +22,11 @@ const alertVariants = cva(
   }
 )
 
+// Update the type definition to include "warning" as an allowed variant
 const Alert = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertVariants>
+  React.HTMLAttributes<HTMLDivElement> & 
+    VariantProps<typeof alertVariants>
 >(({ className, variant, ...props }, ref) => (
   <div
     ref={ref}
