@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -78,7 +77,6 @@ export const useScope1Emissions = (companyId: string) => {
       
       if (error) throw error;
       
-      // Generate unique IDs for each record since scope1_emission_id doesn't exist in the view
       const formattedData: Scope1EmissionData[] = data?.map((item: any, index: number) => ({
         id: `emission-${Date.now()}-${index}`,
         fuel_type: item.fuel_type || '',
