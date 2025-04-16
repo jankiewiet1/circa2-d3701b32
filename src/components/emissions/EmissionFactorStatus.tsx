@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -252,7 +251,7 @@ export const EmissionFactorStatus = () => {
             </div>
             
             {factorStatus.some(status => !status[`has${preferredSource.replace(' ', '')}`]) && (
-              <Alert variant="warning" className="mt-4 bg-yellow-50 border-yellow-200">
+              <Alert variant="destructive" className="mt-4 bg-yellow-50 border-yellow-200">
                 <AlertCircle className="h-4 w-4 text-yellow-500" />
                 <AlertTitle className="text-yellow-800">Missing Emission Factors</AlertTitle>
                 <AlertDescription className="text-yellow-700">
