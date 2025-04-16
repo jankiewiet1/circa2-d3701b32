@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -150,9 +151,12 @@ export const useScope1Emissions = (companyId: string) => {
   const recalculateEmissions = async () => {
     setIsLoading(true);
     try {
-      await supabase.rpc(
+      // Cast the parameters and function name to any to bypass TypeScript checking
+      // This is necessary because the Supabase TypeScript definitions may not include
+      // custom RPC functions defined in your project
+      await (supabase.rpc as any)(
         'recalculate_scope1_emissions', 
-        { p_company_id: companyId } as { p_company_id: string }
+        { p_company_id: companyId }
       );
       
       await fetchEmissions();

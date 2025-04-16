@@ -77,10 +77,10 @@ const recalculateScope1Emissions = async (companyId: string) => {
   try {
     // First attempt to use the RPC function if available
     try {
-      // Use direct type assertion for the parameters
-      await supabase.rpc(
+      // Cast the function call to any to bypass TypeScript checking
+      await (supabase.rpc as any)(
         'recalculate_scope1_emissions', 
-        { p_company_id: companyId } as { p_company_id: string }
+        { p_company_id: companyId }
       );
       
       console.log('Emissions recalculated using RPC function');
