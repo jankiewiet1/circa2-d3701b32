@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
 
@@ -76,8 +77,8 @@ const recalculateScope1Emissions = async (companyId: string) => {
   try {
     // First attempt to use the RPC function if available
     try {
-      // Cast the parameters to any to avoid TypeScript errors
-      const params: any = {
+      // Define params with a Record type for type safety
+      const params: Record<string, unknown> = {
         p_company_id: companyId
       };
       

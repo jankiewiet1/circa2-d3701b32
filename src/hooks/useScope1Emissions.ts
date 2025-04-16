@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -151,8 +150,7 @@ export const useScope1Emissions = (companyId: string) => {
   const recalculateEmissions = async () => {
     setIsLoading(true);
     try {
-      // Cast the entire parameter object to any to bypass TypeScript strict checking
-      const params: any = {
+      const params: Record<string, unknown> = {
         p_company_id: companyId
       };
       
