@@ -150,19 +150,15 @@ export const useScope1Emissions = (companyId: string) => {
   const recalculateEmissions = async () => {
     setIsLoading(true);
     try {
-      const params: Record<string, unknown> = {
-        p_company_id: companyId
-      };
-      
-      const { data, error } = await supabase
-        .rpc('recalculate_scope1_emissions', params);
-      
-      if (error) throw error;
+      await supabase.rpc(
+        'recalculate_scope1_emissions', 
+        { p_company_id: companyId } as { p_company_id: string }
+      );
       
       await fetchEmissions();
       
       toast.success('Emissions recalculated successfully');
-      return { data, error: null };
+      return { data: null, error: null };
     } catch (error: any) {
       console.error('Error recalculating emissions:', error);
       toast.error('Failed to recalculate emissions');

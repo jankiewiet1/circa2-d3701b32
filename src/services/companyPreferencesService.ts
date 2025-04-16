@@ -77,12 +77,12 @@ const recalculateScope1Emissions = async (companyId: string) => {
   try {
     // First attempt to use the RPC function if available
     try {
-      // Define params with a Record type for type safety
-      const params: Record<string, unknown> = {
-        p_company_id: companyId
-      };
+      // Use direct type assertion for the parameters
+      await supabase.rpc(
+        'recalculate_scope1_emissions', 
+        { p_company_id: companyId } as { p_company_id: string }
+      );
       
-      await supabase.rpc('recalculate_scope1_emissions', params);
       console.log('Emissions recalculated using RPC function');
       return;
     } catch (rpcError) {
