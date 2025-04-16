@@ -348,6 +348,13 @@ export type Database = {
             referencedRelation: "scope1_emissions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "emissions_calculated_scope1_emission_id_fkey"
+            columns: ["scope1_emission_id"]
+            isOneToOne: false
+            referencedRelation: "scope1_emissions_with_calculation"
+            referencedColumns: ["id"]
+          },
         ]
       }
       profiles: {
@@ -776,6 +783,7 @@ export type Database = {
           emission_factor_source: string | null
           emissions_co2e: number | null
           fuel_type: string | null
+          id: string | null
           source: string | null
           unit: string | null
           uploaded_by: string | null

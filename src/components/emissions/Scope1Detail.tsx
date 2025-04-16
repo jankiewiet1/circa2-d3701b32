@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, PieChart, Pie, Cell } from 'recharts';
 import { ChartContainer } from '@/components/ui/chart';
 import { useScope1Emissions } from '@/hooks/useScope1Emissions';
-import { useEmissionsCalculations } from '@/hooks/useEmissionsCalculations';
 import { useCompany } from '@/contexts/CompanyContext';
 import { Button } from "@/components/ui/button";
 import { Download, RefreshCw } from 'lucide-react';
@@ -17,7 +15,6 @@ const COLORS = ['#0E5D40', '#6ED0AA', '#AAE3CA', '#D6F3E7', '#1E6F50', '#2E8060'
 export const Scope1Detail = () => {
   const { company } = useCompany();
   const { emissions, isLoading, fetchEmissions } = useScope1Emissions(company?.id || '');
-  const { calculationLogs, isLoading: isCalculating, calculateEmissions, fetchCalculationLogs } = useEmissionsCalculations(company?.id || '');
   const [fuelTypeData, setFuelTypeData] = useState<any[]>([]);
   const [sourceData, setSourceData] = useState<any[]>([]);
 
@@ -59,25 +56,12 @@ export const Scope1Detail = () => {
     }
   }, [emissions]);
 
-  // Fetch emissions data and logs on component mount
+  // Fetch emissions data on component mount
   useEffect(() => {
     if (company?.id) {
       fetchEmissions();
-      fetchCalculationLogs();
     }
   }, [company?.id]);
-
-  // Handle manual recalculation
-  const handleRecalculate = async () => {
-    if (!company?.id) {
-      toast.error("No company selected");
-      return;
-    }
-    
-    await calculateEmissions();
-    await fetchEmissions();
-    toast.success("Emissions recalculated successfully");
-  };
 
   // Export data to CSV
   const exportToCSV = () => {
@@ -114,9 +98,9 @@ export const Scope1Detail = () => {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Scope 1 Emissions Detail</h2>
         <div className="space-x-2">
-          <Button variant="outline" onClick={handleRecalculate} disabled={isCalculating}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${isCalculating ? 'animate-spin' : ''}`} />
-            Recalculate
+          <Button variant="outline" onClick={() => fetchEmissions()}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh Data
           </Button>
           <Button variant="outline" onClick={exportToCSV}>
             <Download className="mr-2 h-4 w-4" />
@@ -127,11 +111,7 @@ export const Scope1Detail = () => {
 
       <EmissionFactorStatus />
       
-      <CalculationStatus 
-        logs={calculationLogs}
-        onRecalculate={handleRecalculate}
-        isLoading={isCalculating}
-      />
+      <CalculationStatus />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>

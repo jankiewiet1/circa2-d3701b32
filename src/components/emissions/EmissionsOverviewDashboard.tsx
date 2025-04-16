@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
@@ -13,8 +12,7 @@ const COLORS = ['#0E5D40', '#6ED0AA', '#AAE3CA', '#D6F3E7'];
 
 export const EmissionsOverviewDashboard = () => {
   const { company } = useCompany();
-  const { calculatedEmissions, calculationLogs, isLoading, calculateEmissions, fetchCalculatedEmissions } = 
-    useEmissionsCalculations(company?.id || '');
+  const { emissions, isLoading } = useScope1Emissions(company?.id || '');
   const [scopeData, setScopeData] = useState<{ name: string; value: number }[]>([]);
   const [monthlyData, setMonthlyData] = useState<{ name: string; emissions: number }[]>([]);
   const [totalEmissions, setTotalEmissions] = useState(0);
@@ -22,18 +20,11 @@ export const EmissionsOverviewDashboard = () => {
   const [isIncreasing, setIsIncreasing] = useState(false);
   const [topCategory, setTopCategory] = useState('');
 
-  // Fetch emissions data on component mount
-  useEffect(() => {
-    if (company?.id) {
-      fetchCalculatedEmissions();
-    }
-  }, [company?.id]);
-
   // Process the emissions data
   useEffect(() => {
-    if (calculatedEmissions.length > 0) {
+    if (emissions.length > 0) {
       // Group by scope (currently we only have scope 1)
-      const scope1Total = calculatedEmissions.reduce((sum, emission) => sum + (emission.emissions_co2e || 0), 0);
+      const scope1Total = emissions.reduce((sum, emission) => sum + (emission.emissions_co2e || 0), 0);
       
       // Create scope data for pie chart
       const newScopeData = [
@@ -44,7 +35,7 @@ export const EmissionsOverviewDashboard = () => {
       
       // Group emissions by month for the bar chart
       const emissionsByMonth: Record<string, number> = {};
-      calculatedEmissions.forEach(emission => {
+      emissions.forEach(emission => {
         if (emission.date) {
           const month = emission.date.substring(0, 7); // Format: YYYY-MM
           emissionsByMonth[month] = (emissionsByMonth[month] || 0) + (emission.emissions_co2e || 0);
@@ -59,7 +50,7 @@ export const EmissionsOverviewDashboard = () => {
       
       // Group by source to find top category
       const sourceEmissions: Record<string, number> = {};
-      calculatedEmissions.forEach(emission => {
+      emissions.forEach(emission => {
         if (emission.source) {
           sourceEmissions[emission.source] = (sourceEmissions[emission.source] || 0) + (emission.emissions_co2e || 0);
         }
@@ -75,7 +66,7 @@ export const EmissionsOverviewDashboard = () => {
       });
       
       // Calculate total emissions
-      const total = calculatedEmissions.reduce((sum, emission) => sum + (emission.emissions_co2e || 0), 0);
+      const total = emissions.reduce((sum, emission) => sum + (emission.emissions_co2e || 0), 0);
       
       // Calculate percentage change (placeholder - in reality would compare with previous period)
       const previousTotal = total * 0.9; // Assuming 10% increase for demo purposes
@@ -88,11 +79,7 @@ export const EmissionsOverviewDashboard = () => {
       setIsIncreasing(change > 0);
       setTopCategory(maxSource);
     }
-  }, [calculatedEmissions]);
-
-  const handleRecalculate = async () => {
-    await calculateEmissions();
-  };
+  }, [emissions]);
 
   return (
     <div className="space-y-6">
@@ -159,7 +146,7 @@ export const EmissionsOverviewDashboard = () => {
             <div className="flex items-center">
               <Calendar className="mr-2 h-4 w-4 text-circa-green" />
               <span className="text-xl font-bold">
-                {calculatedEmissions.length > 0 
+                {emissions.length > 0 
                   ? format(new Date(), 'dd MMM yyyy') 
                   : 'No data'}
               </span>
@@ -233,11 +220,7 @@ export const EmissionsOverviewDashboard = () => {
         </Card>
       </div>
 
-      <CalculationStatus 
-        logs={calculationLogs}
-        onRecalculate={handleRecalculate}
-        isLoading={isLoading}
-      />
+      <CalculationStatus />
     </div>
   );
 };
