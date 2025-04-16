@@ -41,10 +41,9 @@ export const EmissionCalculationStatus = ({ companyId }: EmissionCalculationStat
 
         // Count emissions that have been calculated and match the preferred source
         const { count: calculatedCount, error: calculatedError } = await supabase
-          .from('scope1_emissions')
+          .from('emissions_calculated')
           .select('*', { count: 'exact', head: true })
           .eq('company_id', companyId)
-          .not('emissions_co2e', 'is', null)
           .eq('emission_factor_source', preferredSource);
 
         if (calculatedError) throw calculatedError;

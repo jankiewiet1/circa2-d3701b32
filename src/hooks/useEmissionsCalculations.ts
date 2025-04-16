@@ -68,7 +68,16 @@ export const useEmissionsCalculations = (companyId: string) => {
           .order('created_at', { ascending: true });
 
         if (logsError) throw logsError;
-        setCalculationLogs(logs || []);
+        
+        // Type assertion to ensure the logs match our expected CalculationLog interface
+        const typedLogs = (logs || []).map(log => ({
+          id: log.id,
+          log_type: (log.log_type as 'info' | 'warning' | 'error') || 'info',
+          log_message: log.log_message || '',
+          created_at: log.created_at || new Date().toISOString()
+        }));
+        
+        setCalculationLogs(typedLogs);
       }
 
       await fetchCalculatedEmissions();

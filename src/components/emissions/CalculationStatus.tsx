@@ -16,7 +16,7 @@ interface CalculationStatusProps {
 }
 
 export const CalculationStatus = ({ logs, onRecalculate, isLoading }: CalculationStatusProps) => {
-  const getLogIcon = (type: string) => {
+  const getLogIcon = (type: 'info' | 'warning' | 'error') => {
     switch (type) {
       case 'info':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
