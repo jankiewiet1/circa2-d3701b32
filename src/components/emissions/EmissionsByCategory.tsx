@@ -71,6 +71,63 @@ export const EmissionsByCategory = () => {
     return null;
   };
 
+  // Custom TreemapContent component to fix the ReactElement error
+  const CustomTreemapContent = (props: any) => {
+    const { root, x, y, width, height } = props;
+    
+    if (!root || !root.children) {
+      return null;
+    }
+    
+    return (
+      <g>
+        {root.children.map((node: any, i: number) => {
+          const nodeWidth = node.x1 - node.x0;
+          const nodeHeight = node.y1 - node.y0;
+          
+          // Only show text if there's enough space
+          const showText = nodeWidth > 50 && nodeHeight > 30;
+          
+          return (
+            <g key={`node-${i}`}>
+              <rect
+                x={node.x0}
+                y={node.y0}
+                width={nodeWidth}
+                height={nodeHeight}
+                fill={node.payload.color}
+                stroke="#fff"
+              />
+              {showText && (
+                <>
+                  <text
+                    x={node.x0 + nodeWidth / 2}
+                    y={node.y0 + nodeHeight / 2}
+                    textAnchor="middle"
+                    fill="#fff"
+                    fontSize={12}
+                    fontWeight="bold"
+                  >
+                    {node.name}
+                  </text>
+                  <text
+                    x={node.x0 + nodeWidth / 2}
+                    y={node.y0 + nodeHeight / 2 + 14}
+                    textAnchor="middle"
+                    fill="#fff"
+                    fontSize={10}
+                  >
+                    {node.value.toFixed(1)} tCO₂e
+                  </text>
+                </>
+              )}
+            </g>
+          );
+        })}
+      </g>
+    );
+  };
+
   return (
     <Card className="w-full h-full">
       <CardHeader>
@@ -93,55 +150,7 @@ export const EmissionsByCategory = () => {
                   dataKey="size"
                   stroke="#fff"
                   fill="#0E5D40"
-                  content={({ root, depth, x, y, width, height, index, payload, colors, rank, name }) => {
-                    return (
-                      <g>
-                        {root.children?.map((node: any, i: number) => {
-                          const nodeWidth = node.x1 - node.x0;
-                          const nodeHeight = node.y1 - node.y0;
-                          
-                          // Only show text if there's enough space
-                          const showText = nodeWidth > 50 && nodeHeight > 30;
-                          
-                          return (
-                            <g key={`node-${i}`}>
-                              <rect
-                                x={node.x0}
-                                y={node.y0}
-                                width={nodeWidth}
-                                height={nodeHeight}
-                                fill={node.payload.color}
-                                stroke="#fff"
-                              />
-                              {showText && (
-                                <>
-                                  <text
-                                    x={node.x0 + nodeWidth / 2}
-                                    y={node.y0 + nodeHeight / 2}
-                                    textAnchor="middle"
-                                    fill="#fff"
-                                    fontSize={12}
-                                    fontWeight="bold"
-                                  >
-                                    {node.name}
-                                  </text>
-                                  <text
-                                    x={node.x0 + nodeWidth / 2}
-                                    y={node.y0 + nodeHeight / 2 + 14}
-                                    textAnchor="middle"
-                                    fill="#fff"
-                                    fontSize={10}
-                                  >
-                                    {node.value.toFixed(1)} tCO₂e
-                                  </text>
-                                </>
-                              )}
-                            </g>
-                          );
-                        })}
-                      </g>
-                    );
-                  }}
+                  content={<CustomTreemapContent />}
                 >
                   <RechartsTooltip content={<CustomTooltip />} />
                 </Treemap>

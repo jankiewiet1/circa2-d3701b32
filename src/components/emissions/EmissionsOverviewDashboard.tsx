@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { ArrowDown, ArrowUp, Fire, BarChart2, TrendingUp, Calendar } from 'lucide-react';
+import { ArrowDown, ArrowUp, Flame, BarChart2, TrendingUp, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { ChartContainer } from '@/components/ui/chart';
 import { useEmissionsCalculations } from '@/hooks/useEmissionsCalculations';
@@ -105,7 +105,7 @@ export const EmissionsOverviewDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="flex items-center">
-              <Fire className="mr-2 h-4 w-4 text-orange-500" />
+              <Flame className="mr-2 h-4 w-4 text-orange-500" />
               <span className="text-2xl font-bold">{totalEmissions.toFixed(2)}</span>
               <div className="ml-auto flex items-center">
                 {isIncreasing ? (
@@ -195,7 +195,10 @@ export const EmissionsOverviewDashboard = () => {
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <RechartsTooltip formatter={(value) => [`${value.toFixed(2)} tonnes CO₂e`, 'Emissions']} />
+                    <RechartsTooltip formatter={(value: number | string) => {
+                      const numValue = typeof value === 'number' ? value : parseFloat(value);
+                      return [`${numValue.toFixed(2)} tonnes CO₂e`, 'Emissions'];
+                    }} />
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
@@ -217,7 +220,10 @@ export const EmissionsOverviewDashboard = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <RechartsTooltip formatter={(value) => [`${value} tonnes CO₂e`, 'Emissions']} />
+                    <RechartsTooltip formatter={(value: number | string) => {
+                      const numValue = typeof value === 'number' ? value : parseFloat(value);
+                      return [`${numValue} tonnes CO₂e`, 'Emissions'];
+                    }} />
                     <Bar dataKey="emissions" fill="#0E5D40" />
                   </BarChart>
                 </ResponsiveContainer>
