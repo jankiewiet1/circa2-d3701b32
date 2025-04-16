@@ -12,6 +12,7 @@ export interface Scope1EmissionData {
   date: string;
   emissions_co2e?: number;
   emission_factor_source?: string;
+  emission_factor?: number;
   company_id?: string;
 }
 
@@ -30,7 +31,7 @@ export const useScope1Emissions = (companyId: string) => {
     setIsLoading(true);
     try {
       let query = supabase
-        .from('scope1_emissions')
+        .from('scope1_emissions_with_calculation')
         .select('*')
         .eq('company_id', companyId);
         
@@ -148,82 +149,11 @@ export const useScope1Emissions = (companyId: string) => {
     }
   };
 
-  const recalculateEmissions = async () => {
-    setIsLoading(true);
-    try {
-      // Get company's preferred emission source
-      const { data: prefs } = await supabase
-        .from('company_preferences')
-        .select('preferred_emission_source')
-        .eq('company_id', companyId)
-        .maybeSingle();
-      
-      const preferredSource = prefs?.preferred_emission_source || 'DEFRA';
-      
-      // Cast the parameters and function name to any to bypass TypeScript checking
-      await (supabase.rpc as any)(
-        'recalculate_scope1_emissions', 
-        { p_company_id: companyId }
-      );
-
-      // Check for any logs after recalculation
-      const { data: logs } = await supabase
-        .from('calculation_logs')
-        .select('*')
-        .eq('company_id', companyId)
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      // Look for the summary log
-      const summaryLog = logs?.find(log => 
-        log.log_type === 'info' && 
-        log.log_message?.includes('Recalculation completed')
-      );
-      
-      if (summaryLog) {
-        toast.success(summaryLog.log_message);
-      } else {
-        toast.success('Emissions recalculated successfully');
-      }
-      
-      // Check for fallbacks used
-      const fallbackLogs = logs?.filter(log => 
-        log.log_type === 'info' && 
-        log.log_message?.includes('Used fallback source')
-      );
-      
-      if (fallbackLogs && fallbackLogs.length > 0) {
-        toast.info(`${fallbackLogs.length} emissions used fallback source due to missing ${preferredSource} factors`);
-      }
-      
-      // Check for failures
-      const failureLogs = logs?.filter(log => 
-        log.log_type === 'warning' && 
-        log.log_message?.includes('No matching emission factor found')
-      );
-      
-      if (failureLogs && failureLogs.length > 0) {
-        toast.warning(`${failureLogs.length} emissions could not be calculated due to missing factors`);
-      }
-      
-      await fetchEmissions();
-      
-      return { data: null, error: null };
-    } catch (error: any) {
-      console.error('Error recalculating emissions:', error);
-      toast.error('Failed to recalculate emissions');
-      return { data: null, error };
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return {
     emissions,
     isLoading,
     fetchEmissions,
     addEmission,
-    updateEmission,
-    recalculateEmissions,
+    updateEmission
   };
 };

@@ -767,7 +767,29 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      scope1_emissions_with_calculation: {
+        Row: {
+          amount: number | null
+          company_id: string | null
+          date: string | null
+          emission_factor: number | null
+          emission_factor_source: string | null
+          emissions_co2e: number | null
+          fuel_type: string | null
+          source: string | null
+          unit: string | null
+          uploaded_by: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scope1_emissions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       calculate_scope1_emissions: {
