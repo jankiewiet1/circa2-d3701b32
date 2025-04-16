@@ -828,4 +828,19 @@ export default function Scope1() {
                         <TableCell>{emission.source || 'N/A'}</TableCell>
                         <TableCell>{emission.fuel_type || 'N/A'}</TableCell>
                         <TableCell>{emission.amount?.toFixed(2) || 'N/A'}</TableCell>
-                        <TableCell>{emission.unit
+                        <TableCell>{emission.unit || 'N/A'}</TableCell>
+                        <TableCell>{emission.emissions_co2e?.toFixed(2) || 'N/A'}</TableCell>
+                        <TableCell>{emission.emission_factor?.toFixed(2) || 'N/A'}</TableCell>
+                        <TableCell>{emission.emission_factor_source || 'N/A'}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </MainLayout>
+  );
+}
