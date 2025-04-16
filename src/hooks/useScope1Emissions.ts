@@ -1,7 +1,7 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
-// Remove the incorrect import
 
 export interface Scope1EmissionData {
   id: string;
@@ -151,9 +151,14 @@ export const useScope1Emissions = (companyId: string) => {
   const recalculateEmissions = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.rpc('recalculate_scope1_emissions', {
+      // Define the parameter type correctly for the RPC call
+      type RecalculateParams = {
+        p_company_id: string;
+      };
+      
+      const { data, error } = await supabase.rpc<RecalculateParams>('recalculate_scope1_emissions', {
         p_company_id: companyId
-      } as any); // Use 'any' type to bypass the TypeScript error
+      } as RecalculateParams);
       
       if (error) throw error;
       
