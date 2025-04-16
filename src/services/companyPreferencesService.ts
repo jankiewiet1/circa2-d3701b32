@@ -63,7 +63,7 @@ export const updateCompanyPreferences = async (companyId: string, preferences: {
     if (error) throw error;
     
     // After successfully updating preferences, we need to recalculate emissions
-    await recalculateScope1Emissions(companyId);
+    await recalculateCompanyEmissions(companyId);
     
     return { error: null };
   } catch (error: any) {
@@ -73,48 +73,24 @@ export const updateCompanyPreferences = async (companyId: string, preferences: {
 };
 
 // Function to trigger recalculation of all scope 1 emissions
-const recalculateScope1Emissions = async (companyId: string) => {
+export const recalculateCompanyEmissions = async (companyId: string) => {
   try {
-    // First attempt to use the RPC function if available
-    try {
-      // Cast the function call to any to bypass TypeScript checking
-      await (supabase.rpc as any)(
-        'recalculate_scope1_emissions', 
-        { p_company_id: companyId }
-      );
-      
-      console.log('Emissions recalculated using RPC function');
-      return;
-    } catch (rpcError) {
-      console.warn('RPC function not available, using fallback method', rpcError);
+    const { data, error } = await supabase.rpc(
+      'recalculate_company_emissions', 
+      { p_company_id: companyId }
+    );
+    
+    if (error) {
+      console.error("Error with RPC recalculation:", error);
+      toast.error("Could not recalculate emissions with new preferences");
+      return false;
     }
     
-    // Fallback: Update each emission to trigger the update_scope1_emissions trigger
-    const { data: emissions } = await supabase
-      .from('scope1_emissions')
-      .select('*')
-      .eq('company_id', companyId);
-
-    if (emissions && emissions.length > 0) {
-      console.log(`Recalculating ${emissions.length} emissions records`);
-      
-      // Update each emission record to trigger the calculation
-      for (const emission of emissions) {
-        await supabase
-          .from('scope1_emissions')
-          .update({
-            // Use the same amount to trigger the update_scope1_emissions trigger
-            amount: emission.amount,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', emission.id);
-      }
-      
-      console.log('Emissions recalculation completed');
-    } else {
-      console.log('No emissions to recalculate');
-    }
+    toast.success("Emissions have been recalculated with new preferences");
+    return true;
   } catch (error) {
     console.error("Error recalculating emissions:", error);
+    toast.error("Failed to recalculate emissions");
+    return false;
   }
 };

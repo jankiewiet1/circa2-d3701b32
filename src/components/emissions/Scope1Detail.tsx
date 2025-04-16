@@ -4,16 +4,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, PieChart, Pie, Cell } from 'recharts';
 import { ChartContainer } from '@/components/ui/chart';
 import { useScope1Emissions } from '@/hooks/useScope1Emissions';
+import { useEmissionsCalculations } from '@/hooks/useEmissionsCalculations';
 import { useCompany } from '@/contexts/CompanyContext';
 import { Button } from "@/components/ui/button";
-import { Download } from 'lucide-react';
+import { Download, RefreshCw } from 'lucide-react';
 import { EmissionFactorStatus } from './EmissionFactorStatus';
+import { CalculationStatus } from './CalculationStatus';
+import { toast } from 'sonner';
 
 const COLORS = ['#0E5D40', '#6ED0AA', '#AAE3CA', '#D6F3E7', '#1E6F50', '#2E8060', '#3E9170'];
 
 export const Scope1Detail = () => {
   const { company } = useCompany();
   const { emissions, isLoading, fetchEmissions } = useScope1Emissions(company?.id || '');
+  const { calculationLogs, isLoading: isCalculating, calculateEmissions, fetchCalculationLogs } = useEmissionsCalculations(company?.id || '');
   const [fuelTypeData, setFuelTypeData] = useState<any[]>([]);
   const [sourceData, setSourceData] = useState<any[]>([]);
 
@@ -55,18 +59,31 @@ export const Scope1Detail = () => {
     }
   }, [emissions]);
 
-  // Fetch emissions data on component mount
+  // Fetch emissions data and logs on component mount
   useEffect(() => {
     if (company?.id) {
       fetchEmissions();
+      fetchCalculationLogs();
     }
   }, [company?.id]);
+
+  // Handle manual recalculation
+  const handleRecalculate = async () => {
+    if (!company?.id) {
+      toast.error("No company selected");
+      return;
+    }
+    
+    await calculateEmissions();
+    await fetchEmissions();
+    toast.success("Emissions recalculated successfully");
+  };
 
   // Export data to CSV
   const exportToCSV = () => {
     if (emissions.length === 0) return;
     
-    const headers = ['Date', 'Source', 'Fuel Type', 'Amount', 'Unit', 'Emissions (tCO₂e)'];
+    const headers = ['Date', 'Source', 'Fuel Type', 'Amount', 'Unit', 'Emissions (tCO₂e)', 'Emission Factor', 'Factor Source'];
     const csvContent = [
       headers.join(','),
       ...emissions.map(e => [
@@ -75,7 +92,9 @@ export const Scope1Detail = () => {
         e.fuel_type,
         e.amount,
         e.unit,
-        e.emissions_co2e || 0
+        e.emissions_co2e || 0,
+        e.emission_factor || '',
+        e.emission_factor_source || ''
       ].join(','))
     ].join('\n');
     
@@ -94,13 +113,25 @@ export const Scope1Detail = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Scope 1 Emissions Detail</h2>
-        <Button variant="outline" onClick={exportToCSV}>
-          <Download className="mr-2 h-4 w-4" />
-          Export Data
-        </Button>
+        <div className="space-x-2">
+          <Button variant="outline" onClick={handleRecalculate} disabled={isCalculating}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${isCalculating ? 'animate-spin' : ''}`} />
+            Recalculate
+          </Button>
+          <Button variant="outline" onClick={exportToCSV}>
+            <Download className="mr-2 h-4 w-4" />
+            Export Data
+          </Button>
+        </div>
       </div>
 
       <EmissionFactorStatus />
+      
+      <CalculationStatus 
+        logs={calculationLogs}
+        onRecalculate={handleRecalculate}
+        isLoading={isCalculating}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>

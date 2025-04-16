@@ -57,7 +57,7 @@ export const useEmissionsCalculations = (companyId: string) => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.rpc(
-        'calculate_scope1_emissions',
+        'recalculate_company_emissions',
         { p_company_id: companyId }
       );
 
@@ -68,8 +68,9 @@ export const useEmissionsCalculations = (companyId: string) => {
         const { data: logs, error: logsError } = await supabase
           .from('calculation_logs')
           .select('*')
-          .eq('calculation_id', data)
-          .order('created_at', { ascending: true });
+          .eq('company_id', companyId)
+          .order('created_at', { ascending: false })
+          .limit(20);
 
         if (logsError) throw logsError;
         
@@ -96,11 +97,40 @@ export const useEmissionsCalculations = (companyId: string) => {
     }
   };
 
+  const fetchCalculationLogs = async () => {
+    if (!companyId) return;
+    
+    try {
+      const { data: logs, error } = await supabase
+        .from('calculation_logs')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      
+      const typedLogs: CalculationLog[] = (logs || []).map(log => ({
+        id: log.id,
+        log_type: (log.log_type as 'info' | 'warning' | 'error') || 'info',
+        log_message: log.log_message || '',
+        created_at: log.created_at || new Date().toISOString()
+      }));
+      
+      setCalculationLogs(typedLogs);
+      return { data: typedLogs, error: null };
+    } catch (error: any) {
+      console.error('Error fetching calculation logs:', error);
+      return { data: null, error };
+    }
+  };
+
   return {
     calculatedEmissions,
     calculationLogs,
     isLoading,
     fetchCalculatedEmissions,
     calculateEmissions,
+    fetchCalculationLogs
   };
 };

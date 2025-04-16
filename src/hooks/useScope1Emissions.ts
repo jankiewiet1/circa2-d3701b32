@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -77,8 +78,8 @@ export const useScope1Emissions = (companyId: string) => {
       
       if (error) throw error;
       
-      const formattedData: Scope1EmissionData[] = data?.map((item: any, index: number) => ({
-        id: `emission-${Date.now()}-${index}`,
+      const formattedData: Scope1EmissionData[] = data?.map((item: any) => ({
+        id: item.id || '',
         fuel_type: item.fuel_type || '',
         source: item.source || '',
         amount: item.amount || 0,
