@@ -32,7 +32,7 @@ export const useScope1Emissions = (companyId: string) => {
     try {
       let query = supabase
         .from('scope1_emissions_with_calculation')
-        .select('*, id:scope1_emission_id')
+        .select('*')
         .eq('company_id', companyId);
         
       if (filters) {
@@ -78,9 +78,9 @@ export const useScope1Emissions = (companyId: string) => {
       
       if (error) throw error;
       
-      // Ensure the data conforms to the Scope1EmissionData interface by mapping it
-      const formattedData: Scope1EmissionData[] = data?.map(item => ({
-        id: item.id || `temp-${Date.now()}-${Math.random()}`,
+      // Generate unique IDs for each record since scope1_emission_id doesn't exist in the view
+      const formattedData: Scope1EmissionData[] = data?.map((item: any, index: number) => ({
+        id: `emission-${Date.now()}-${index}`,
         fuel_type: item.fuel_type || '',
         source: item.source || '',
         amount: item.amount || 0,
