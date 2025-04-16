@@ -35,7 +35,6 @@ export const EmissionFactorStatus = () => {
       setLoading(true);
       
       try {
-        // Get company preference
         const { data: preferences } = await supabase
           .from('company_preferences')
           .select('preferred_emission_source')
@@ -46,7 +45,6 @@ export const EmissionFactorStatus = () => {
           setPreferredSource(preferences.preferred_emission_source);
         }
         
-        // Get distinct fuel types and units from scope1_emissions
         const { data: emissionsData, error: emissionsError } = await supabase
           .from('scope1_emissions')
           .select('fuel_type, unit')
@@ -56,14 +54,12 @@ export const EmissionFactorStatus = () => {
         if (emissionsError) throw emissionsError;
         
         if (emissionsData) {
-          // Remove duplicates
           const uniqueCombinations = emissionsData.filter((value, index, self) =>
             index === self.findIndex((t) => (
               t.fuel_type === value.fuel_type && t.unit === value.unit
             ))
           );
           
-          // Get emission factors
           const { data: factorsData, error: factorsError } = await supabase
             .from('emission_factors')
             .select('fuel_type, unit, source, year')
@@ -71,14 +67,12 @@ export const EmissionFactorStatus = () => {
             
           if (factorsError) throw factorsError;
           
-          // Process statuses
           const statuses = uniqueCombinations.map(combination => {
             const fuelFactors = factorsData?.filter(factor => 
               factor.fuel_type?.toLowerCase().trim() === combination.fuel_type?.toLowerCase().trim() && 
               factor.unit?.toLowerCase().trim() === combination.unit?.toLowerCase().trim()
             ) || [];
             
-            // Find latest year for preferred source
             const preferredFactors = fuelFactors.filter(f => f.source === preferences?.preferred_emission_source);
             const latestYear = preferredFactors.length > 0 
               ? Math.max(...preferredFactors.map(f => f.year || 0)) 
@@ -114,7 +108,6 @@ export const EmissionFactorStatus = () => {
     
     setLoading(true);
     try {
-      // Get a sample of scope1_emissions that failed calculation
       const { data: logsData, error: logsError } = await supabase
         .from('calculation_logs')
         .select('log_message, related_id')
@@ -125,25 +118,21 @@ export const EmissionFactorStatus = () => {
       if (logsError) throw logsError;
       
       if (logsData && logsData.length > 0) {
-        // Extract related emission IDs
         const relatedIds = logsData.map(log => log.related_id).filter(id => id);
         
         if (relatedIds.length > 0) {
-          // Get the emission records
           const { data: emissionsData } = await supabase
             .from('scope1_emissions')
             .select('*')
             .in('id', relatedIds);
             
           if (emissionsData && emissionsData.length > 0) {
-            // Show toast with diagnosis
             const sampleEmission = emissionsData[0];
             toast.info(
               `Diagnostic information: Looking for ${sampleEmission.fuel_type} in ${sampleEmission.unit} with source ${preferredSource}`, 
               { duration: 5000 }
             );
             
-            // Check exact match in factors table
             const { data: factorMatch } = await supabase
               .from('emission_factors')
               .select('*')
@@ -152,7 +141,6 @@ export const EmissionFactorStatus = () => {
               .eq('source', preferredSource);
               
             if (!factorMatch || factorMatch.length === 0) {
-              // Let's try case-insensitive matches to help debug
               const { data: similarFactors } = await supabase
                 .from('emission_factors')
                 .select('fuel_type, unit, source')
