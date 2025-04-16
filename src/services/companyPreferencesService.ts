@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
 
@@ -75,7 +76,7 @@ export const updateCompanyPreferences = async (companyId: string, preferences: {
 export const recalculateCompanyEmissions = async (companyId: string) => {
   try {
     const { data, error } = await supabase.rpc(
-      'recalculate_scope1_emissions', // Updated to match database function
+      'calculate_scope1_emissions', // Using the function name defined in the TypeScript types
       { p_company_id: companyId }
     );
     
