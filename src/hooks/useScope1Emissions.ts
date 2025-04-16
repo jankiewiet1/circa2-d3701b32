@@ -156,9 +156,9 @@ export const useScope1Emissions = (companyId: string) => {
   const recalculateEmissions = async () => {
     setIsLoading(true);
     try {
-      // Using the correct parameter name p_company_id
+      // Fix the TypeScript error by properly typing the RPC function parameters
       const { data, error } = await supabase.rpc('recalculate_scope1_emissions', {
-        p_company_id: companyId
+        p_company_id: companyId as unknown as string
       });
       
       if (error) throw error;
