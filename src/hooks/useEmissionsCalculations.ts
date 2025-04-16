@@ -57,7 +57,7 @@ export const useEmissionsCalculations = (companyId: string) => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.rpc(
-        'recalculate_scope1_emissions',
+        'recalculate_scope1_emissions', // Ensure this matches the database function name
         { p_company_id: companyId }
       );
 
