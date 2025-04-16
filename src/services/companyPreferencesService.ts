@@ -79,8 +79,8 @@ const recalculateScope1Emissions = async (companyId: string) => {
     try {
       await supabase
         .rpc('recalculate_scope1_emissions', {
-          p_company_id: companyId as string
-        });
+          p_company_id: companyId
+        } as unknown);
       console.log('Emissions recalculated using RPC function');
       return;
     } catch (rpcError) {
