@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -107,27 +108,16 @@ export const EmissionFactorStatus = () => {
     
     setLoading(true);
     try {
-      // Fetch recent calculation logs to check for warnings
-      const { data: logsData } = await supabase
-        .from('calculation_logs')
-        .select('*')
-        .eq('company_id', company.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (logsData && logsData.length > 0) {
-        const warningLogs = logsData.filter(log => log.log_type === 'warning');
-        const infoLogs = logsData.filter(log => log.log_type === 'info');
-        
-        if (warningLogs.length > 0) {
-          toast.warning(warningLogs[0].log_message, { duration: 5000 });
-        }
-        
-        if (infoLogs.length > 0) {
-          toast.info(infoLogs[0].log_message, { duration: 5000 });
-        }
+      // Display diagnostic info directly
+      const warningCount = factorStatus.filter(status => !status[`has${preferredSource.replace(/\s+/g, '')}`]).length;
+      
+      // Create a simple diagnostic message
+      if (warningCount > 0) {
+        toast.warning(`Found ${warningCount} fuel types without ${preferredSource} emission factors`, { duration: 5000 });
+      } else if (factorStatus.length === 0) {
+        toast.info('No emission data found to analyze', { duration: 5000 });
       } else {
-        toast.success('No calculation issues found');
+        toast.success('All fuel types have proper emission factors available', { duration: 5000 });
       }
     } catch (error) {
       console.error('Error running diagnostics:', error);
@@ -203,7 +193,11 @@ export const EmissionFactorStatus = () => {
               </table>
             </div>
             
-            {factorStatus.some(status => !status[`has${preferredSource.replace(' ', '')}`]) && (
+            {factorStatus.some(status => {
+              const sourceNormalized = preferredSource.replace(/\s+/g, '');
+              const hasKey = `has${sourceNormalized}` as keyof typeof status;
+              return !status[hasKey];
+            }) && (
               <Alert variant="warning">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Missing Emission Factors</AlertTitle>

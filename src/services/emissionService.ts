@@ -134,29 +134,42 @@ export const checkEmissionFactorStatus = async (companyId: string) => {
  */
 export const runEmissionDiagnostics = async (companyId: string) => {
   try {
-    // Check for recent calculation logs with warnings or errors
-    const { data: logsData, error: logsError } = await supabase
-      .from('calculation_logs')
+    // Get emissions data to analyze
+    const { data: emissionsData, error: emissionsError } = await supabase
+      .from('scope1_emissions')
       .select('*')
-      .eq('company_id', companyId)
-      .in('log_type', ['warning', 'error'])
-      .order('created_at', { ascending: false })
-      .limit(10);
+      .eq('company_id', companyId);
       
-    if (logsError) throw logsError;
+    if (emissionsError) throw emissionsError;
     
-    // Check for emissions without calculations
-    const { count: missingCount, error: countError } = await supabase
-      .from('scope1_emissions_with_calculation')
-      .select('id', { count: 'exact', head: true })
-      .eq('company_id', companyId)
-      .is('emissions_co2e', null);
+    // Get emission factors
+    const { data: factorsData, error: factorsError } = await supabase
+      .from('emission_factors')
+      .select('*');
       
-    if (countError) throw countError;
+    if (factorsError) throw factorsError;
+    
+    // Simple diagnostic - count emissions that might have issues
+    const missingFactorTypes = new Set();
+    
+    emissionsData?.forEach(emission => {
+      // Check if there's a matching factor
+      const hasMatchingFactor = factorsData?.some(factor => 
+        factor.fuel_type.toLowerCase().trim() === emission.fuel_type?.toLowerCase().trim() &&
+        factor.unit.toLowerCase().trim() === emission.unit?.toLowerCase().trim()
+      );
+      
+      if (!hasMatchingFactor && emission.fuel_type && emission.unit) {
+        missingFactorTypes.add(`${emission.fuel_type}/${emission.unit}`);
+      }
+    });
     
     return {
-      logs: logsData || [],
-      missingCalculations: missingCount || 0,
+      logs: Array.from(missingFactorTypes).map(type => ({
+        log_type: 'warning',
+        log_message: `Missing emission factor for: ${type}`
+      })),
+      missingCalculations: missingFactorTypes.size,
       error: null
     };
   } catch (error: any) {

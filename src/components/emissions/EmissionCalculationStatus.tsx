@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchCompanyPreferences } from '@/services/companyPreferencesService';
+import { useScope1Emissions } from '@/hooks/useScope1Emissions';
 
 interface EmissionCalculationStatusProps {
   companyId: string;
@@ -21,6 +22,8 @@ export const EmissionCalculationStatus = ({ companyId }: EmissionCalculationStat
     calculated: 0,
     preferredSource: 'DEFRA',
   });
+  
+  const { emissions, isLoading } = useScope1Emissions(companyId);
 
   useEffect(() => {
     const checkCalculationStatus = async () => {
@@ -31,22 +34,11 @@ export const EmissionCalculationStatus = ({ companyId }: EmissionCalculationStat
         const { data: preferences } = await fetchCompanyPreferences(companyId);
         const preferredSource = preferences?.preferred_emission_source || 'DEFRA';
         
-        // Count total emissions
-        const { count: totalCount, error: totalError } = await supabase
-          .from('scope1_emissions')
-          .select('*', { count: 'exact', head: true })
-          .eq('company_id', companyId);
-
-        if (totalError) throw totalError;
-
-        // Count emissions that have been calculated and match the preferred source
-        const { count: calculatedCount, error: calculatedError } = await supabase
-          .from('emissions_calculated')
-          .select('*', { count: 'exact', head: true })
-          .eq('company_id', companyId)
-          .eq('emission_factor_source', preferredSource);
-
-        if (calculatedError) throw calculatedError;
+        // Count total emissions from the scope1_emissions hook
+        const totalCount = emissions.length;
+        
+        // Count emissions that have been calculated
+        const calculatedCount = emissions.filter(e => e.emissions_co2e !== null && e.emissions_co2e !== undefined).length;
 
         setCalculationStatus({
           total: totalCount || 0,
@@ -58,8 +50,10 @@ export const EmissionCalculationStatus = ({ companyId }: EmissionCalculationStat
       }
     };
 
-    checkCalculationStatus();
-  }, [companyId]);
+    if (!isLoading) {
+      checkCalculationStatus();
+    }
+  }, [companyId, emissions, isLoading]);
 
   const needsRecalculation = calculationStatus.total > 0 && calculationStatus.calculated < calculationStatus.total;
 

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle, XCircle } from "lucide-react";
@@ -13,7 +13,14 @@ interface CalculationLogDisplay {
 
 export const CalculationStatus = () => {
   const { company } = useCompany();
-  const { emissions, isLoading } = useScope1Emissions(company?.id || '');
+  const { emissions, isLoading, fetchEmissions } = useScope1Emissions(company?.id || '');
+
+  // Fetch emissions on component mount
+  useEffect(() => {
+    if (company?.id) {
+      fetchEmissions();
+    }
+  }, [company?.id]);
 
   // Generate status messages based on emissions data
   const getStatusMessages = (): CalculationLogDisplay[] => {
@@ -27,6 +34,7 @@ export const CalculationStatus = () => {
       return messages;
     }
 
+    // Check for emissions that might have calculation issues
     const missingFactors = emissions.filter(e => !e.emission_factor);
     if (missingFactors.length > 0) {
       messages.push({
