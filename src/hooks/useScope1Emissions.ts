@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -156,7 +155,7 @@ export const useScope1Emissions = (companyId: string) => {
         p_company_id: string;
       };
       
-      const { data, error } = await supabase.rpc<RecalculateParams>('recalculate_scope1_emissions', {
+      const { data, error } = await supabase.rpc<RecalculateParams, Scope1EmissionData[]>('recalculate_scope1_emissions', {
         p_company_id: companyId
       } as RecalculateParams);
       
