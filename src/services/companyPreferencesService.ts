@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
 
@@ -78,8 +77,8 @@ const recalculateScope1Emissions = async (companyId: string) => {
     // First attempt to use the RPC function if available
     try {
       await supabase.rpc('recalculate_scope1_emissions', {
-        p_company_id: companyId as unknown as string
-      });
+        p_company_id: companyId
+      } as { p_company_id: string });
       console.log('Emissions recalculated using RPC function');
       return;
     } catch (rpcError) {

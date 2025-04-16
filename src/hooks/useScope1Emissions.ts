@@ -1,7 +1,7 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
+import { Scope1EmissionData } from '@/types/chart';
 
 export interface Scope1EmissionData {
   id: string;
@@ -34,9 +34,7 @@ export const useScope1Emissions = (companyId: string) => {
         .select('*')
         .eq('company_id', companyId);
         
-      // Apply filters if provided
       if (filters) {
-        // Apply date range filter
         if (filters.dateRange && filters.dateRange !== 'all') {
           const today = new Date();
           let startDate = new Date();
@@ -62,7 +60,6 @@ export const useScope1Emissions = (companyId: string) => {
           query = query.gte('date', startDate.toISOString().split('T')[0]);
         }
         
-        // Apply other filters
         if (filters.fuelType && filters.fuelType !== 'all') {
           query = query.eq('fuel_type', filters.fuelType);
         }
@@ -109,7 +106,6 @@ export const useScope1Emissions = (companyId: string) => {
 
       if (error) throw error;
       
-      // Refresh the emissions list
       await fetchEmissions();
       
       toast.success('Emission data added successfully');
@@ -139,7 +135,6 @@ export const useScope1Emissions = (companyId: string) => {
 
       if (error) throw error;
       
-      // Refresh the emissions list
       await fetchEmissions();
       
       toast.success('Emission data updated successfully');
@@ -156,14 +151,12 @@ export const useScope1Emissions = (companyId: string) => {
   const recalculateEmissions = async () => {
     setIsLoading(true);
     try {
-      // Fix the TypeScript error by properly typing the RPC function parameters
       const { data, error } = await supabase.rpc('recalculate_scope1_emissions', {
-        p_company_id: companyId as unknown as string
-      });
+        p_company_id: companyId
+      } as { p_company_id: string });
       
       if (error) throw error;
       
-      // Refresh the emissions list
       await fetchEmissions();
       
       toast.success('Emissions recalculated successfully');
