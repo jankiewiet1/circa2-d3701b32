@@ -1,15 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Treemap, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
-import { useEmissionsCalculations } from '@/hooks/useEmissionsCalculations';
+import { useScope1Emissions } from '@/hooks/useScope1Emissions';
 import { useCompany } from '@/contexts/CompanyContext';
 import { ChartContainer } from '@/components/ui/chart';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { EmissionCalculationStatus } from './EmissionCalculationStatus';
 
 interface TreemapData {
   name: string;
@@ -20,7 +18,7 @@ interface TreemapData {
 
 export const EmissionsByCategory = () => {
   const { company } = useCompany();
-  const { calculatedEmissions, isLoading, calculationLogs } = useEmissionsCalculations(company?.id || '');
+  const { emissions, isLoading } = useScope1Emissions(company?.id || '');
   const [treemapData, setTreemapData] = useState<TreemapData[]>([]);
   const [totalEmissions, setTotalEmissions] = useState(0);
   const [hasEmissionFactorError, setHasEmissionFactorError] = useState(false);
@@ -35,20 +33,20 @@ export const EmissionsByCategory = () => {
 
   // Check for emission factor errors
   useEffect(() => {
-    if (calculationLogs && calculationLogs.length > 0) {
-      const factorErrors = calculationLogs.filter(log => 
-        log.log_message && log.log_message.includes('No matching emission factor found')
-      );
+    if (emissions && emissions.length > 0) {
+      const factorErrors = emissions.filter(emission => !emission.emission_factor);
       setHasEmissionFactorError(factorErrors.length > 0);
+    } else {
+      setHasEmissionFactorError(false);
     }
-  }, [calculationLogs]);
+  }, [emissions]);
 
   // Process emissions data for the treemap
   useEffect(() => {
-    if (calculatedEmissions.length > 0) {
+    if (emissions.length > 0) {
       // Group by source
       const sourceEmissions: Record<string, number> = {};
-      calculatedEmissions.forEach(emission => {
+      emissions.forEach(emission => {
         if (emission.source) {
           sourceEmissions[emission.source] = (sourceEmissions[emission.source] || 0) + (emission.emissions_co2e || 0);
         }
@@ -71,7 +69,7 @@ export const EmissionsByCategory = () => {
       
       setTreemapData(data);
     }
-  }, [calculatedEmissions]);
+  }, [emissions]);
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {

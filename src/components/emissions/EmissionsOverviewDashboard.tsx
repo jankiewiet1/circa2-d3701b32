@@ -4,7 +4,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, L
 import { ArrowDown, ArrowUp, Flame, BarChart2, TrendingUp, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { ChartContainer } from '@/components/ui/chart';
-import { useEmissionsCalculations } from '@/hooks/useEmissionsCalculations';
+import { useScope1Emissions } from '@/hooks/useScope1Emissions';
 import { useCompany } from '@/contexts/CompanyContext';
 import { CalculationStatus } from './CalculationStatus';
 
@@ -20,24 +20,20 @@ export const EmissionsOverviewDashboard = () => {
   const [isIncreasing, setIsIncreasing] = useState(false);
   const [topCategory, setTopCategory] = useState('');
 
-  // Process the emissions data
   useEffect(() => {
     if (emissions.length > 0) {
-      // Group by scope (currently we only have scope 1)
       const scope1Total = emissions.reduce((sum, emission) => sum + (emission.emissions_co2e || 0), 0);
       
-      // Create scope data for pie chart
       const newScopeData = [
         { name: 'Scope 1', value: scope1Total },
-        { name: 'Scope 2', value: 0 }, // Placeholder for now
-        { name: 'Scope 3', value: 0 }  // Placeholder for now
+        { name: 'Scope 2', value: 0 },
+        { name: 'Scope 3', value: 0 }
       ];
       
-      // Group emissions by month for the bar chart
       const emissionsByMonth: Record<string, number> = {};
       emissions.forEach(emission => {
         if (emission.date) {
-          const month = emission.date.substring(0, 7); // Format: YYYY-MM
+          const month = emission.date.substring(0, 7);
           emissionsByMonth[month] = (emissionsByMonth[month] || 0) + (emission.emissions_co2e || 0);
         }
       });
@@ -48,7 +44,6 @@ export const EmissionsOverviewDashboard = () => {
         emissions: parseFloat(emissionsByMonth[month].toFixed(2))
       }));
       
-      // Group by source to find top category
       const sourceEmissions: Record<string, number> = {};
       emissions.forEach(emission => {
         if (emission.source) {
@@ -65,11 +60,9 @@ export const EmissionsOverviewDashboard = () => {
         }
       });
       
-      // Calculate total emissions
       const total = emissions.reduce((sum, emission) => sum + (emission.emissions_co2e || 0), 0);
       
-      // Calculate percentage change (placeholder - in reality would compare with previous period)
-      const previousTotal = total * 0.9; // Assuming 10% increase for demo purposes
+      const previousTotal = total * 0.9;
       const change = ((total - previousTotal) / previousTotal) * 100;
       
       setScopeData(newScopeData);
@@ -84,7 +77,6 @@ export const EmissionsOverviewDashboard = () => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Summary Cards */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Total Emissions</CardTitle>
@@ -156,7 +148,6 @@ export const EmissionsOverviewDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Charts */}
         <Card>
           <CardHeader>
             <CardTitle>Emissions by Scope</CardTitle>

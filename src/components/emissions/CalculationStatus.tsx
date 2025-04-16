@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle, XCircle } from "lucide-react";
 import { useScope1Emissions } from '@/hooks/useScope1Emissions';
+import { useCompany } from '@/contexts/CompanyContext';
 
 interface CalculationLogDisplay {
   type: 'info' | 'warning' | 'error';
@@ -11,7 +12,8 @@ interface CalculationLogDisplay {
 }
 
 export const CalculationStatus = () => {
-  const { emissions, isLoading } = useScope1Emissions();
+  const { company } = useCompany();
+  const { emissions, isLoading } = useScope1Emissions(company?.id || '');
 
   // Generate status messages based on emissions data
   const getStatusMessages = (): CalculationLogDisplay[] => {
