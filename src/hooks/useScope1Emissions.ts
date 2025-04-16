@@ -15,16 +15,18 @@ export interface Scope1EmissionData {
   company_id?: string;
 }
 
+interface Filters {
+  dateRange?: string;
+  fuelType?: string;
+  source?: string;
+  unit?: string;
+}
+
 export const useScope1Emissions = (companyId: string) => {
   const [isLoading, setIsLoading] = useState(false);
   const [emissions, setEmissions] = useState<Scope1EmissionData[]>([]);
 
-  const fetchEmissions = async (filters?: {
-    dateRange?: string;
-    fuelType?: string;
-    source?: string;
-    unit?: string;
-  }) => {
+  const fetchEmissions = async (filters?: Filters) => {
     setIsLoading(true);
     try {
       let query = supabase
@@ -154,6 +156,7 @@ export const useScope1Emissions = (companyId: string) => {
   const recalculateEmissions = async () => {
     setIsLoading(true);
     try {
+      // Using the correct parameter name p_company_id
       const { data, error } = await supabase.rpc('recalculate_scope1_emissions', {
         p_company_id: companyId
       });

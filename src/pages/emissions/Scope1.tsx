@@ -47,6 +47,8 @@ import { ValueType } from "recharts/types/component/DefaultTooltipContent";
 import { toast } from "sonner";
 import { useScope1Emissions, Scope1EmissionData } from "@/hooks/useScope1Emissions";
 import { fetchCompanyPreferences } from "@/services/companyPreferencesService";
+import { ChartDataPoint, EmissionData } from "@/types/chart";
+import { EmissionCalculationStatus } from "@/components/emissions/EmissionCalculationStatus";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 

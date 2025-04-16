@@ -71,7 +71,7 @@ export const EmissionCalculationStatus = ({ companyId }: EmissionCalculationStat
   return (
     <div className="mb-4">
       {needsRecalculation ? (
-        <Alert variant="warning">
+        <Alert variant="default" className="bg-yellow-50 text-yellow-800 border-yellow-200">
           <AlertCircle className="h-4 w-4 mr-2" />
           <AlertDescription>
             {calculationStatus.calculated} of {calculationStatus.total} emission records have been calculated using{' '}
@@ -80,7 +80,7 @@ export const EmissionCalculationStatus = ({ companyId }: EmissionCalculationStat
           </AlertDescription>
         </Alert>
       ) : (
-        <Alert variant="success" className="bg-green-50 text-green-800 border-green-200">
+        <Alert variant="default" className="bg-green-50 text-green-800 border-green-200">
           <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
           <AlertDescription>
             All {calculationStatus.total} emission records have been calculated using{' '}
