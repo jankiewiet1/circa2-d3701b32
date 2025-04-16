@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,7 +25,6 @@ export const EmissionFactorStatus = () => {
   const [factorStatus, setFactorStatus] = useState<FactorStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [preferredSource, setPreferredSource] = useState('DEFRA');
-  const [debugInfo, setDebugInfo] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchFactorStatus = async () => {
@@ -35,6 +33,7 @@ export const EmissionFactorStatus = () => {
       setLoading(true);
       
       try {
+        // Fetch preferred source from company preferences
         const { data: preferences } = await supabase
           .from('company_preferences')
           .select('preferred_emission_source')
@@ -45,6 +44,7 @@ export const EmissionFactorStatus = () => {
           setPreferredSource(preferences.preferred_emission_source);
         }
         
+        // Fetch unique fuel type/unit combinations from scope1_emissions
         const { data: emissionsData, error: emissionsError } = await supabase
           .from('scope1_emissions')
           .select('fuel_type, unit')
@@ -53,6 +53,7 @@ export const EmissionFactorStatus = () => {
         if (emissionsError) throw emissionsError;
         
         if (emissionsData) {
+          // Deduplicate fuel type/unit combinations
           const uniqueCombinations = emissionsData.filter((value, index, self) =>
             index === self.findIndex((t) => (
               t.fuel_type?.toLowerCase().trim() === value.fuel_type?.toLowerCase().trim() && 
@@ -60,12 +61,14 @@ export const EmissionFactorStatus = () => {
             ))
           );
           
+          // Fetch all emission factors to check availability
           const { data: factorsData, error: factorsError } = await supabase
             .from('emission_factors')
             .select('fuel_type, unit, source, year');
             
           if (factorsError) throw factorsError;
           
+          // Check which emission factors are available for each fuel type/unit combination
           const statuses = uniqueCombinations.map(combination => {
             const fuelFactors = factorsData?.filter(factor => 
               factor.fuel_type?.toLowerCase().trim() === combination.fuel_type?.toLowerCase().trim() && 
@@ -87,7 +90,6 @@ export const EmissionFactorStatus = () => {
           });
           
           setFactorStatus(statuses);
-          setDebugInfo(factorsData || []);
         }
       } catch (error) {
         console.error('Error fetching emission factor status:', error);
@@ -105,6 +107,7 @@ export const EmissionFactorStatus = () => {
     
     setLoading(true);
     try {
+      // Fetch recent calculation logs to check for warnings
       const { data: logsData } = await supabase
         .from('calculation_logs')
         .select('*')

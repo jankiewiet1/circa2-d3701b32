@@ -30,6 +30,7 @@ export const useScope1Emissions = (companyId: string) => {
   const fetchEmissions = async (filters?: Filters) => {
     setIsLoading(true);
     try {
+      // Use the scope1_emissions_with_calculation view to get calculated values
       let query = supabase
         .from('scope1_emissions_with_calculation')
         .select('*')
