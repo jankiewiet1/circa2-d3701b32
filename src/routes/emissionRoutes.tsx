@@ -5,6 +5,8 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Scope1 from "@/pages/emissions/Scope1";
 import Scope2 from "@/pages/emissions/Scope2";
 import Scope3 from "@/pages/emissions/Scope3";
+import Overview from "@/pages/emissions/Overview";
+import ByCategory from "@/pages/emissions/ByCategory";
 import { toast } from "sonner";
 import { useRouteError } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -32,6 +34,24 @@ const RouteErrorBoundary = () => {
 
 export const emissionRoutes = (
   <>
+    <Route
+      path="/emissions/overview"
+      element={
+        <ProtectedRoute>
+          <Overview />
+        </ProtectedRoute>
+      }
+      errorElement={<RouteErrorBoundary />}
+    />
+    <Route
+      path="/emissions/by-category"
+      element={
+        <ProtectedRoute>
+          <ByCategory />
+        </ProtectedRoute>
+      }
+      errorElement={<RouteErrorBoundary />}
+    />
     <Route
       path="/emissions/scope1"
       element={

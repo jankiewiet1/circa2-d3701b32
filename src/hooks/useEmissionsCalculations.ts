@@ -73,8 +73,8 @@ export const useEmissionsCalculations = (companyId: string) => {
 
         if (logsError) throw logsError;
         
-        // Type assertion to ensure the logs match our expected CalculationLog interface
-        const typedLogs = (logs || []).map(log => ({
+        // Use proper type assertion to ensure logs match our expected interface
+        const typedLogs: CalculationLog[] = (logs || []).map(log => ({
           id: log.id,
           log_type: (log.log_type as 'info' | 'warning' | 'error') || 'info',
           log_message: log.log_message || '',
