@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/sonner';
@@ -150,9 +151,10 @@ export const useScope1Emissions = (companyId: string) => {
   const recalculateEmissions = async () => {
     setIsLoading(true);
     try {
+      // We need to specify the generic type for the RPC function
       const { data, error } = await supabase
         .rpc('recalculate_scope1_emissions', {
-          p_company_id: companyId
+          p_company_id: companyId as string
         });
       
       if (error) throw error;
