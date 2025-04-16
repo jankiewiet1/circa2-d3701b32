@@ -74,16 +74,12 @@ export const updateCompanyPreferences = async (companyId: string, preferences: {
 // Function to trigger recalculation of all scope 1 emissions
 const recalculateScope1Emissions = async (companyId: string) => {
   try {
-    // Define the parameter type correctly for the RPC call
-    type RecalculateParams = {
-      p_company_id: string;
-    };
-    
     // First attempt to use the RPC function if available
     try {
-      await supabase.rpc<RecalculateParams, any>('recalculate_scope1_emissions', {
-        p_company_id: companyId
-      } as RecalculateParams);
+      await supabase
+        .rpc('recalculate_scope1_emissions', {
+          p_company_id: companyId
+        });
       console.log('Emissions recalculated using RPC function');
       return;
     } catch (rpcError) {

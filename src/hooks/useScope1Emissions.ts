@@ -150,14 +150,10 @@ export const useScope1Emissions = (companyId: string) => {
   const recalculateEmissions = async () => {
     setIsLoading(true);
     try {
-      // Define the parameter type correctly for the RPC call
-      type RecalculateParams = {
-        p_company_id: string;
-      };
-      
-      const { data, error } = await supabase.rpc<RecalculateParams, Scope1EmissionData[]>('recalculate_scope1_emissions', {
-        p_company_id: companyId
-      } as RecalculateParams);
+      const { data, error } = await supabase
+        .rpc('recalculate_scope1_emissions', {
+          p_company_id: companyId
+        });
       
       if (error) throw error;
       
