@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
 
@@ -73,14 +74,14 @@ export const updateCompanyPreferences = async (companyId: string, preferences: {
 
 export const recalculateCompanyEmissions = async (companyId: string) => {
   try {
-    const { data, error } = await supabase.rpc(
-      'calculate_scope1_emissions', 
+    // Explicitly type the parameters to the RPC function
+    const { data, error } = await supabase.rpc<any>(
+      'calculate_scope1_emissions',
       { p_company_id: companyId }
     );
     
     if (error) throw error;
     
-    // After successfully updating preferences, we need to recalculate emissions
     toast.success("Emissions recalculated successfully");
     return { error: null };
   } catch (error: any) {
