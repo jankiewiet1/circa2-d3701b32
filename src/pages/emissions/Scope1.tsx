@@ -49,6 +49,8 @@ import { useScope1Emissions, Scope1EmissionData } from "@/hooks/useScope1Emissio
 import { fetchCompanyPreferences } from "@/services/companyPreferencesService";
 import { ChartDataPoint, EmissionData } from "@/types/chart";
 import { EmissionCalculationStatus } from "@/components/emissions/EmissionCalculationStatus";
+import { useEmissionsCalculations } from '@/hooks/useEmissionsCalculations';
+import { CalculationStatus } from '@/components/emissions/CalculationStatus';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
@@ -84,6 +86,14 @@ export default function Scope1() {
     recalculateEmissions
   } = useScope1Emissions(companyId || '');
   
+  const { 
+    calculatedEmissions, 
+    calculationLogs,
+    isLoading: isCalculating,
+    calculateEmissions,
+    fetchCalculatedEmissions 
+  } = useEmissionsCalculations(companyId || '');
+
   useEffect(() => {
     const loadPreferences = async () => {
       if (!companyId) return;
@@ -387,6 +397,12 @@ export default function Scope1() {
   const fuelTypeData = prepareFuelTypeData();
   const sourceData = prepareSourceData();
   const monthlyTrendsData = prepareMonthlyTrendsData();
+
+  useEffect(() => {
+    if (companyId) {
+      fetchCalculatedEmissions();
+    }
+  }, [companyId]);
   
   return (
     <MainLayout>
@@ -483,6 +499,14 @@ export default function Scope1() {
               </div>
             </CardContent>
           </Card>
+        </div>
+        
+        <div className="mb-6">
+          <CalculationStatus 
+            logs={calculationLogs}
+            onRecalculate={calculateEmissions}
+            isLoading={isCalculating}
+          />
         </div>
         
         <Card className="mb-6">
@@ -739,7 +763,7 @@ export default function Scope1() {
             <div className="flex justify-between items-center">
               <div>
                 <CardTitle>Emissions Data</CardTitle>
-                <CardDescription>Raw emissions records</CardDescription>
+                <CardDescription>Calculated emissions records</CardDescription>
               </div>
               <Button variant="outline" size="sm">
                 <Download className="mr-2 h-4 w-4" />
@@ -758,13 +782,14 @@ export default function Scope1() {
                     <TableHead>Amount</TableHead>
                     <TableHead>Unit</TableHead>
                     <TableHead>Emissions (tCO₂e)</TableHead>
-                    <TableHead>Emission Factor Source</TableHead>
+                    <TableHead>Emission Factor</TableHead>
+                    <TableHead>Factor Source</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8">
+                      <TableCell colSpan={8} className="text-center py-8">
                         <div className="flex justify-center items-center">
                           <svg
                             className="animate-spin h-5 w-5 mr-3 text-green-600"
@@ -790,54 +815,17 @@ export default function Scope1() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ) : emissionsData.length === 0 ? (
+                  ) : calculatedEmissions.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8">
+                      <TableCell colSpan={8} className="text-center py-8">
                         No emissions data available
                       </TableCell>
                     </TableRow>
                   ) : (
-                    emissionsData.map((emission) => (
+                    calculatedEmissions.map((emission) => (
                       <TableRow key={emission.id}>
                         <TableCell>{emission.date ? format(new Date(emission.date), 'yyyy-MM-dd') : 'N/A'}</TableCell>
                         <TableCell>{emission.source || 'N/A'}</TableCell>
                         <TableCell>{emission.fuel_type || 'N/A'}</TableCell>
                         <TableCell>{emission.amount?.toFixed(2) || 'N/A'}</TableCell>
-                        <TableCell>{emission.unit || 'N/A'}</TableCell>
-                        <TableCell>
-                          {emission.emissions_co2e ? (
-                            <span className="font-medium">{Number(emission.emissions_co2e).toFixed(3)}</span>
-                          ) : (
-                            'Uncalculated'
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {emission.emission_factor_source ? (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              {emission.emission_factor_source}
-                            </span>
-                          ) : (
-                            'N/A'
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <div className="text-sm text-gray-500">
-              Showing {emissionsData.length} entries
-            </div>
-            <div className="flex space-x-2">
-              <Button variant="outline" size="sm" disabled>Previous</Button>
-              <Button variant="outline" size="sm" disabled>Next</Button>
-            </div>
-          </CardFooter>
-        </Card>
-      </div>
-    </MainLayout>
-  );
-}
+                        <TableCell>{emission.unit
