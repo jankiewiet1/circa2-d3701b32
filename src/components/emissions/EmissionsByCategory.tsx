@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { EmissionCalculationStatus } from './EmissionCalculationStatus';
 
 interface TreemapData {
   name: string;
@@ -153,7 +154,7 @@ export const EmissionsByCategory = () => {
       </CardHeader>
       <CardContent>
         {hasEmissionFactorError && (
-          <Alert variant="warning" className="mb-4 bg-yellow-50 border-yellow-200">
+          <Alert className="mb-4 bg-yellow-50 border-yellow-200">
             <AlertTriangle className="h-5 w-5 text-yellow-600" />
             <AlertTitle className="text-yellow-800">Missing Emission Factors</AlertTitle>
             <AlertDescription className="text-yellow-700">
