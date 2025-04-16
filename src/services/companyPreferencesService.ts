@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
 
@@ -73,8 +74,9 @@ export const updateCompanyPreferences = async (companyId: string, preferences: {
 
 export const recalculateCompanyEmissions = async (companyId: string) => {
   try {
-    // Add two type arguments: return type and parameters type
-    const { data, error } = await supabase.rpc<{ emissions: any[] }, { p_company_id: string }>(
+    // Fix the typing by using a more generic type for the return value
+    // instead of constraining it to a specific shape
+    const { data, error } = await supabase.rpc<any, { p_company_id: string }>(
       'calculate_scope1_emissions',
       { p_company_id: companyId }
     );
