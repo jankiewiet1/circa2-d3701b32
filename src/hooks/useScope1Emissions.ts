@@ -151,6 +151,38 @@ export const useScope1Emissions = (companyId: string) => {
   const recalculateEmissions = async () => {
     setIsLoading(true);
     try {
+      // Get company's preferred emission source
+      const { data: prefs } = await supabase
+        .from('company_preferences')
+        .select('preferred_emission_source')
+        .eq('company_id', companyId)
+        .single();
+      
+      const preferredSource = prefs?.preferred_emission_source || 'DEFRA';
+      
+      // Get a sample emission to verify factors exist
+      const { data: sampleEmissions } = await supabase
+        .from('scope1_emissions')
+        .select('fuel_type, unit')
+        .eq('company_id', companyId)
+        .limit(1);
+        
+      if (sampleEmissions && sampleEmissions.length > 0) {
+        const { fuel_type, unit } = sampleEmissions[0];
+        
+        // Check if factors exist for this combination
+        const { data: factors } = await supabase
+          .from('emission_factors')
+          .select('*')
+          .eq('fuel_type', fuel_type)
+          .eq('unit', unit)
+          .eq('source', preferredSource);
+          
+        if (!factors || factors.length === 0) {
+          toast.warning(`Warning: No emission factors found for ${fuel_type} - ${unit} - ${preferredSource}. Please check your emission factors or change your preferred source.`);
+        }
+      }
+      
       // Cast the parameters and function name to any to bypass TypeScript checking
       // This is necessary because the Supabase TypeScript definitions may not include
       // custom RPC functions defined in your project

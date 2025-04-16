@@ -7,6 +7,7 @@ import { useScope1Emissions } from '@/hooks/useScope1Emissions';
 import { useCompany } from '@/contexts/CompanyContext';
 import { Button } from "@/components/ui/button";
 import { Download } from 'lucide-react';
+import { EmissionFactorStatus } from './EmissionFactorStatus';
 
 const COLORS = ['#0E5D40', '#6ED0AA', '#AAE3CA', '#D6F3E7', '#1E6F50', '#2E8060', '#3E9170'];
 
@@ -98,6 +99,8 @@ export const Scope1Detail = () => {
           Export Data
         </Button>
       </div>
+
+      <EmissionFactorStatus />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
