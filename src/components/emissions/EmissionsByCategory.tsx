@@ -5,6 +5,10 @@ import { Treemap, ResponsiveContainer, Tooltip as RechartsTooltip } from 'rechar
 import { useEmissionsCalculations } from '@/hooks/useEmissionsCalculations';
 import { useCompany } from '@/contexts/CompanyContext';
 import { ChartContainer } from '@/components/ui/chart';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 interface TreemapData {
   name: string;
@@ -15,9 +19,10 @@ interface TreemapData {
 
 export const EmissionsByCategory = () => {
   const { company } = useCompany();
-  const { calculatedEmissions, isLoading } = useEmissionsCalculations(company?.id || '');
+  const { calculatedEmissions, isLoading, calculationLogs } = useEmissionsCalculations(company?.id || '');
   const [treemapData, setTreemapData] = useState<TreemapData[]>([]);
   const [totalEmissions, setTotalEmissions] = useState(0);
+  const [hasEmissionFactorError, setHasEmissionFactorError] = useState(false);
 
   // Color scale for the treemap
   const getColor = (value: number, max: number) => {
@@ -26,6 +31,16 @@ export const EmissionsByCategory = () => {
     const index = Math.min(Math.floor((value / max) * (colors.length - 1)), colors.length - 1);
     return colors[index];
   };
+
+  // Check for emission factor errors
+  useEffect(() => {
+    if (calculationLogs && calculationLogs.length > 0) {
+      const factorErrors = calculationLogs.filter(log => 
+        log.log_message && log.log_message.includes('No matching emission factor found')
+      );
+      setHasEmissionFactorError(factorErrors.length > 0);
+    }
+  }, [calculationLogs]);
 
   // Process emissions data for the treemap
   useEffect(() => {
@@ -137,6 +152,27 @@ export const EmissionsByCategory = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {hasEmissionFactorError && (
+          <Alert variant="warning" className="mb-4 bg-yellow-50 border-yellow-200">
+            <AlertTriangle className="h-5 w-5 text-yellow-600" />
+            <AlertTitle className="text-yellow-800">Missing Emission Factors</AlertTitle>
+            <AlertDescription className="text-yellow-700">
+              <p>Your emissions cannot be calculated because there are no matching emission factors in the database for your fuel types and units.</p>
+              <p className="mt-2">To fix this:</p>
+              <ol className="list-decimal ml-5 mt-1">
+                <li>Ensure emission factors for your fuel types and units are added to the database</li>
+                <li>Check that your preferred emission source (DEFRA) has factors for the units you're using</li>
+                <li>Consider changing units (e.g., from liters to m³) to match available factors</li>
+              </ol>
+              <div className="mt-3">
+                <Button asChild variant="outline" className="text-yellow-800 border-yellow-300 hover:bg-yellow-100">
+                  <Link to="/settings">Go to Settings</Link>
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <div className="h-96">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
@@ -157,8 +193,13 @@ export const EmissionsByCategory = () => {
               </ResponsiveContainer>
             </ChartContainer>
           ) : (
-            <div className="flex items-center justify-center h-full">
-              <p>No emissions data available</p>
+            <div className="flex flex-col items-center justify-center h-full">
+              <p className="text-gray-500 mb-2">No emissions data available</p>
+              {hasEmissionFactorError && (
+                <p className="text-sm text-yellow-600">
+                  Please add emission factors to see your data visualized here.
+                </p>
+              )}
             </div>
           )}
         </div>
