@@ -774,6 +774,30 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: string
       }
+      recalculate_scope1_emissions: {
+        Args: { p_company_id: string }
+        Returns: {
+          activity_data: string | null
+          additional_notes: string | null
+          amount: number | null
+          company_id: string | null
+          created_at: string | null
+          date: string | null
+          events_affecting_data: string | null
+          fuel_type: string | null
+          id: string
+          progress_toward_target: string | null
+          ratio_indicators: string | null
+          reporting_boundary: string | null
+          reporting_period: string | null
+          scope_description: string | null
+          source: string | null
+          trend_notes: string | null
+          uncertainty_notes: string | null
+          unit: string | null
+          uploaded_by: string | null
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

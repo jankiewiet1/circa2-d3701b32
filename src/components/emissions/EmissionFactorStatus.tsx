@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Check, Info, RefreshCw } from "lucide-react";
+import { AlertCircle, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { supabase } from '@/integrations/supabase/client';
@@ -25,7 +26,6 @@ export const EmissionFactorStatus = () => {
   const [factorStatus, setFactorStatus] = useState<FactorStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [preferredSource, setPreferredSource] = useState('DEFRA');
-  const [diagnosisMode, setDiagnosisMode] = useState(false);
   const [debugInfo, setDebugInfo] = useState<any[]>([]);
 
   useEffect(() => {
@@ -48,22 +48,21 @@ export const EmissionFactorStatus = () => {
         const { data: emissionsData, error: emissionsError } = await supabase
           .from('scope1_emissions')
           .select('fuel_type, unit')
-          .eq('company_id', company.id)
-          .order('fuel_type', { ascending: true });
+          .eq('company_id', company.id);
           
         if (emissionsError) throw emissionsError;
         
         if (emissionsData) {
           const uniqueCombinations = emissionsData.filter((value, index, self) =>
             index === self.findIndex((t) => (
-              t.fuel_type === value.fuel_type && t.unit === value.unit
+              t.fuel_type?.toLowerCase().trim() === value.fuel_type?.toLowerCase().trim() && 
+              t.unit?.toLowerCase().trim() === value.unit?.toLowerCase().trim()
             ))
           );
           
           const { data: factorsData, error: factorsError } = await supabase
             .from('emission_factors')
-            .select('fuel_type, unit, source, year')
-            .order('fuel_type', { ascending: true });
+            .select('fuel_type, unit, source, year');
             
           if (factorsError) throw factorsError;
           
@@ -72,11 +71,6 @@ export const EmissionFactorStatus = () => {
               factor.fuel_type?.toLowerCase().trim() === combination.fuel_type?.toLowerCase().trim() && 
               factor.unit?.toLowerCase().trim() === combination.unit?.toLowerCase().trim()
             ) || [];
-            
-            const preferredFactors = fuelFactors.filter(f => f.source === preferences?.preferred_emission_source);
-            const latestYear = preferredFactors.length > 0 
-              ? Math.max(...preferredFactors.map(f => f.year || 0)) 
-              : undefined;
 
             return {
               fuelType: combination.fuel_type || '',
@@ -86,7 +80,9 @@ export const EmissionFactorStatus = () => {
               hasIpcc: fuelFactors.some(factor => factor.source === 'IPCC'),
               hasGhg: fuelFactors.some(factor => factor.source === 'GHG Protocol Default'),
               hasAdeme: fuelFactors.some(factor => factor.source === 'ADEME'),
-              latestYear
+              latestYear: fuelFactors
+                .filter(f => f.source === preferences?.preferred_emission_source)
+                .reduce((max, f) => Math.max(max, f.year || 0), 0) || undefined
             };
           });
           
@@ -95,6 +91,7 @@ export const EmissionFactorStatus = () => {
         }
       } catch (error) {
         console.error('Error fetching emission factor status:', error);
+        toast.error('Failed to load emission factor status');
       } finally {
         setLoading(false);
       }
@@ -102,68 +99,33 @@ export const EmissionFactorStatus = () => {
     
     fetchFactorStatus();
   }, [company?.id]);
-  
+
   const runDiagnostics = async () => {
     if (!company?.id) return;
     
     setLoading(true);
     try {
-      const { data: logsData, error: logsError } = await supabase
+      const { data: logsData } = await supabase
         .from('calculation_logs')
-        .select('log_message, related_id')
+        .select('*')
         .eq('company_id', company.id)
-        .ilike('log_message', '%No matching emission factor found%')
+        .order('created_at', { ascending: false })
         .limit(5);
-        
-      if (logsError) throw logsError;
-      
+
       if (logsData && logsData.length > 0) {
-        const relatedIds = logsData.map(log => log.related_id).filter(id => id);
+        const warningLogs = logsData.filter(log => log.log_type === 'warning');
+        const infoLogs = logsData.filter(log => log.log_type === 'info');
         
-        if (relatedIds.length > 0) {
-          const { data: emissionsData } = await supabase
-            .from('scope1_emissions')
-            .select('*')
-            .in('id', relatedIds);
-            
-          if (emissionsData && emissionsData.length > 0) {
-            const sampleEmission = emissionsData[0];
-            toast.info(
-              `Diagnostic information: Looking for ${sampleEmission.fuel_type} in ${sampleEmission.unit} with source ${preferredSource}`, 
-              { duration: 5000 }
-            );
-            
-            const { data: factorMatch } = await supabase
-              .from('emission_factors')
-              .select('*')
-              .eq('fuel_type', sampleEmission.fuel_type)
-              .eq('unit', sampleEmission.unit)
-              .eq('source', preferredSource);
-              
-            if (!factorMatch || factorMatch.length === 0) {
-              const { data: similarFactors } = await supabase
-                .from('emission_factors')
-                .select('fuel_type, unit, source')
-                .eq('source', preferredSource)
-                .limit(10);
-                
-              toast.error(
-                `No exact match found for ${sampleEmission.fuel_type} - ${sampleEmission.unit} - ${preferredSource}. Check spelling and case sensitivity.`,
-                { duration: 8000 }
-              );
-              
-              if (similarFactors && similarFactors.length > 0) {
-                const factors = similarFactors.map(f => `${f.fuel_type} (${f.unit})`).join(", ");
-                toast.info(`Available factors for ${preferredSource}: ${factors}`, { duration: 8000 });
-              }
-            } else {
-              toast.success(`Found matching factors in database. Check if calculation is working correctly.`, { duration: 5000 });
-            }
-          }
+        if (warningLogs.length > 0) {
+          toast.warning(warningLogs[0].log_message, { duration: 5000 });
         }
+        
+        if (infoLogs.length > 0) {
+          toast.info(infoLogs[0].log_message, { duration: 5000 });
+        }
+      } else {
+        toast.success('No calculation issues found');
       }
-      
-      setDiagnosisMode(true);
     } catch (error) {
       console.error('Error running diagnostics:', error);
       toast.error('Failed to run emission factor diagnostics');
@@ -194,7 +156,7 @@ export const EmissionFactorStatus = () => {
               Availability of emission factors for your fuel types and units
             </CardDescription>
           </div>
-          {factorStatus.length > 0 && factorStatus.some(status => !status[`has${preferredSource.replace(' ', '')}`]) && (
+          {factorStatus.length > 0 && (
             <Button variant="outline" size="sm" onClick={runDiagnostics} disabled={loading}>
               <Info className="mr-2 h-4 w-4" />
               Run Diagnostics
@@ -206,7 +168,7 @@ export const EmissionFactorStatus = () => {
         {loading ? (
           <div className="text-center py-4">Loading status...</div>
         ) : factorStatus.length > 0 ? (
-          <>
+          <div className="space-y-4">
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
@@ -239,7 +201,7 @@ export const EmissionFactorStatus = () => {
             </div>
             
             {factorStatus.some(status => !status[`has${preferredSource.replace(' ', '')}`]) && (
-              <Alert variant="warning" className="mt-4">
+              <Alert variant="warning">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Missing Emission Factors</AlertTitle>
                 <AlertDescription>
@@ -248,7 +210,7 @@ export const EmissionFactorStatus = () => {
                 </AlertDescription>
               </Alert>
             )}
-          </>
+          </div>
         ) : (
           <div className="text-center py-4">No emission data available</div>
         )}
