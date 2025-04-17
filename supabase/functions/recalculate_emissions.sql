@@ -35,7 +35,7 @@ BEGIN
       AND source = factor_source;
 
     IF latest_year IS NOT NULL THEN
-      SELECT factor_per_unit INTO emission_factor
+      SELECT emission_factor INTO emission_factor  -- Updated to use emission_factor instead of factor_per_unit
       FROM public.emission_factors
       WHERE LOWER(TRIM(fuel_type)) = LOWER(TRIM(emission.fuel_type))
         AND LOWER(TRIM(unit)) = LOWER(TRIM(emission.unit))
@@ -61,7 +61,7 @@ BEGIN
         AND source = fallback_source;
 
       IF latest_year IS NOT NULL THEN
-        SELECT factor_per_unit INTO emission_factor
+        SELECT emission_factor INTO emission_factor  -- Updated to use emission_factor instead of factor_per_unit
         FROM public.emission_factors
         WHERE LOWER(TRIM(fuel_type)) = LOWER(TRIM(emission.fuel_type))
           AND LOWER(TRIM(unit)) = LOWER(TRIM(emission.unit))

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -7,8 +6,13 @@ export interface EmissionFactor {
   fuel_type: string;
   unit: string;
   source: string;
-  factor_per_unit: number;
+  emission_factor: number;
   year: number;
+  category?: string;
+  scope?: string;
+  subcategory?: string;
+  segment?: string;
+  fuel_tag?: string;
 }
 
 export interface EmissionFactorStatus {

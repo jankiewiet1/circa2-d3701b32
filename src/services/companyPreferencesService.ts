@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
 
@@ -27,7 +26,6 @@ export const updateCompanyPreferences = async (companyId: string, preferences: {
   preferred_emission_source?: string;
 }) => {
   try {
-    // First check if a record already exists
     const { data: existingPrefs } = await supabase
       .from('company_preferences')
       .select('id')
@@ -37,7 +35,6 @@ export const updateCompanyPreferences = async (companyId: string, preferences: {
     let error;
     
     if (existingPrefs) {
-      // Update existing record
       const result = await supabase
         .from('company_preferences')
         .update({
@@ -48,7 +45,6 @@ export const updateCompanyPreferences = async (companyId: string, preferences: {
       
       error = result.error;
     } else {
-      // Insert new record
       const result = await supabase
         .from('company_preferences')
         .insert({
@@ -62,7 +58,6 @@ export const updateCompanyPreferences = async (companyId: string, preferences: {
 
     if (error) throw error;
     
-    // After successfully updating preferences, we need to recalculate emissions
     await recalculateCompanyEmissions(companyId);
     
     return { error: null };
@@ -74,20 +69,16 @@ export const updateCompanyPreferences = async (companyId: string, preferences: {
 
 export const recalculateCompanyEmissions = async (companyId: string) => {
   try {
-    // Fix the typing by using a more generic approach
-    // We're calling the recalculate_scope1_emissions function and we don't care about the return type
     const { data, error } = await supabase.rpc(
       'recalculate_scope1_emissions', 
       { p_company_id: companyId }
-    );
+    ) as { data: any, error: any };
     
     if (error) throw error;
     
-    toast.success("Emissions recalculated successfully");
     return { error: null };
   } catch (error: any) {
     console.error("Error recalculating emissions:", error);
-    toast.error("Could not recalculate emissions");
     return { error };
   }
 };
