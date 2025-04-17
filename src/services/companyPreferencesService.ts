@@ -25,6 +25,7 @@ export const updateCompanyPreferences = async (companyId: string, preferences: {
   language?: string;
   timezone?: string;
   preferred_emission_source?: string;
+  emission_unit?: string;
 }) => {
   try {
     const { data: existingPrefs } = await supabase
@@ -60,7 +61,7 @@ export const updateCompanyPreferences = async (companyId: string, preferences: {
     if (error) throw error;
     
     // Trigger recalculation when emission source changes
-    if (preferences.preferred_emission_source) {
+    if (preferences.preferred_emission_source || preferences.emission_unit) {
       await recalculateCompanyEmissions(companyId);
       toast.success("Emission factors updated. Recalculating emissions...");
     } else {

@@ -8,7 +8,7 @@ DECLARE
   emission_factor FLOAT;
   factor_source TEXT;
   fallback_source TEXT := 'GHG Protocol Default';
-  latest_year INT := 2024;  -- Default to using 2024 data
+  latest_year INT := 2024;  -- Use 2024 data by default
   matched_count INT := 0;
   fallback_count INT := 0;
   unmatched_count INT := 0;
@@ -28,13 +28,13 @@ BEGIN
     WHERE company_id = p_company_id
   LOOP
     -- Try to find matching emission factor for the preferred source, year 2024 and scope 1
-    SELECT ef.emission_factor INTO emission_factor
-    FROM public.emission_factors ef
-    WHERE LOWER(TRIM(ef.fuel_type)) = LOWER(TRIM(emission.fuel_type))
-      AND LOWER(TRIM(ef.unit)) = LOWER(TRIM(emission.unit))
-      AND ef.source = factor_source
-      AND ef.scope = '1'
-      AND ef.year = latest_year;
+    SELECT emission_factor INTO emission_factor
+    FROM public.emission_factors
+    WHERE LOWER(TRIM(fuel_type)) = LOWER(TRIM(emission.fuel_type))
+      AND LOWER(TRIM(unit)) = LOWER(TRIM(emission.unit))
+      AND preferred_emission_source = factor_source
+      AND scope = '1'
+      AND year = latest_year;
 
     -- Primary factor found
     IF emission_factor IS NOT NULL THEN
@@ -47,13 +47,13 @@ BEGIN
 
     -- Try fallback if no primary factor
     ELSE
-      SELECT ef.emission_factor INTO emission_factor
-      FROM public.emission_factors ef
-      WHERE LOWER(TRIM(ef.fuel_type)) = LOWER(TRIM(emission.fuel_type))
-        AND LOWER(TRIM(ef.unit)) = LOWER(TRIM(emission.unit))
-        AND ef.source = fallback_source
-        AND ef.scope = '1'
-        AND ef.year = latest_year;
+      SELECT emission_factor INTO emission_factor
+      FROM public.emission_factors
+      WHERE LOWER(TRIM(fuel_type)) = LOWER(TRIM(emission.fuel_type))
+        AND LOWER(TRIM(unit)) = LOWER(TRIM(emission.unit))
+        AND preferred_emission_source = fallback_source
+        AND scope = '1'
+        AND year = latest_year;
 
       IF emission_factor IS NOT NULL THEN
         UPDATE scope1_emissions

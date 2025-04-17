@@ -136,7 +136,7 @@ export const CalculationStatus = () => {
               </AlertDescription>
             </Alert>
           ) : diagnostics.logs.length === 0 && !loading ? (
-            <Alert variant="success" className="bg-green-50 border-green-200">
+            <Alert>
               <AlertCircle className="h-4 w-4 text-green-500" />
               <AlertDescription className="text-green-800">
                 All emissions have appropriate emission factors available.
