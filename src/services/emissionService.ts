@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export interface EmissionFactor {
-  id: string;
+  id: number;
   fuel_type: string;
   unit: string;
   source: string;
@@ -40,6 +40,7 @@ export const fetchEmissionFactors = async () => {
     
     if (error) throw error;
     
+    // Cast the data to EmissionFactor[] to ensure type compatibility
     return { data: data as EmissionFactor[], error: null };
   } catch (error: any) {
     console.error("Error fetching emission factors:", error);
