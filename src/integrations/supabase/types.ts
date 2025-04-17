@@ -9,6 +9,44 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      calculation_logs: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          id: string
+          log_message: string | null
+          log_type: string | null
+          related_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          log_message?: string | null
+          log_type?: string | null
+          related_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          log_message?: string | null
+          log_type?: string | null
+          related_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calculation_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           bank_name: string | null
@@ -209,34 +247,43 @@ export type Database = {
       }
       emission_factors: {
         Row: {
-          created_at: string | null
-          factor_per_unit: number
-          fuel_type: string
-          id: string
-          source: string
-          unit: string
-          updated_at: string | null
-          year: number
+          category: string | null
+          emission_factor: number | null
+          fuel_tag: string | null
+          fuel_type: string | null
+          id: number
+          scope: string | null
+          segment: string | null
+          source: string | null
+          subcategory: string | null
+          unit: string | null
+          year: number | null
         }
         Insert: {
-          created_at?: string | null
-          factor_per_unit: number
-          fuel_type: string
-          id?: string
-          source: string
-          unit: string
-          updated_at?: string | null
-          year: number
+          category?: string | null
+          emission_factor?: number | null
+          fuel_tag?: string | null
+          fuel_type?: string | null
+          id?: number
+          scope?: string | null
+          segment?: string | null
+          source?: string | null
+          subcategory?: string | null
+          unit?: string | null
+          year?: number | null
         }
         Update: {
-          created_at?: string | null
-          factor_per_unit?: number
-          fuel_type?: string
-          id?: string
-          source?: string
-          unit?: string
-          updated_at?: string | null
-          year?: number
+          category?: string | null
+          emission_factor?: number | null
+          fuel_tag?: string | null
+          fuel_type?: string | null
+          id?: number
+          scope?: string | null
+          segment?: string | null
+          source?: string | null
+          subcategory?: string | null
+          unit?: string | null
+          year?: number | null
         }
         Relationships: []
       }
@@ -281,6 +328,8 @@ export type Database = {
           company_id: string | null
           created_at: string | null
           date: string | null
+          emission_factor_source: string | null
+          emissions_co2e: number | null
           events_affecting_data: string | null
           fuel_type: string | null
           id: string
@@ -302,6 +351,8 @@ export type Database = {
           company_id?: string | null
           created_at?: string | null
           date?: string | null
+          emission_factor_source?: string | null
+          emissions_co2e?: number | null
           events_affecting_data?: string | null
           fuel_type?: string | null
           id?: string
@@ -323,6 +374,8 @@ export type Database = {
           company_id?: string | null
           created_at?: string | null
           date?: string | null
+          emission_factor_source?: string | null
+          emissions_co2e?: number | null
           events_affecting_data?: string | null
           fuel_type?: string | null
           id?: string
@@ -660,7 +713,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      recalculate_scope1_emissions: {
+        Args: { p_company_id: string }
+        Returns: {
+          activity_data: string | null
+          additional_notes: string | null
+          amount: number | null
+          company_id: string | null
+          created_at: string | null
+          date: string | null
+          emission_factor_source: string | null
+          emissions_co2e: number | null
+          events_affecting_data: string | null
+          fuel_type: string | null
+          id: string
+          progress_toward_target: string | null
+          ratio_indicators: string | null
+          reporting_boundary: string | null
+          reporting_period: string | null
+          scope_description: string | null
+          source: string | null
+          trend_notes: string | null
+          uncertainty_notes: string | null
+          unit: string | null
+          uploaded_by: string | null
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

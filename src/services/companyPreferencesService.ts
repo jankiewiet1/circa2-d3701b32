@@ -74,10 +74,10 @@ export const updateCompanyPreferences = async (companyId: string, preferences: {
 
 export const recalculateCompanyEmissions = async (companyId: string) => {
   try {
-    // Fix the typing by using a more generic type for the return value
-    // instead of constraining it to a specific shape
-    const { data, error } = await supabase.rpc<any, { p_company_id: string }>(
-      'calculate_scope1_emissions',
+    // Fix the typing by using a more generic approach
+    // We're calling the recalculate_scope1_emissions function and we don't care about the return type
+    const { data, error } = await supabase.rpc(
+      'recalculate_scope1_emissions', 
       { p_company_id: companyId }
     );
     

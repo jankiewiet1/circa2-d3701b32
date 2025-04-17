@@ -1,3 +1,4 @@
+
 CREATE OR REPLACE FUNCTION public.recalculate_scope1_emissions(p_company_id UUID)
 RETURNS SETOF scope1_emissions
 LANGUAGE plpgsql
@@ -121,4 +122,3 @@ BEGIN
   RETURN;
 END;
 $$;
-
