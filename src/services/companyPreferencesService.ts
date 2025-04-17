@@ -1,5 +1,6 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 export const fetchCompanyPreferences = async (companyId: string) => {
   try {
@@ -58,27 +59,35 @@ export const updateCompanyPreferences = async (companyId: string, preferences: {
 
     if (error) throw error;
     
-    await recalculateCompanyEmissions(companyId);
+    // Trigger recalculation when emission source changes
+    if (preferences.preferred_emission_source) {
+      await recalculateCompanyEmissions(companyId);
+      toast.success("Emission factors updated. Recalculating emissions...");
+    } else {
+      toast.success("Preferences updated successfully");
+    }
     
     return { error: null };
   } catch (error: any) {
     console.error("Error updating company preferences:", error);
+    toast.error("Failed to update preferences");
     return { error };
   }
 };
 
 export const recalculateCompanyEmissions = async (companyId: string) => {
   try {
-    const { data, error } = await supabase.rpc(
+    const { error } = await supabase.rpc(
       'recalculate_scope1_emissions', 
       { p_company_id: companyId }
-    ) as { data: any, error: any };
+    );
     
     if (error) throw error;
     
     return { error: null };
   } catch (error: any) {
     console.error("Error recalculating emissions:", error);
+    toast.error("Failed to recalculate emissions");
     return { error };
   }
 };

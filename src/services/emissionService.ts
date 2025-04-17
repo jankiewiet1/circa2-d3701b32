@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -64,7 +65,8 @@ export const checkEmissionFactorStatus = async (companyId: string) => {
     // Get all emission factors
     const { data: factorsData, error: factorsError } = await supabase
       .from('emission_factors')
-      .select('fuel_type, unit, source, year');
+      .select('fuel_type, unit, source, year, scope')
+      .eq('scope', '1');
       
     if (factorsError) throw factorsError;
     
@@ -98,7 +100,8 @@ export const checkEmissionFactorStatus = async (companyId: string) => {
         const matchingFactors = factorsData?.filter(factor => 
           normalizeString(factor.fuel_type) === normalizeString(combo.fuel_type) &&
           normalizeString(factor.unit) === normalizeString(combo.unit) &&
-          factor.source === source
+          factor.source === source &&
+          factor.scope === '1'
         ) || [];
         
         const latestYear = matchingFactors.length > 0 
@@ -147,21 +150,33 @@ export const runEmissionDiagnostics = async (companyId: string) => {
       
     if (emissionsError) throw emissionsError;
     
-    // Get emission factors
+    // Get emission factors with scope 1
     const { data: factorsData, error: factorsError } = await supabase
       .from('emission_factors')
-      .select('*');
+      .select('*')
+      .eq('scope', '1')
+      .eq('year', 2024);
       
     if (factorsError) throw factorsError;
+    
+    // Get company's preferred emission source
+    const { data: preferences } = await supabase
+      .from('company_preferences')
+      .select('preferred_emission_source')
+      .eq('company_id', companyId)
+      .maybeSingle();
+    
+    const preferredSource = preferences?.preferred_emission_source || 'DEFRA';
     
     // Simple diagnostic - count emissions that might have issues
     const missingFactorTypes = new Set();
     
     emissionsData?.forEach(emission => {
-      // Check if there's a matching factor
+      // Check if there's a matching factor for the preferred source
       const hasMatchingFactor = factorsData?.some(factor => 
         factor.fuel_type.toLowerCase().trim() === emission.fuel_type?.toLowerCase().trim() &&
-        factor.unit.toLowerCase().trim() === emission.unit?.toLowerCase().trim()
+        factor.unit.toLowerCase().trim() === emission.unit?.toLowerCase().trim() &&
+        factor.source === preferredSource
       );
       
       if (!hasMatchingFactor && emission.fuel_type && emission.unit) {

@@ -79,29 +79,18 @@ export const useScope1Emissions = (companyId: string) => {
       
       if (error) throw error;
       
-      const formattedData: Scope1EmissionData[] = data?.map((item: any) => {
-        // Calculate emissions using a simple formula based on amount
-        // This is a temporary solution until the database view is properly set up
-        const emission_factor = item.fuel_type === 'Natural Gas' ? 0.2 :
-                             item.fuel_type === 'Diesel' ? 2.68 :
-                             item.fuel_type === 'Gasoline' ? 2.31 : 1.0;
-        
-        // Calculate CO2e based on amount and emission factor
-        const emissions_co2e = item.amount ? item.amount * emission_factor : undefined;
-        
-        return {
-          id: item.id || '',
-          fuel_type: item.fuel_type || '',
-          source: item.source || '',
-          amount: item.amount || 0,
-          unit: item.unit || '',
-          date: item.date || '',
-          emissions_co2e: emissions_co2e,
-          emission_factor_source: 'DEFRA',
-          emission_factor: emission_factor,
-          company_id: item.company_id
-        };
-      }) || [];
+      // Use the actual emissions data from the database
+      const formattedData: Scope1EmissionData[] = data?.map((item: any) => ({
+        id: item.id || '',
+        fuel_type: item.fuel_type || '',
+        source: item.source || '',
+        amount: item.amount || 0,
+        unit: item.unit || '',
+        date: item.date || '',
+        emissions_co2e: item.emissions_co2e,
+        emission_factor_source: item.emission_factor_source || '',
+        company_id: item.company_id
+      })) || [];
       
       setEmissions(formattedData);
       return { data: formattedData, error: null };
@@ -132,9 +121,11 @@ export const useScope1Emissions = (companyId: string) => {
 
       if (error) throw error;
       
+      // Immediately recalculate the emissions for this new data
+      await supabase.rpc('recalculate_scope1_emissions', { p_company_id: companyId });
       await fetchEmissions();
       
-      toast.success('Emission data added successfully');
+      toast.success('Emission data added and calculated successfully');
       return { error: null };
     } catch (error: any) {
       console.error('Error adding emission:', error);
@@ -160,6 +151,11 @@ export const useScope1Emissions = (companyId: string) => {
         .eq('id', id);
 
       if (error) throw error;
+      
+      // Recalculate emissions if fuel_type, unit, or amount changed
+      if (updates.fuel_type || updates.unit || updates.amount !== undefined) {
+        await supabase.rpc('recalculate_scope1_emissions', { p_company_id: companyId });
+      }
       
       await fetchEmissions();
       

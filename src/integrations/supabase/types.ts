@@ -252,9 +252,9 @@ export type Database = {
           fuel_tag: string | null
           fuel_type: string | null
           id: number
+          preferred_emission_source: string | null
           scope: string | null
           segment: string | null
-          source: string | null
           subcategory: string | null
           unit: string | null
           year: number | null
@@ -265,9 +265,9 @@ export type Database = {
           fuel_tag?: string | null
           fuel_type?: string | null
           id?: number
+          preferred_emission_source?: string | null
           scope?: string | null
           segment?: string | null
-          source?: string | null
           subcategory?: string | null
           unit?: string | null
           year?: number | null
@@ -278,9 +278,9 @@ export type Database = {
           fuel_tag?: string | null
           fuel_type?: string | null
           id?: number
+          preferred_emission_source?: string | null
           scope?: string | null
           segment?: string | null
-          source?: string | null
           subcategory?: string | null
           unit?: string | null
           year?: number | null

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -57,28 +56,29 @@ export const EmissionFactorStatus = () => {
           // Deduplicate fuel type/unit combinations
           const uniqueCombinations = emissionsData.filter((value, index, self) =>
             index === self.findIndex((t) => (
-              t.fuel_type?.toLowerCase().trim() === value.fuel_type?.toLowerCase().trim() && 
-              t.unit?.toLowerCase().trim() === value.unit?.toLowerCase().trim()
+              normalizeString(t.fuel_type) === normalizeString(value.fuel_type) && 
+              normalizeString(t.unit) === normalizeString(value.unit)
             ))
           );
           
           // Fetch all emission factors to check availability
           const { data: factorsData, error: factorsError } = await supabase
             .from('emission_factors')
-            .select('fuel_type, unit, source, year');
+            .select('fuel_type, unit, source, year, scope')
+            .eq('scope', '1');
             
           if (factorsError) throw factorsError;
           
           // Check which emission factors are available for each fuel type/unit combination
-          const statuses = uniqueCombinations.map(combination => {
+          const statuses = uniqueCombinations.map(combo => {
             const fuelFactors = factorsData?.filter(factor => 
-              factor.fuel_type?.toLowerCase().trim() === combination.fuel_type?.toLowerCase().trim() && 
-              factor.unit?.toLowerCase().trim() === combination.unit?.toLowerCase().trim()
+              normalizeString(factor.fuel_type) === normalizeString(combo.fuel_type) &&
+              normalizeString(factor.unit) === normalizeString(combo.unit)
             ) || [];
 
             return {
-              fuelType: combination.fuel_type || '',
-              unit: combination.unit || '',
+              fuelType: combo.fuel_type || '',
+              unit: combo.unit || '',
               hasDefra: fuelFactors.some(factor => factor.source === 'DEFRA'),
               hasEpa: fuelFactors.some(factor => factor.source === 'EPA'),
               hasIpcc: fuelFactors.some(factor => factor.source === 'IPCC'),
@@ -227,3 +227,5 @@ export const EmissionFactorStatus = () => {
     </Card>
   );
 };
+
+const normalizeString = (str?: string) => (str || '').toLowerCase().trim();

@@ -8,7 +8,7 @@ DECLARE
   emission_factor FLOAT;
   factor_source TEXT;
   fallback_source TEXT := 'GHG Protocol Default';
-  latest_year INT;
+  latest_year INT := 2024;  -- Default to using 2024 data
   matched_count INT := 0;
   fallback_count INT := 0;
   unmatched_count INT := 0;
@@ -27,26 +27,19 @@ BEGIN
     SELECT * FROM public.scope1_emissions
     WHERE company_id = p_company_id
   LOOP
-    -- Attempt to find matching emission factor
-    SELECT MAX(year) INTO latest_year
-    FROM public.emission_factors
-    WHERE LOWER(TRIM(fuel_type)) = LOWER(TRIM(emission.fuel_type))
-      AND LOWER(TRIM(unit)) = LOWER(TRIM(emission.unit))
-      AND source = factor_source;
-
-    IF latest_year IS NOT NULL THEN
-      SELECT emission_factor INTO emission_factor  -- Updated to use emission_factor instead of factor_per_unit
-      FROM public.emission_factors
-      WHERE LOWER(TRIM(fuel_type)) = LOWER(TRIM(emission.fuel_type))
-        AND LOWER(TRIM(unit)) = LOWER(TRIM(emission.unit))
-        AND source = factor_source
-        AND year = latest_year;
-    END IF;
+    -- Try to find matching emission factor for the preferred source, year 2024 and scope 1
+    SELECT ef.emission_factor INTO emission_factor
+    FROM public.emission_factors ef
+    WHERE LOWER(TRIM(ef.fuel_type)) = LOWER(TRIM(emission.fuel_type))
+      AND LOWER(TRIM(ef.unit)) = LOWER(TRIM(emission.unit))
+      AND ef.source = factor_source
+      AND ef.scope = '1'
+      AND ef.year = latest_year;
 
     -- Primary factor found
     IF emission_factor IS NOT NULL THEN
       UPDATE scope1_emissions
-      SET emissions_co2e = (emission.amount * emission_factor) / 1000,
+      SET emissions_co2e = (emission.amount * emission_factor),
           emission_factor_source = factor_source
       WHERE id = emission.id;
 
@@ -54,24 +47,17 @@ BEGIN
 
     -- Try fallback if no primary factor
     ELSE
-      SELECT MAX(year) INTO latest_year
-      FROM public.emission_factors
-      WHERE LOWER(TRIM(fuel_type)) = LOWER(TRIM(emission.fuel_type))
-        AND LOWER(TRIM(unit)) = LOWER(TRIM(emission.unit))
-        AND source = fallback_source;
-
-      IF latest_year IS NOT NULL THEN
-        SELECT emission_factor INTO emission_factor  -- Updated to use emission_factor instead of factor_per_unit
-        FROM public.emission_factors
-        WHERE LOWER(TRIM(fuel_type)) = LOWER(TRIM(emission.fuel_type))
-          AND LOWER(TRIM(unit)) = LOWER(TRIM(emission.unit))
-          AND source = fallback_source
-          AND year = latest_year;
-      END IF;
+      SELECT ef.emission_factor INTO emission_factor
+      FROM public.emission_factors ef
+      WHERE LOWER(TRIM(ef.fuel_type)) = LOWER(TRIM(emission.fuel_type))
+        AND LOWER(TRIM(ef.unit)) = LOWER(TRIM(emission.unit))
+        AND ef.source = fallback_source
+        AND ef.scope = '1'
+        AND ef.year = latest_year;
 
       IF emission_factor IS NOT NULL THEN
         UPDATE scope1_emissions
-        SET emissions_co2e = (emission.amount * emission_factor) / 1000,
+        SET emissions_co2e = (emission.amount * emission_factor),
             emission_factor_source = fallback_source
         WHERE id = emission.id;
 
