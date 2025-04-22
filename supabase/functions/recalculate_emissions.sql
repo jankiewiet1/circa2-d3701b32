@@ -8,7 +8,7 @@ DECLARE
   emission_factor FLOAT;
   factor_source TEXT;
   fallback_source TEXT := 'GHG Protocol Default';
-  latest_year INT := 2024;  -- Use 2024 data by default
+  latest_year INT := 2024;  -- Using 2024 data
   matched_count INT := 0;
   fallback_count INT := 0;
   unmatched_count INT := 0;
@@ -27,14 +27,14 @@ BEGIN
     SELECT * FROM public.scope1_emissions
     WHERE company_id = p_company_id
   LOOP
-    -- Try to find matching emission factor for the preferred source, year 2024 and scope 1
-    SELECT emission_factor INTO emission_factor
+    -- Try to find matching emission factor for the preferred source and scope 1
+    -- Using the new column structure (Category_1 instead of fuel_type, UOM instead of unit)
+    SELECT "GHG_Conversion_Factor_2024" INTO emission_factor
     FROM public.emission_factors
-    WHERE LOWER(TRIM(fuel_type)) = LOWER(TRIM(emission.fuel_type))
-      AND LOWER(TRIM(unit)) = LOWER(TRIM(emission.unit))
-      AND preferred_emission_source = factor_source
-      AND scope = '1'
-      AND year = latest_year;
+    WHERE LOWER(TRIM("Category_1")) = LOWER(TRIM(emission.fuel_type))
+      AND LOWER(TRIM("UOM")) = LOWER(TRIM(emission.unit))
+      AND "Source" = factor_source
+      AND "Scope" = '1';
 
     -- Primary factor found
     IF emission_factor IS NOT NULL THEN
@@ -47,13 +47,12 @@ BEGIN
 
     -- Try fallback if no primary factor
     ELSE
-      SELECT emission_factor INTO emission_factor
+      SELECT "GHG_Conversion_Factor_2024" INTO emission_factor
       FROM public.emission_factors
-      WHERE LOWER(TRIM(fuel_type)) = LOWER(TRIM(emission.fuel_type))
-        AND LOWER(TRIM(unit)) = LOWER(TRIM(emission.unit))
-        AND preferred_emission_source = fallback_source
-        AND scope = '1'
-        AND year = latest_year;
+      WHERE LOWER(TRIM("Category_1")) = LOWER(TRIM(emission.fuel_type))
+        AND LOWER(TRIM("UOM")) = LOWER(TRIM(emission.unit))
+        AND "Source" = fallback_source
+        AND "Scope" = '1';
 
       IF emission_factor IS NOT NULL THEN
         UPDATE scope1_emissions

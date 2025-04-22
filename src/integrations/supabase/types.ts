@@ -247,43 +247,43 @@ export type Database = {
       }
       emission_factors: {
         Row: {
-          category: string | null
-          emission_factor: number | null
-          fuel_tag: string | null
-          fuel_type: string | null
+          Category_1: string
+          Category_2: string
+          Category_3: string
+          Category_4: string
+          Column_Text: string
+          GHG_Conversion_Factor_2024: number
+          "GHG/Unit": string
           id: number
-          preferred_emission_source: string | null
-          scope: string | null
-          segment: string | null
-          subcategory: string | null
-          unit: string | null
-          year: number | null
+          Scope: string
+          Source: string
+          UOM: string
         }
         Insert: {
-          category?: string | null
-          emission_factor?: number | null
-          fuel_tag?: string | null
-          fuel_type?: string | null
+          Category_1?: string
+          Category_2?: string
+          Category_3?: string
+          Category_4?: string
+          Column_Text?: string
+          GHG_Conversion_Factor_2024?: number
+          "GHG/Unit"?: string
           id?: number
-          preferred_emission_source?: string | null
-          scope?: string | null
-          segment?: string | null
-          subcategory?: string | null
-          unit?: string | null
-          year?: number | null
+          Scope?: string
+          Source?: string
+          UOM?: string
         }
         Update: {
-          category?: string | null
-          emission_factor?: number | null
-          fuel_tag?: string | null
-          fuel_type?: string | null
+          Category_1?: string
+          Category_2?: string
+          Category_3?: string
+          Category_4?: string
+          Column_Text?: string
+          GHG_Conversion_Factor_2024?: number
+          "GHG/Unit"?: string
           id?: number
-          preferred_emission_source?: string | null
-          scope?: string | null
-          segment?: string | null
-          subcategory?: string | null
-          unit?: string | null
-          year?: number | null
+          Scope?: string
+          Source?: string
+          UOM?: string
         }
         Relationships: []
       }

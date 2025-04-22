@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,6 @@ interface FactorStatus {
   hasIpcc: boolean;
   hasGhg: boolean;
   hasAdeme: boolean;
-  latestYear?: number;
 }
 
 export const EmissionFactorStatus = () => {
@@ -65,29 +63,27 @@ export const EmissionFactorStatus = () => {
           // Fetch all emission factors to check availability
           const { data: factorsData, error: factorsError } = await supabase
             .from('emission_factors')
-            .select('fuel_type, unit, preferred_emission_source, year, scope')
-            .eq('scope', '1');
+            .select('Category_1, UOM, Source, Scope')
+            .eq('Scope', '1');
             
           if (factorsError) throw factorsError;
           
           // Check which emission factors are available for each fuel type/unit combination
           const statuses = uniqueCombinations.map(combo => {
             const fuelFactors = factorsData?.filter(factor => 
-              normalizeString(factor.fuel_type) === normalizeString(combo.fuel_type) &&
-              normalizeString(factor.unit) === normalizeString(combo.unit)
+              normalizeString(factor.Category_1) === normalizeString(combo.fuel_type) &&
+              normalizeString(factor.UOM) === normalizeString(combo.unit)
             ) || [];
 
             return {
               fuelType: combo.fuel_type || '',
               unit: combo.unit || '',
-              hasDefra: fuelFactors.some(factor => factor.preferred_emission_source === 'DEFRA'),
-              hasEpa: fuelFactors.some(factor => factor.preferred_emission_source === 'EPA'),
-              hasIpcc: fuelFactors.some(factor => factor.preferred_emission_source === 'IPCC'),
-              hasGhg: fuelFactors.some(factor => factor.preferred_emission_source === 'GHG Protocol Default'),
-              hasAdeme: fuelFactors.some(factor => factor.preferred_emission_source === 'ADEME'),
-              latestYear: fuelFactors
-                .filter(f => f.preferred_emission_source === preferences?.preferred_emission_source)
-                .reduce((max, f) => Math.max(max, f.year || 0), 0) || undefined
+              hasDefra: fuelFactors.some(factor => factor.Source === 'DEFRA'),
+              hasEpa: fuelFactors.some(factor => factor.Source === 'EPA'),
+              hasIpcc: fuelFactors.some(factor => factor.Source === 'IPCC'),
+              hasGhg: fuelFactors.some(factor => factor.Source === 'GHG Protocol Default'),
+              hasAdeme: fuelFactors.some(factor => factor.Source === 'ADEME'),
+              latestYear: 2024 // We're using 2024 data
             };
           });
           
@@ -230,11 +226,3 @@ export const EmissionFactorStatus = () => {
 };
 
 const normalizeString = (str?: string) => (str || '').toLowerCase().trim();
-
-const runDiagnostics = async () => {
-  // Implementation kept from original
-};
-
-const getStatusBadge = (hasSource: boolean, source: string) => {
-  // Implementation kept from original
-};

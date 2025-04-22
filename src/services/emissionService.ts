@@ -4,16 +4,16 @@ import { toast } from "sonner";
 
 export interface EmissionFactor {
   id: number;
-  fuel_type: string;
-  unit: string;
-  preferred_emission_source: string;  // Updated from 'source' to match DB
-  emission_factor: number;
-  year: number;
-  category?: string;
-  scope?: string;
-  subcategory?: string;
-  segment?: string;
-  fuel_tag?: string;
+  Category_1: string;
+  UOM: string;
+  Source: string;
+  GHG_Conversion_Factor_2024: number;
+  Scope: string;
+  Category_2: string;
+  Category_3: string;
+  Category_4: string;
+  Column_Text: string;
+  "GHG/Unit": string;
 }
 
 export interface EmissionFactorStatus {
@@ -34,15 +34,13 @@ export const fetchEmissionFactors = async () => {
     const { data, error } = await supabase
       .from('emission_factors')
       .select('*')
-      .order('fuel_type')
-      .order('unit')
-      .order('preferred_emission_source')
-      .order('year', { ascending: false });
+      .order('Category_1')
+      .order('UOM')
+      .order('Source');
     
     if (error) throw error;
     
-    // Use type assertion to make TypeScript happy with the field changes
-    return { data: data as unknown as EmissionFactor[], error: null };
+    return { data: data as EmissionFactor[], error: null };
   } catch (error: any) {
     console.error("Error fetching emission factors:", error);
     return { data: null, error };
@@ -65,8 +63,8 @@ export const checkEmissionFactorStatus = async (companyId: string) => {
     // Get all emission factors
     const { data: factorsData, error: factorsError } = await supabase
       .from('emission_factors')
-      .select('fuel_type, unit, preferred_emission_source, year, scope')
-      .eq('scope', '1');
+      .select('Category_1, UOM, Source, Scope')
+      .eq('Scope', '1');
       
     if (factorsError) throw factorsError;
     
@@ -98,20 +96,16 @@ export const checkEmissionFactorStatus = async (companyId: string) => {
     const statusChecks = uniqueCombinations.map(combo => {
       const sources = knownSources.map(source => {
         const matchingFactors = factorsData?.filter(factor => 
-          normalizeString(factor.fuel_type) === normalizeString(combo.fuel_type) &&
-          normalizeString(factor.unit) === normalizeString(combo.unit) &&
-          factor.preferred_emission_source === source &&
-          factor.scope === '1'
+          normalizeString(factor.Category_1) === normalizeString(combo.fuel_type) &&
+          normalizeString(factor.UOM) === normalizeString(combo.unit) &&
+          factor.Source === source &&
+          factor.Scope === '1'
         ) || [];
-        
-        const latestYear = matchingFactors.length > 0 
-          ? Math.max(...matchingFactors.map(f => f.year || 0)) 
-          : undefined;
         
         return {
           source,
           hasData: matchingFactors.length > 0,
-          latestYear: latestYear || undefined
+          latestYear: 2024 // Using 2024 data
         };
       });
       
@@ -154,8 +148,7 @@ export const runEmissionDiagnostics = async (companyId: string) => {
     const { data: factorsData, error: factorsError } = await supabase
       .from('emission_factors')
       .select('*')
-      .eq('scope', '1')
-      .eq('year', 2024);
+      .eq('Scope', '1');
       
     if (factorsError) throw factorsError;
     
@@ -174,9 +167,9 @@ export const runEmissionDiagnostics = async (companyId: string) => {
     emissionsData?.forEach(emission => {
       // Check if there's a matching factor for the preferred source
       const hasMatchingFactor = factorsData?.some(factor => 
-        factor.fuel_type.toLowerCase().trim() === emission.fuel_type?.toLowerCase().trim() &&
-        factor.unit.toLowerCase().trim() === emission.unit?.toLowerCase().trim() &&
-        factor.preferred_emission_source === preferredSource
+        factor.Category_1.toLowerCase().trim() === emission.fuel_type?.toLowerCase().trim() &&
+        factor.UOM.toLowerCase().trim() === emission.unit?.toLowerCase().trim() &&
+        factor.Source === preferredSource
       );
       
       if (!hasMatchingFactor && emission.fuel_type && emission.unit) {
