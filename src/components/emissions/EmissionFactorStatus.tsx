@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ interface FactorStatus {
   hasIpcc: boolean;
   hasGhg: boolean;
   hasAdeme: boolean;
+  latestYear: number; // Added this property to fix the type error
 }
 
 export const EmissionFactorStatus = () => {
