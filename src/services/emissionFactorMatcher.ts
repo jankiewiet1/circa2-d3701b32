@@ -3,14 +3,14 @@ import Fuse from "fuse.js";
 import { supabase } from "@/integrations/supabase/client";
 
 interface EmissionFactor {
-  id: number;
+  ID: number;
   category_1: string;
   category_2: string;
   category_3: string;
   category_4: string;
-  ghg_conversion_factor_2024: number | null;
+  "GHG Conversion Factor 2024": number | null;
   uom: string;
-  Source: string; // Note: original casing from DB column is 'Source'
+  Source: string; // Note exact casing for DB columns
   scope: string;
 }
 
@@ -101,7 +101,7 @@ type FuseFactor = EmissionFactor & { searchString: string };
  */
 export async function loadEmissionFactorsFuse(): Promise<{ fuse: Fuse<FuseFactor>; factors: FuseFactor[] }> {
   const { data, error } = await supabase
-    .from<EmissionFactor>("emission_factors")
+    .from<"emission_factors", EmissionFactor>("emission_factors")
     .select(
       `"ID", category_1, category_2, category_3, category_4, "GHG Conversion Factor 2024", uom, "Source", scope`
     )
@@ -126,9 +126,9 @@ export async function loadEmissionFactorsFuse(): Promise<{ fuse: Fuse<FuseFactor
     uom: factor.uom ?? "",
     Source: factor.Source ?? "",
     scope: factor.scope ?? "",
-    ghg_conversion_factor_2024: factor["GHG Conversion Factor 2024"] ?? null,
+    "GHG Conversion Factor 2024": factor["GHG Conversion Factor 2024"] ?? null,
     searchString: composeSearchString({
-      id: factor.ID,
+      ID: factor.ID,
       category_1: factor.category_1 ?? "",
       category_2: factor.category_2 ?? "",
       category_3: factor.category_3 ?? "",
@@ -136,8 +136,8 @@ export async function loadEmissionFactorsFuse(): Promise<{ fuse: Fuse<FuseFactor
       uom: factor.uom ?? "",
       Source: factor.Source ?? "",
       scope: factor.scope ?? "",
-      ghg_conversion_factor_2024: factor["GHG Conversion Factor 2024"] ?? null,
-    }),
+      "GHG Conversion Factor 2024": factor["GHG Conversion Factor 2024"] ?? null,
+    } as EmissionFactor),
   }));
 
   const fuse = new Fuse(factors, {
@@ -238,15 +238,15 @@ export async function matchEmissionEntry(
     };
   }
 
-  if (bestMatch.ghg_conversion_factor_2024 == null) {
+  if (bestMatch["GHG Conversion Factor 2024"] == null) {
     return {
       matchedFactor: null,
       calculatedEmissions: null,
-      log: `[EmissionFactorMatcher] Matched emission factor missing ghg_conversion_factor_2024 for category "${category}"`,
+      log: `[EmissionFactorMatcher] Matched emission factor missing GHG Conversion Factor 2024 for category "${category}"`,
     };
   }
 
-  const emissions = quantity * bestMatch.ghg_conversion_factor_2024;
+  const emissions = quantity * bestMatch["GHG Conversion Factor 2024"];
 
   return {
     matchedFactor: bestMatch,

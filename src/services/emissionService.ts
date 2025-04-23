@@ -33,7 +33,7 @@ export interface EmissionFactorStatus {
 export const fetchEmissionFactors = async () => {
   try {
     const { data, error } = await supabase
-      .from("emission_factors")
+      .from<"emission_factors">("emission_factors")
       // Use correct casing for columns
       .select(
         `"category_1", "uom", "Source", "scope", "GHG Conversion Factor 2024"`
@@ -70,8 +70,7 @@ export const checkEmissionFactorStatus = async (companyId: string) => {
     }
 
     const { data: factorsData, error: factorsError } = await supabase
-      .from("emission_factors")
-      // Correct casing for columns
+      .from<"emission_factors">("emission_factors")
       .select(`"category_1", "uom", "Source", "scope"`);
 
     if (factorsError) throw factorsError;
@@ -165,8 +164,7 @@ export const runEmissionDiagnostics = async (companyId: string) => {
     }
 
     const { data: factorsData, error: factorsError } = await supabase
-      .from("emission_factors")
-      // Correct casing for columns
+      .from<"emission_factors">("emission_factors")
       .select(`"category_1", "uom", "Source", "scope"`);
 
     if (factorsError) throw factorsError;
