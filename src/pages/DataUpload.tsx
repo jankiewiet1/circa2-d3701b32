@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from "react";
 import Papa from "papaparse";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +11,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { MainLayout } from "@/components/MainLayout";
+import { matchEmissionEntry } from "@/services/emissionFactorMatcher";
 
 type EmissionEntry = {
   date: string;
@@ -32,6 +32,9 @@ interface EmissionEntryInsert {
   unit: string;
   scope: number;
   notes?: string | null;
+  emission_factor?: number | null;
+  emissions?: number | null;
+  match_status?: string;
 }
 
 const requiredFields = [
@@ -50,7 +53,14 @@ export default function DataUpload() {
 
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvRows, setCsvRows] = useState<
-    (EmissionEntry & { isNew?: boolean; isUpdate?: boolean })[]
+    (EmissionEntry & {
+      isNew?: boolean;
+      isUpdate?: boolean;
+      emission_factor?: number | null;
+      emissions?: number | null;
+      match_status?: string;
+      match_log?: string;
+    })[]
   >([]);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [isUploadingCsv, setIsUploadingCsv] = useState(false);
@@ -60,21 +70,26 @@ export default function DataUpload() {
   const [isSubmittingManual, setIsSubmittingManual] = useState(false);
 
   const parseCsv = useCallback(
-    (file: File) => {
+    async (file: File) => {
       setValidationErrors([]);
       setCsvRows([]);
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
-        complete: (results) => {
+        complete: async (results) => {
           const rawData = results.data as Record<string, any>[];
           const parsedRows: (EmissionEntry & {
             isNew?: boolean;
             isUpdate?: boolean;
+            emission_factor?: number | null;
+            emissions?: number | null;
+            match_status?: string;
+            match_log?: string;
           })[] = [];
           const errors: string[] = [];
 
-          rawData.forEach((row, idx) => {
+          for (let idx = 0; idx < rawData.length; idx++) {
+            const row = rawData[idx];
             const missingFields = requiredFields.filter(
               (f) =>
                 !(f in row) ||
@@ -89,28 +104,29 @@ export default function DataUpload() {
                   ", "
                 )}`
               );
-              return;
+              continue;
             }
 
             const dateValue = new Date(row.date);
             if (isNaN(dateValue.getTime())) {
               errors.push(`Row ${idx + 2}: Invalid date format`);
-              return;
+              continue;
             }
 
             const quantityNum = parseFloat(row.quantity);
             if (isNaN(quantityNum) || quantityNum < 0) {
               errors.push(`Row ${idx + 2}: Quantity must be a positive number`);
-              return;
+              continue;
             }
 
             const scopeNum = parseInt(row.scope, 10);
             if (![1, 2, 3].includes(scopeNum)) {
               errors.push(`Row ${idx + 2}: Scope must be 1, 2, or 3`);
-              return;
+              continue;
             }
 
-            parsedRows.push({
+            // Prepare entry
+            const entry: EmissionEntry = {
               date: dateValue.toISOString().split("T")[0],
               category: row.category.toString().trim(),
               description: row.description.toString().trim(),
@@ -118,14 +134,40 @@ export default function DataUpload() {
               unit: row.unit.toString().trim(),
               scope: scopeNum,
               notes: row.notes ? row.notes.toString().trim() : undefined,
-              isNew: undefined,
-              isUpdate: undefined,
-            });
-          });
+            };
 
-          parsedRows.forEach((row) => {
-            row.isNew = true;
-          });
+            // Perform fuzzy matching to find emission_factor and emissions
+            try {
+              const matchResult = await matchEmissionEntry({
+                category: entry.category,
+                unit: entry.unit,
+                scope: entry.scope.toString(),
+                quantity: entry.quantity,
+              });
+
+              entry["emission_factor"] = matchResult.matchedFactor?.["GHG Conversion Factor 2024"] ?? null;
+              entry["emissions"] = matchResult.calculatedEmissions ?? null;
+              entry["match_status"] = matchResult.matchedFactor ? "matched" : "unmatched";
+
+              parsedRows.push({
+                ...entry,
+                isNew: true,
+                emission_factor: entry["emission_factor"],
+                emissions: entry["emissions"],
+                match_status: entry["match_status"],
+              });
+            } catch (e) {
+              errors.push(`Row ${idx + 2}: Matching error - ${(e as Error).message}`);
+              // Include the raw row but mark unmatched due to error
+              parsedRows.push({
+                ...entry,
+                isNew: true,
+                emission_factor: null,
+                emissions: null,
+                match_status: "unmatched",
+              });
+            }
+          }
 
           setValidationErrors(errors);
           setCsvRows(parsedRows);
@@ -174,6 +216,9 @@ export default function DataUpload() {
         unit: row.unit,
         scope: row.scope,
         notes: row.notes ?? null,
+        emission_factor: row.emission_factor ?? null,
+        emissions: row.emissions ?? null,
+        match_status: row.match_status ?? "matched",
       }));
 
       const { error } = await supabase
@@ -404,6 +449,8 @@ export default function DataUpload() {
                       <th className="p-3 text-right">Quantity</th>
                       <th className="p-3 text-left">Unit</th>
                       <th className="p-3 text-right">Scope</th>
+                      <th className="p-3 text-left">Emissions (calculated)</th>
+                      <th className="p-3 text-left">Match Status</th>
                       <th className="p-3 text-left">Notes</th>
                     </tr>
                   </thead>
@@ -438,6 +485,14 @@ export default function DataUpload() {
                         <td className="p-3 text-right">{row.quantity}</td>
                         <td className="p-3">{row.unit}</td>
                         <td className="p-3 text-right">{row.scope}</td>
+                        <td className="p-3">{row.emissions ?? "-"}</td>
+                        <td className="p-3">
+                          {row.match_status === "matched" ? (
+                            <span className="text-green-700 font-semibold">Matched</span>
+                          ) : (
+                            <span className="text-red-700 font-semibold">Unmatched</span>
+                          )}
+                        </td>
                         <td className="p-3">{row.notes || "-"}</td>
                       </tr>
                     ))}
