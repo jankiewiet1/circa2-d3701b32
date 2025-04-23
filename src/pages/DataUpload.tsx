@@ -147,7 +147,7 @@ export default function DataUpload() {
       const { error } = await supabase
         .from("emission_entries")
         .upsert(rowsToUpsert, {
-          onConflict: ["company_id", "date", "category", "unit", "scope"],
+          onConflict: "company_id,date,category,unit,scope",
         });
 
       if (error) {
@@ -169,7 +169,9 @@ export default function DataUpload() {
   };
 
   const handleManualInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value } = e.target;
     setManualEntry((prev) => ({
@@ -244,7 +246,9 @@ export default function DataUpload() {
           quantity: Number(manualEntry.quantity),
           unit: (manualEntry.unit || "").toString().trim(),
           scope: Number(manualEntry.scope),
-          notes: manualEntry.notes ? (manualEntry.notes || "").toString().trim() : null,
+          notes: manualEntry.notes
+            ? (manualEntry.notes || "").toString().trim()
+            : null,
           emission_factor: 0,
         },
       ];
@@ -252,7 +256,7 @@ export default function DataUpload() {
       const { error } = await supabase
         .from("emission_entries")
         .upsert(entryToUpsert, {
-          onConflict: ["company_id", "date", "category", "unit", "scope"],
+          onConflict: "company_id,date,category,unit,scope",
         });
 
       if (error) {
