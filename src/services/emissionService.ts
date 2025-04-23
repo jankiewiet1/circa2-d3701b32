@@ -1,5 +1,5 @@
 
-// Updated to use correct casing for column names like "category_1" instead of "Category_1"
+// Updated to use correct casing for column names and improved error checking
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -14,8 +14,8 @@ export interface EmissionEntry {
   quantity: number;
   unit: string;
   emission_factor: number;
-  scope: number; // 1, 2, or 3
-  emissions: number; // quantity * emission_factor
+  scope: number;
+  emissions: number;
   created_at: string;
   updated_at: string;
 }
@@ -42,7 +42,6 @@ export const fetchEmissionFactors = async () => {
       .order("source");
 
     if (error) throw error;
-
     if (!data || !Array.isArray(data)) {
       throw new Error("No emission factors data returned");
     }
@@ -55,46 +54,41 @@ export const fetchEmissionFactors = async () => {
 };
 
 /**
- * Checks emission factor availability for company's emissions data unified using emission_entries
+ * Checks emission factor availability for company's emissions data
  */
 export const checkEmissionFactorStatus = async (companyId: string) => {
   try {
-    // Get emission_entries category/unit/scope for company
     const { data: entriesData, error: entriesError } = await supabase
       .from("emission_entries")
       .select("category, unit, scope")
       .eq("company_id", companyId);
 
     if (entriesError) throw entriesError;
-
     if (!entriesData || !Array.isArray(entriesData)) {
       throw new Error("No emission entries data returned");
     }
 
-    // Get all emission factors
     const { data: factorsData, error: factorsError } = await supabase
       .from("emission_factors")
       .select("category_1, uom, source, scope");
 
     if (factorsError) throw factorsError;
-
     if (!factorsData || !Array.isArray(factorsData)) {
       throw new Error("No emission factors data returned");
     }
 
-    // Get company's preferred emission source
-    const { data: preferences } = await supabase
+    const { data: preferences, error: prefError } = await supabase
       .from("company_preferences")
       .select("preferred_emission_source")
       .eq("company_id", companyId)
       .maybeSingle();
 
+    if (prefError) throw prefError;
+
     const preferredSource = preferences?.preferred_emission_source || "DEFRA";
 
-    // Standardize string comparison helper
     const normalizeString = (str?: string) => (str || "").toLowerCase().trim();
 
-    // Deduplicate by category/unit/scope
     const uniqueCombinations =
       entriesData.filter((value, index, self) =>
         index ===
@@ -106,10 +100,14 @@ export const checkEmissionFactorStatus = async (companyId: string) => {
         )
       ) || [];
 
-    // Known sources to check for
-    const knownSources = ["DEFRA", "EPA", "IPCC", "GHG Protocol Default", "ADEME"];
+    const knownSources = [
+      "DEFRA",
+      "EPA",
+      "IPCC",
+      "GHG Protocol Default",
+      "ADEME",
+    ];
 
-    // Check status for each emission type/unit pair
     const statusChecks = uniqueCombinations.map((combo) => {
       const sources = knownSources.map((source) => {
         const matchingFactors =
@@ -160,7 +158,6 @@ export const runEmissionDiagnostics = async (companyId: string) => {
       .eq("company_id", companyId);
 
     if (entriesError) throw entriesError;
-
     if (!entriesData || !Array.isArray(entriesData)) {
       throw new Error("No emission entries data returned");
     }
@@ -170,24 +167,23 @@ export const runEmissionDiagnostics = async (companyId: string) => {
       .select("category_1, uom, source, scope");
 
     if (factorsError) throw factorsError;
-
     if (!factorsData || !Array.isArray(factorsData)) {
       throw new Error("No emission factors data returned");
     }
 
-    const { data: pref } = await supabase
+    const { data: pref, error: prefError } = await supabase
       .from("company_preferences")
       .select("preferred_emission_source")
       .eq("company_id", companyId)
       .maybeSingle();
 
+    if (prefError) throw prefError;
+
     const preferredSource = pref?.preferred_emission_source || "DEFRA";
 
-    // Find entries with no emissions calculated (emissions is NULL)
     const missingFactorsSet = new Set<string>();
 
     entriesData.forEach((entry) => {
-      // Check if emission factor is present in emission_factors for this entry
       const factorExists = factorsData.some(
         (factor) =>
           factor.category_1.toLowerCase().trim() === entry.category.toLowerCase().trim() &&
@@ -195,7 +191,6 @@ export const runEmissionDiagnostics = async (companyId: string) => {
           Number(factor.scope) === entry.scope &&
           factor.source === preferredSource
       );
-
       if (!factorExists) {
         missingFactorsSet.add(`${entry.category}/${entry.unit}`);
       }

@@ -1,6 +1,4 @@
 
-// Utility module to match emission entries to the best available emission factor (DEFRA source) using enhanced fuzzy category matching with improved normalization, synonyms, and logging.
-
 import Fuse from "fuse.js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -36,7 +34,6 @@ const synonymsMap: Record<string, string> = {
   liter: "liters",
   litre: "liters",
   l: "liters",
-  litre: "liters",
   petrol: "gasoline",
   gas: "gasoline",
   gasoline: "gasoline",
@@ -47,7 +44,6 @@ const synonymsMap: Record<string, string> = {
   ton: "t",
   tonnage: "t",
   t: "t",
-  // Add more synonyms as needed
 };
 
 /**
@@ -55,7 +51,6 @@ const synonymsMap: Record<string, string> = {
  */
 const normalizeStr = (str: string): string => {
   const lowered = str.toLowerCase().trim().replace(/\s+/g, " ");
-  // Replace synonyms if any
   const replaced = synonymsMap[lowered] ?? lowered;
   return replaced;
 };
@@ -76,12 +71,12 @@ const buildFullCategory = (factor: EmissionFactor): string => {
 };
 
 /**
- * Normalize uom/unit applying synonyms replacement and trim/lowercase.
+ * Normalize unit applying synonyms replacement and trim/lowercase.
  */
 const normalizeUnit = (unit: string): string => normalizeStr(unit);
 
 /**
- * Normalize scope by converting number/string consistently to string, lowercased.
+ * Normalize scope by converting numbers to string and lowercasing strings.
  */
 const normalizeScope = (scope: number | string): string => {
   if (typeof scope === "number") return scope.toString();
@@ -92,24 +87,22 @@ const normalizeScope = (scope: number | string): string => {
  * Compose searchable string for each factor for Fuse search with all relevant fields.
  */
 const composeSearchString = (factor: EmissionFactor): string => {
-  // categories + uom + scope as string
   return [
     buildFullCategory(factor),
     normalizeUnit(factor.uom),
     normalizeScope(factor.scope),
-  ]
-    .join(" ");
+  ].join(" ");
 };
 
 type FuseFactor = EmissionFactor & { searchString: string };
 
 /**
- * Loads emission factors from Supabase filtered by DEFRA source (exact match).
+ * Loads emission factors from Supabase filtered by DEFRA source using lowercase exact keys.
  * Builds Fuse.js instance for fuzzy searching categories + uom + scope.
  */
 export async function loadEmissionFactorsFuse() {
   const { data, error } = await supabase
-    .from("emission_factors")
+    .from<EmissionFactor>("emission_factors")
     .select(
       "id, category_1, category_2, category_3, category_4, ghg_conversion_factor_2024, uom, source, scope"
     )
@@ -125,9 +118,9 @@ export async function loadEmissionFactorsFuse() {
     return { fuse: null, factors: [] };
   }
 
-  // Normalize scope to string explicitly
-  const factors: FuseFactor[] = data.map((factor: any) => ({
+  const factors: FuseFactor[] = data.map((factor) => ({
     ...factor,
+    // Force scope to string for uniformity
     scope: typeof factor.scope === "number" ? factor.scope.toString() : factor.scope,
     category_1: factor.category_1 ?? "",
     category_2: factor.category_2 ?? "",
@@ -139,7 +132,6 @@ export async function loadEmissionFactorsFuse() {
     searchString: composeSearchString(factor),
   }));
 
-  // Setup Fuse index options: search on composed searchString
   const fuse = new Fuse(factors, {
     keys: ["searchString"],
     threshold: 0.4,
@@ -154,9 +146,7 @@ export async function loadEmissionFactorsFuse() {
 }
 
 /**
- * Match a single emission entry to an emission factor using fuzzy matching,
- * with boosting for exact uom and scope matches.
- * Returns matched factor and calculated emissions or logs if none found.
+ * Match a single emission entry to emission factor using fuzzy matching and boosting exact uom/scope matches.
  */
 export async function matchEmissionEntry(
   entry: EmissionEntry
@@ -166,43 +156,32 @@ export async function matchEmissionEntry(
     return {
       matchedFactor: null,
       calculatedEmissions: null,
-      log: `[EmissionFactorMatcher] Invalid input: missing category, unit or scope`,
+      log: "[EmissionFactorMatcher] Invalid input: missing category, unit or scope",
     };
   }
 
-  // Normalize inputs with synonym replacements for unit and normalized category.
   const normCategory = normalizeStr(category);
   const normUnit = normalizeUnit(unit);
   const normScope = normalizeScope(scope);
 
   const { fuse, factors } = await loadEmissionFactorsFuse();
-
   if (!fuse) {
-    const logMessage = "[EmissionFactorMatcher] Emission Factors Fuse index not available";
-    return { matchedFactor: null, calculatedEmissions: null, log: logMessage };
+    return {
+      matchedFactor: null,
+      calculatedEmissions: null,
+      log: "[EmissionFactorMatcher] Emission Factors Fuse index not available",
+    };
   }
-
-  /*
-   * Strategy:
-   * - Build search string to query Fuse that includes category + unit + scope normalized.
-   * - Fuse returns list of best matches (with score).
-   * - We boost score for exact match on uom and scope vs entry.
-   */
 
   const searchString = `${normCategory} ${normUnit} ${normScope}`;
+  let searchResults = fuse.search(searchString, { limit: 10 });
 
-  // Search with Fuse
-  let searchResults = fuse.search(searchString);
-
-  // If no results, fallback search only on normalized category
   if (searchResults.length === 0) {
-    searchResults = fuse.search(normCategory);
+    searchResults = fuse.search(normCategory, { limit: 10 });
   }
 
-  // If still no results, log top 3 closest matches (from entire factor list by manual string distance)
   if (searchResults.length === 0) {
-    // Prepare an array of candidate debug strings sorted by Fuse as fallback: order by simple Levenshtein or string similarity for category
-    // but for simplicity just pick first 3 factors with best searchString similarity (we'll reuse Fuse scores by searching only category)
+    // Provide top 3 closest matches by category as debug info
     const fuseCat = new Fuse(factors, {
       keys: ["searchString"],
       threshold: 1.0,
@@ -212,20 +191,21 @@ export async function matchEmissionEntry(
       minMatchCharLength: 1,
       includeScore: true,
     });
-    const catResults = fuseCat.search(normCategory, { limit: 3 });
 
+    const catResults = fuseCat.search(normCategory, { limit: 3 });
     const logMatches = catResults.map((r) => {
       return `id:${r.item.id}, category: "${r.item.category_1} ${r.item.category_2} ${r.item.category_3} ${r.item.category_4}", uom: ${r.item.uom}, scope: ${r.item.scope}, score: ${r.score?.toFixed(4)}`;
     }).join(" | ");
 
-    const logMsg = `[EmissionFactorMatcher] No matching emission factor for category "${category}", unit "${unit}", scope "${scope}". Top 3 closest matches: ${logMatches}`;
-    return { matchedFactor: null, calculatedEmissions: null, log: logMsg };
+    return {
+      matchedFactor: null,
+      calculatedEmissions: null,
+      log: `[EmissionFactorMatcher] No matching emission factor for input category "${category}", unit "${unit}", scope "${scope}". Top 3 closest matches: ${logMatches}`,
+    };
   }
 
-  // Post-process results to boost matches with exact uom and scope matching:
-  const boostedResults = searchResults.map(result => {
-    const { item, score } = result;
-    // Lower score is better, reduce score by 0.1 if uom & scope match exactly (scaled boost)
+  // Boost score for exact matches on uom and scope
+  const boostedResults = searchResults.map(({ item, score }) => {
     let boost = 0;
     if (normalizeUnit(item.uom) === normUnit) boost -= 0.1;
     if (normalizeScope(item.scope) === normScope) boost -= 0.1;
@@ -237,14 +217,15 @@ export async function matchEmissionEntry(
     };
   });
 
-  // Sort again by boosted score ascending (better matches first)
   boostedResults.sort((a, b) => a.boostedScore - b.boostedScore);
-
   const bestMatch = boostedResults[0].item;
 
   if (!bestMatch) {
-    const logMessage = "[EmissionFactorMatcher] No emission factor matched after boosting.";
-    return { matchedFactor: null, calculatedEmissions: null, log: logMessage };
+    return {
+      matchedFactor: null,
+      calculatedEmissions: null,
+      log: "[EmissionFactorMatcher] No emission factor matched after boosting.",
+    };
   }
 
   if (bestMatch.ghg_conversion_factor_2024 == null) {
@@ -255,7 +236,6 @@ export async function matchEmissionEntry(
     };
   }
 
-  // Calculate emissions using matched conversion factor
   const emissions = quantity * bestMatch.ghg_conversion_factor_2024;
 
   return {
@@ -263,3 +243,4 @@ export async function matchEmissionEntry(
     calculatedEmissions: emissions,
   };
 }
+
