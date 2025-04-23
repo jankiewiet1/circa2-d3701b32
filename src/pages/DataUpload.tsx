@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from "react";
 import Papa from "papaparse";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,7 +22,6 @@ type EmissionEntry = {
   notes?: string;
 };
 
-// Adjusted the type for insert to correctly omit emission_factor which is nullable now
 interface EmissionEntryInsert {
   company_id: string;
   date: string;
@@ -49,7 +47,6 @@ export default function DataUpload() {
 
   const [mode, setMode] = useState<"csv" | "manual">("csv");
 
-  // CSV Upload state
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvRows, setCsvRows] = useState<
     (EmissionEntry & { isNew?: boolean; isUpdate?: boolean })[]
@@ -57,7 +54,6 @@ export default function DataUpload() {
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [isUploadingCsv, setIsUploadingCsv] = useState(false);
 
-  // Manual Entry state
   const [manualEntry, setManualEntry] = useState<Partial<EmissionEntry>>({});
   const [manualEntryErrors, setManualEntryErrors] = useState<string[]>([]);
   const [isSubmittingManual, setIsSubmittingManual] = useState(false);
@@ -95,7 +91,6 @@ export default function DataUpload() {
               return;
             }
 
-            // Validate individual fields
             const dateValue = new Date(row.date);
             if (isNaN(dateValue.getTime())) {
               errors.push(`Row ${idx + 2}: Invalid date format`);
@@ -169,7 +164,6 @@ export default function DataUpload() {
 
     setIsUploadingCsv(true);
     try {
-      // Use explicit type for rows to upsert without emission_factor
       const rowsToUpsert: EmissionEntryInsert[] = csvRows.map((row) => ({
         company_id: company.id,
         date: row.date,
@@ -708,4 +702,3 @@ export default function DataUpload() {
     </MainLayout>
   );
 }
-
