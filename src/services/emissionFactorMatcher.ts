@@ -103,9 +103,9 @@ type FuseFactor = EmissionFactor & { searchString: string };
  */
 export async function loadEmissionFactorsFuse(): Promise<{ fuse: Fuse<FuseFactor>; factors: FuseFactor[] }> {
   const { data, error } = await supabase
-    .from<"emission_factors", EmissionFactor>("emission_factors")
+    .from("emission_factors")
     .select(
-      `"ID", category_1, category_2, category_3, category_4, "GHG Conversion Factor 2024", uom, "Source", scope`
+      `ID, category_1, category_2, category_3, category_4, "GHG Conversion Factor 2024", uom, Source, scope`
     )
     .eq("Source", "DEFRA");
 
@@ -119,6 +119,7 @@ export async function loadEmissionFactorsFuse(): Promise<{ fuse: Fuse<FuseFactor
     return { fuse: new Fuse([], { keys: ["searchString"] }), factors: [] };
   }
 
+  // Map data to FuseFactor with safe property names and search string
   const factors: FuseFactor[] = data.map((factor) => ({
     ID: factor.ID,
     category_1: factor.category_1 ?? "",
@@ -175,6 +176,7 @@ export async function matchEmissionEntry(
   const normScope = normalizeScope(scope);
 
   const { fuse, factors } = await loadEmissionFactorsFuse();
+
   if (!fuse) {
     return {
       matchedFactor: null,
