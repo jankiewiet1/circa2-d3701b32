@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Treemap, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
@@ -7,6 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useEmissionEntries } from '@/hooks/useScope1Emissions';
 
 interface TreemapData {
   name: string;
@@ -30,7 +32,7 @@ export const EmissionsByCategory = () => {
 
   useEffect(() => {
     if (emissions && emissions.length > 0) {
-      const factorErrors = emissions.filter(emission => !emission.emission_factor);
+      const factorErrors = emissions.filter(emission => emission.emission_factor === 0);
       setHasEmissionFactorError(factorErrors.length > 0);
     } else {
       setHasEmissionFactorError(false);
@@ -39,25 +41,25 @@ export const EmissionsByCategory = () => {
 
   useEffect(() => {
     if (emissions.length > 0) {
-      const sourceEmissions: Record<string, number> = {};
+      // emissions do not have 'source', so grouping by category instead, aggregating emissions value
+      const categoryEmissions: Record<string, number> = {};
       emissions.forEach(emission => {
-        if (emission.source) {
-          sourceEmissions[emission.source] = (sourceEmissions[emission.source] || 0) + (emission.emissions_co2e || 0);
-        }
+        const cat = emission.category || 'Unknown';
+        categoryEmissions[cat] = (categoryEmissions[cat] || 0) + (emission.emissions || 0);
       });
-      
-      const total = Object.values(sourceEmissions).reduce((sum, val) => sum + val, 0);
+
+      const total = Object.values(categoryEmissions).reduce((sum, val) => sum + val, 0);
       setTotalEmissions(total);
-      
-      const maxEmission = Math.max(...Object.values(sourceEmissions));
-      
-      const data: TreemapData[] = Object.entries(sourceEmissions).map(([source, value]) => ({
-        name: source,
+
+      const maxEmission = Math.max(...Object.values(categoryEmissions));
+
+      const data: TreemapData[] = Object.entries(categoryEmissions).map(([category, value]) => ({
+        name: category,
         size: value,
         color: getColor(value, maxEmission),
-        percentOfTotal: (value / total) * 100
+        percentOfTotal: (value / total) * 100,
       }));
-      
+
       setTreemapData(data);
     }
   }, [emissions]);
@@ -77,20 +79,20 @@ export const EmissionsByCategory = () => {
   };
 
   const CustomTreemapContent = (props: any) => {
-    const { root, x, y, width, height } = props;
-    
+    const { root } = props;
+
     if (!root || !root.children) {
       return null;
     }
-    
+
     return (
       <g>
         {root.children.map((node: any, i: number) => {
           const nodeWidth = node.x1 - node.x0;
           const nodeHeight = node.y1 - node.y0;
-          
+
           const showText = nodeWidth > 50 && nodeHeight > 30;
-          
+
           return (
             <g key={`node-${i}`}>
               <rect
@@ -160,7 +162,7 @@ export const EmissionsByCategory = () => {
             </AlertDescription>
           </Alert>
         )}
-        
+
         <div className="h-96">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">

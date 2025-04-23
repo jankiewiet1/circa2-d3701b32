@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
@@ -22,55 +23,54 @@ export const EmissionsOverviewDashboard = () => {
 
   useEffect(() => {
     if (emissions.length > 0) {
-      const scope1Total = emissions.reduce((sum, emission) => sum + (emission.emissions_co2e || 0), 0);
-      
+      const scope1Total = emissions.reduce((sum, emission) => sum + (emission.emissions || 0), 0);
+
       const newScopeData = [
         { name: 'Scope 1', value: scope1Total },
         { name: 'Scope 2', value: 0 },
         { name: 'Scope 3', value: 0 }
       ];
-      
+
       const emissionsByMonth: Record<string, number> = {};
       emissions.forEach(emission => {
         if (emission.date) {
           const month = emission.date.substring(0, 7);
-          emissionsByMonth[month] = (emissionsByMonth[month] || 0) + (emission.emissions_co2e || 0);
+          emissionsByMonth[month] = (emissionsByMonth[month] || 0) + (emission.emissions || 0);
         }
       });
-      
+
       const sortedMonths = Object.keys(emissionsByMonth).sort();
       const newMonthlyData = sortedMonths.map(month => ({
         name: format(new Date(month + '-01'), 'MMM yyyy'),
         emissions: parseFloat(emissionsByMonth[month].toFixed(2))
       }));
-      
-      const sourceEmissions: Record<string, number> = {};
+
+      const categoryEmissions: Record<string, number> = {};
       emissions.forEach(emission => {
-        if (emission.source) {
-          sourceEmissions[emission.source] = (sourceEmissions[emission.source] || 0) + (emission.emissions_co2e || 0);
-        }
+        const cat = emission.category || 'Unknown';
+        categoryEmissions[cat] = (categoryEmissions[cat] || 0) + (emission.emissions || 0);
       });
-      
+
       let maxEmissions = 0;
-      let maxSource = '';
-      Object.entries(sourceEmissions).forEach(([source, amount]) => {
+      let maxCategory = '';
+      Object.entries(categoryEmissions).forEach(([category, amount]) => {
         if (amount > maxEmissions) {
           maxEmissions = amount;
-          maxSource = source;
+          maxCategory = category;
         }
       });
-      
-      const total = emissions.reduce((sum, emission) => sum + (emission.emissions_co2e || 0), 0);
-      
+
+      const total = emissions.reduce((sum, emission) => sum + (emission.emissions || 0), 0);
+
       const previousTotal = total * 0.9;
       const change = ((total - previousTotal) / previousTotal) * 100;
-      
+
       setScopeData(newScopeData);
       setMonthlyData(newMonthlyData);
       setTotalEmissions(total);
       setChangePercentage(Math.abs(change));
       setIsIncreasing(change > 0);
-      setTopCategory(maxSource);
+      setTopCategory(maxCategory);
     }
   }, [emissions]);
 
@@ -138,8 +138,8 @@ export const EmissionsOverviewDashboard = () => {
             <div className="flex items-center">
               <Calendar className="mr-2 h-4 w-4 text-circa-green" />
               <span className="text-xl font-bold">
-                {emissions.length > 0 
-                  ? format(new Date(), 'dd MMM yyyy') 
+                {emissions.length > 0
+                  ? format(new Date(), 'dd MMM yyyy')
                   : 'No data'}
               </span>
             </div>

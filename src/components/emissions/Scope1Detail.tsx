@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, PieChart, Pie, Cell } from 'recharts';
@@ -8,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Download, RefreshCw } from 'lucide-react';
 import { EmissionFactorStatus } from './EmissionFactorStatus';
 import { CalculationStatus } from './CalculationStatus';
-import { toast } from 'sonner';
 
 const COLORS = ['#0E5D40', '#6ED0AA', '#AAE3CA', '#D6F3E7', '#1E6F50', '#2E8060', '#3E9170'];
 
@@ -16,40 +16,40 @@ export const Scope1Detail = () => {
   const { company } = useCompany();
   const { entries: emissions, isLoading, fetchEntries: fetchEmissions } = useEmissionEntries(company?.id || '', 1);
   const [fuelTypeData, setFuelTypeData] = useState<any[]>([]);
+  const [categoryData, setCategoryData] = useState<any[]>([]);
   const [sourceData, setSourceData] = useState<any[]>([]);
-
+  
   useEffect(() => {
     if (emissions.length > 0) {
+      // Note: emission object does not have fuel_type nor source, but has category and quantity
       const fuelTypeEmissions: Record<string, number> = {};
       emissions.forEach(emission => {
-        if (emission.fuel_type && emission.emissions_co2e) {
-          fuelTypeEmissions[emission.fuel_type] = (fuelTypeEmissions[emission.fuel_type] || 0) + 
-            (emission.emissions_co2e || 0);
-        }
+        const type = emission.category || 'Unknown';
+        fuelTypeEmissions[type] = (fuelTypeEmissions[type] || 0) + (emission.emissions || 0);
       });
-      
+
       const fuelTypeChartData = Object.entries(fuelTypeEmissions).map(([type, value]) => ({
         name: type,
         value: parseFloat(value.toFixed(2))
       }));
-      
-      const sourceEmissions: Record<string, number> = {};
+
+      setFuelTypeData(fuelTypeChartData);
+
+      // source field does not exist in EmissionEntryData, so skip source breakdown or consider an alternative if available
+      const categoryEmissions: Record<string, number> = {};
       emissions.forEach(emission => {
-        if (emission.source && emission.emissions_co2e) {
-          sourceEmissions[emission.source] = (sourceEmissions[emission.source] || 0) + 
-            (emission.emissions_co2e || 0);
-        }
+        const cat = emission.category || 'Unknown';
+        categoryEmissions[cat] = (categoryEmissions[cat] || 0) + (emission.emissions || 0);
       });
-      
-      const sourceChartData = Object.entries(sourceEmissions)
-        .map(([source, value]) => ({
-          name: source,
+
+      const categoryChartData = Object.entries(categoryEmissions)
+        .map(([category, value]) => ({
+          name: category,
           emissions: parseFloat(value.toFixed(2))
         }))
         .sort((a, b) => b.emissions - a.emissions);
-      
-      setFuelTypeData(fuelTypeChartData);
-      setSourceData(sourceChartData);
+
+      setCategoryData(categoryChartData);
     }
   }, [emissions]);
 
@@ -61,22 +61,20 @@ export const Scope1Detail = () => {
 
   const exportToCSV = () => {
     if (emissions.length === 0) return;
-    
-    const headers = ['Date', 'Source', 'Fuel Type', 'Amount', 'Unit', 'Emissions (tCO₂e)', 'Emission Factor', 'Factor Source'];
+
+    const headers = ['Date', 'Category', 'Quantity', 'Unit', 'Emissions (tCO₂e)', 'Emission Factor'];
     const csvContent = [
       headers.join(','),
       ...emissions.map(e => [
         e.date,
-        e.source,
-        e.fuel_type,
-        e.amount,
+        e.category,
+        e.quantity,
         e.unit,
-        e.emissions_co2e || 0,
-        e.emission_factor || '',
-        e.emission_factor_source || ''
+        e.emissions || 0,
+        e.emission_factor || ''
       ].join(','))
     ].join('\n');
-    
+
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -105,14 +103,57 @@ export const Scope1Detail = () => {
       </div>
 
       <EmissionFactorStatus />
-      
+
       <CalculationStatus />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle>Emissions by Fuel Type</CardTitle>
-            <CardDescription>Distribution across different fuel types</CardDescription>
+            <CardTitle>Emissions by Category</CardTitle>
+            <CardDescription>Distribution across different categories</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <p>Loading data...</p>
+                </div>
+              ) : categoryData.length > 0 ? (
+                <ChartContainer config={{}}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={categoryData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={100}
+                        fill="#8884d8"
+                        dataKey="emissions"
+                      >
+                        {categoryData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip formatter={(value) => [`${value} tonnes CO₂e`, 'Emissions']} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p>No emissions data available</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Emissions by Fuel Type (using category as proxy)</CardTitle>
+            <CardDescription>Distribution across categories</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -141,47 +182,6 @@ export const Scope1Detail = () => {
                       <RechartsTooltip formatter={(value) => [`${value} tonnes CO₂e`, 'Emissions']} />
                       <Legend />
                     </PieChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <p>No emissions data available</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Emissions by Source</CardTitle>
-            <CardDescription>CO₂e by facility or asset</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              {isLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <p>Loading data...</p>
-                </div>
-              ) : sourceData.length > 0 ? (
-                <ChartContainer config={{ "emissions": { color: "#0E5D40" } }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={sourceData}
-                      layout="vertical"
-                      margin={{ top: 5, right: 30, left: 50, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" />
-                      <YAxis 
-                        dataKey="name" 
-                        type="category"
-                        width={120}
-                        tick={{ fontSize: 12 }}
-                      />
-                      <RechartsTooltip formatter={(value) => [`${value} tonnes CO₂e`, 'Emissions']} />
-                      <Bar dataKey="emissions" fill="#0E5D40" />
-                    </BarChart>
                   </ResponsiveContainer>
                 </ChartContainer>
               ) : (

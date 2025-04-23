@@ -1,11 +1,12 @@
 
+// Fix import, but it already uses useEmissionEntries, confirm usage is correct
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 import { fetchCompanyPreferences } from '@/services/companyPreferencesService';
-import { useEmissionEntries } from '@/hooks/useScope1Emissions'; // updated import
+import { useEmissionEntries } from '@/hooks/useScope1Emissions';
 
 interface EmissionCalculationStatusProps {
   companyId: string;
@@ -21,7 +22,7 @@ export const EmissionCalculationStatus = ({ companyId }: EmissionCalculationStat
     calculated: 0,
     preferredSource: 'DEFRA',
   });
-  
+
   // useEmissionEntries with scopeFilter = 1
   const { entries: emissions, isLoading } = useEmissionEntries(companyId, 1);
 
@@ -35,6 +36,7 @@ export const EmissionCalculationStatus = ({ companyId }: EmissionCalculationStat
 
         const totalCount = emissions.length;
 
+        // Filter count of emissions that have non-null emissions value
         const calculatedCount = emissions.filter(e => e.emissions !== null && e.emissions !== undefined).length;
 
         setCalculationStatus({
@@ -81,4 +83,3 @@ export const EmissionCalculationStatus = ({ companyId }: EmissionCalculationStat
     </div>
   );
 };
-
