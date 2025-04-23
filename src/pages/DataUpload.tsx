@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from "react";
 import Papa from "papaparse";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +22,18 @@ type EmissionEntry = {
   scope: number;
   notes?: string;
 };
+
+// Define the type used for inserting/upserting emission entries, includes company_id
+interface EmissionEntryInsert {
+  company_id: string;
+  date: string;
+  category: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  scope: number;
+  notes?: string | null;
+}
 
 const requiredFields = [
   "date",
@@ -157,32 +170,21 @@ export default function DataUpload() {
 
     setIsUploadingCsv(true);
     try {
-      // Cast payload to exclude emission_factor and other non-inserted fields
-      const rowsToUpsert = csvRows.map((row) =>
-        ({
-          company_id: company.id,
-          date: row.date,
-          category: row.category,
-          description: row.description,
-          quantity: row.quantity,
-          unit: row.unit,
-          scope: row.scope,
-          notes: row.notes ?? null,
-        } as Omit<
-          Parameters<typeof supabase.from>[0] extends infer T
-            ? T extends { upsert: (v: infer V) => any }
-              ? V extends (infer U)[]
-                ? U
-                : never
-              : never
-            : never,
-          "emission_factor" | "emissions" | "id" | "created_at" | "updated_at" | "upload_session_id" | "year"
-        >)
-      );
+      // Use explicit type for rows to upsert
+      const rowsToUpsert: EmissionEntryInsert[] = csvRows.map((row) => ({
+        company_id: company.id,
+        date: row.date,
+        category: row.category,
+        description: row.description,
+        quantity: row.quantity,
+        unit: row.unit,
+        scope: row.scope,
+        notes: row.notes ?? null,
+      }));
 
       const { error } = await supabase
         .from("emission_entries")
-        .upsert(rowsToUpsert as any, {
+        .upsert(rowsToUpsert, {
           onConflict: "company_id,date,category,unit,scope",
         });
 
@@ -272,7 +274,7 @@ export default function DataUpload() {
     setIsSubmittingManual(true);
     try {
       const dateObj = new Date(manualEntry.date as string);
-      const entryToUpsert = [
+      const entryToUpsert: EmissionEntryInsert[] = [
         {
           company_id: company.id,
           date: dateObj.toISOString().split("T")[0],
@@ -284,21 +286,12 @@ export default function DataUpload() {
           notes: manualEntry.notes
             ? (manualEntry.notes || "").toString().trim()
             : null,
-        } as Omit<
-          Parameters<typeof supabase.from>[0] extends infer T
-            ? T extends { upsert: (v: infer V) => any }
-              ? V extends (infer U)[]
-                ? U
-                : never
-              : never
-            : never,
-          "emission_factor" | "emissions" | "id" | "created_at" | "updated_at" | "upload_session_id" | "year"
-        >,
+        },
       ];
 
       const { error } = await supabase
         .from("emission_entries")
-        .upsert(entryToUpsert as any, {
+        .upsert(entryToUpsert, {
           onConflict: "company_id,date,category,unit,scope",
         });
 
@@ -716,3 +709,4 @@ export default function DataUpload() {
     </MainLayout>
   );
 }
+
