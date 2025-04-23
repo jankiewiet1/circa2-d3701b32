@@ -316,43 +316,43 @@ export type Database = {
       }
       emission_factors: {
         Row: {
-          Category_1: string
-          Category_2: string
-          Category_3: string
-          Category_4: string
+          category_1: string
+          category_2: string
+          category_3: string
+          category_4: string
           "Column Text": string
           "GHG Conversion Factor 2024": number | null
           "GHG/Unit": string
           ID: number
-          Scope: string
+          scope: string
           Source: string
-          UOM: string
+          uom: string
         }
         Insert: {
-          Category_1?: string
-          Category_2?: string
-          Category_3?: string
-          Category_4?: string
+          category_1?: string
+          category_2?: string
+          category_3?: string
+          category_4?: string
           "Column Text"?: string
           "GHG Conversion Factor 2024"?: number | null
           "GHG/Unit"?: string
           ID?: number
-          Scope?: string
+          scope?: string
           Source?: string
-          UOM?: string
+          uom?: string
         }
         Update: {
-          Category_1?: string
-          Category_2?: string
-          Category_3?: string
-          Category_4?: string
+          category_1?: string
+          category_2?: string
+          category_3?: string
+          category_4?: string
           "Column Text"?: string
           "GHG Conversion Factor 2024"?: number | null
           "GHG/Unit"?: string
           ID?: number
-          Scope?: string
+          scope?: string
           Source?: string
-          UOM?: string
+          uom?: string
         }
         Relationships: []
       }
