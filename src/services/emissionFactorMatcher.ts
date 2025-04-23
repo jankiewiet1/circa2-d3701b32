@@ -1,3 +1,4 @@
+
 import Fuse from "fuse.js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -22,7 +23,7 @@ interface EmissionEntry {
 
 export interface MatchedEmissionResult {
   matchedFactor: EmissionFactor | null;
-  calculatedEmissions: number | null;
+  calculatedEmissions: number;
   log?: string;
 }
 
@@ -45,9 +46,9 @@ const synonymsMap: Record<string, string> = {
   t: "t",
   diesel: "diesel",
   biofuel: "biofuel",
-  "average biofuel blend": "biofuel", // normalize biofuel blends into same term
-  diesel blend: "diesel",
-  diesel oil: "diesel",
+  "average biofuel blend": "biofuel", // normalize biofuel blends
+  "diesel blend": "diesel",
+  "diesel oil": "diesel",
   ltr: "liters",
   litre: "liters",
   kwht: "kwh",
@@ -100,7 +101,10 @@ type FuseFactor = EmissionFactor & {
  * Loads emission factors from Supabase filtered by Source = 'DEFRA' using correct casing.
  * Builds Fuse.js instance for fuzzy searching categories + uom + scope.
  */
-export async function loadEmissionFactorsFuse(): Promise<{ fuse: Fuse<FuseFactor>; factors: FuseFactor[] }> {
+export async function loadEmissionFactorsFuse(): Promise<{
+  fuse: Fuse<FuseFactor>;
+  factors: FuseFactor[];
+}> {
   const { data, error } = await supabase
     .from("emission_factors")
     .select(
@@ -152,7 +156,7 @@ export async function loadEmissionFactorsFuse(): Promise<{ fuse: Fuse<FuseFactor
 
 /**
  * Match a single emission entry to emission factor using fuzzy matching and boosting exact uom/scope matches.
- * Returns always a calculated emissions number (even 0 if missing EF) and useful logging.
+ * Returns always a calculated emissions number (0 if missing EF) and useful logging.
  */
 export async function matchEmissionEntry(
   entry: EmissionEntry
@@ -204,7 +208,11 @@ export async function matchEmissionEntry(
     const catResults = fuseCat.search(normCategory, { limit: 3 });
     const logMatches = catResults
       .map((r) => {
-        return `ID:${r.item.ID}, categories: "${r.item.normalizedCategories.join(" ")}", uom: ${r.item.uom}, scope: ${r.item.scope}, score: ${r.score?.toFixed(4)}`;
+        return `ID:${r.item.ID}, categories: "${r.item.normalizedCategories.join(
+          " "
+        )}", uom: ${r.item.uom}, scope: ${r.item.scope}, score: ${
+          r.score?.toFixed(4) ?? "N/A"
+        }`;
       })
       .join(" | ");
 
@@ -242,13 +250,13 @@ export async function matchEmissionEntry(
   const efValue = bestMatch["GHG Conversion Factor 2024"];
   if (efValue == null || efValue === undefined) {
     return {
-      matchedFactor: null,
+      matchedFactor: bestMatch,
       calculatedEmissions: 0,
       log: `[EmissionFactorMatcher] Matched emission factor missing GHG Conversion Factor 2024 for category "${category}"`,
     };
   }
 
-  // Emit calculated emissions (quantity*efValue)
+  // Emit calculated emissions (quantity * efValue)
   const emissions = quantity * efValue;
 
   return {
@@ -256,3 +264,4 @@ export async function matchEmissionEntry(
     calculatedEmissions: emissions,
   };
 }
+
