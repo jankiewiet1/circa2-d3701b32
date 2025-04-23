@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from "react";
 import Papa from "papaparse";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +14,6 @@ import { MainLayout } from "@/components/MainLayout";
 
 type EmissionEntry = {
   date: string;
-  year: number;
   category: string;
   description: string;
   quantity: number;
@@ -105,7 +103,6 @@ export default function DataUpload() {
 
             parsedRows.push({
               date: dateValue.toISOString().split("T")[0],
-              year: dateValue.getFullYear(),
               category: row.category.toString().trim(),
               description: row.description.toString().trim(),
               quantity: quantityNum,
@@ -164,7 +161,6 @@ export default function DataUpload() {
         company_id: company.id,
         emission_factor: 0,
         date: row.date,
-        year: row.year,
         category: row.category,
         description: row.description,
         quantity: row.quantity,
@@ -269,7 +265,6 @@ export default function DataUpload() {
         {
           company_id: company.id,
           date: dateObj.toISOString().split("T")[0],
-          year: dateObj.getFullYear(),
           category: (manualEntry.category || "").toString().trim(),
           description: (manualEntry.description || "").toString().trim(),
           quantity: Number(manualEntry.quantity),

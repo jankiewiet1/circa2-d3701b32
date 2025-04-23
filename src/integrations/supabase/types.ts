@@ -255,6 +255,7 @@ export type Database = {
           emission_factor: number
           emissions: number | null
           id: string
+          notes: string | null
           quantity: number
           scope: number
           unit: string
@@ -271,6 +272,7 @@ export type Database = {
           emission_factor: number
           emissions?: number | null
           id?: string
+          notes?: string | null
           quantity: number
           scope: number
           unit: string
@@ -287,6 +289,7 @@ export type Database = {
           emission_factor?: number
           emissions?: number | null
           id?: string
+          notes?: string | null
           quantity?: number
           scope?: number
           unit?: string
