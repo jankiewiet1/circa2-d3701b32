@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from "react";
 import Papa from "papaparse";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,11 +8,9 @@ import { toast } from "sonner";
 import {
   Upload,
   Check,
-  X as XIcon,
   AlertTriangle,
 } from "lucide-react";
 import { MainLayout } from "@/components/MainLayout";
-import { matchEmissionEntry } from "@/services/emissionFactorMatcher";
 
 type EmissionEntry = {
   date: string;
@@ -32,8 +31,6 @@ interface EmissionEntryInsert {
   unit: string;
   scope: number;
   notes?: string | null;
-  emission_factor?: number | null;
-  emissions?: number | null;
 }
 
 const requiredFields = [
@@ -51,16 +48,7 @@ export default function DataUpload() {
   const [mode, setMode] = useState<"csv" | "manual">("csv");
 
   const [csvFile, setCsvFile] = useState<File | null>(null);
-  const [csvRows, setCsvRows] = useState<
-    (EmissionEntry & {
-      isNew?: boolean;
-      isUpdate?: boolean;
-      emission_factor?: number | null;
-      emissions?: number | null;
-      match_status?: string;
-      match_log?: string;
-    })[]
-  >([]);
+  const [csvRows, setCsvRows] = useState<EmissionEntry[]>([]);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [isUploadingCsv, setIsUploadingCsv] = useState(false);
 
@@ -75,16 +63,9 @@ export default function DataUpload() {
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
-        complete: async (results) => {
+        complete: (results) => {
           const rawData = results.data as Record<string, any>[];
-          const parsedRows: (EmissionEntry & {
-            isNew?: boolean;
-            isUpdate?: boolean;
-            emission_factor?: number | null;
-            emissions?: number | null;
-            match_status?: string;
-            match_log?: string;
-          })[] = [];
+          const parsedRows: EmissionEntry[] = [];
           const errors: string[] = [];
 
           for (let idx = 0; idx < rawData.length; idx++) {
@@ -134,38 +115,7 @@ export default function DataUpload() {
               notes: row.notes ? row.notes.toString().trim() : undefined,
             };
 
-            try {
-              const matchResult = await matchEmissionEntry({
-                category: entry.category,
-                unit: entry.unit,
-                scope: entry.scope.toString(),
-                quantity: entry.quantity,
-              });
-              // We're now robustly handling missing matches by setting emissions and factors safely:
-              const emissionFactorValue = matchResult.matchedFactor
-                ? matchResult.matchedFactor["GHG Conversion Factor 2024"]
-                : null;
-              const emissionsValue = matchResult.calculatedEmissions ?? null;
-
-              parsedRows.push({
-                ...entry,
-                isNew: true,
-                emission_factor: emissionFactorValue,
-                emissions: emissionsValue,
-                match_status: matchResult.matchedFactor ? "matched" : "unmatched",
-                match_log: matchResult.log,
-              });
-            } catch (e) {
-              errors.push(`Row ${idx + 2}: Matching error - ${(e as Error).message}`);
-              parsedRows.push({
-                ...entry,
-                isNew: true,
-                emission_factor: null,
-                emissions: null,
-                match_status: "unmatched",
-                match_log: `Error: ${(e as Error).message}`,
-              });
-            }
+            parsedRows.push(entry);
           }
 
           setValidationErrors(errors);
@@ -215,8 +165,6 @@ export default function DataUpload() {
         unit: row.unit,
         scope: row.scope,
         notes: row.notes ?? null,
-        emission_factor: row.emission_factor ?? null,
-        emissions: row.emissions ?? null,
       }));
 
       const { error } = await supabase
@@ -447,8 +395,6 @@ export default function DataUpload() {
                       <th className="p-3 text-right">Quantity</th>
                       <th className="p-3 text-left">Unit</th>
                       <th className="p-3 text-right">Scope</th>
-                      <th className="p-3 text-left">Emissions (calculated)</th>
-                      <th className="p-3 text-left">Match Status</th>
                       <th className="p-3 text-left">Notes</th>
                     </tr>
                   </thead>
@@ -463,19 +409,10 @@ export default function DataUpload() {
                         }
                       >
                         <td className="p-3">
-                          {row.isNew ? (
-                            <Check
-                              className="text-green-600"
-                              aria-label="New"
-                            />
-                          ) : row.isUpdate ? (
-                            <XIcon
-                              className="text-yellow-600"
-                              aria-label="Update"
-                            />
-                          ) : (
-                            <></>
-                          )}
+                          <Check
+                            className="text-green-600"
+                            aria-label="New"
+                          />
                         </td>
                         <td className="p-3">{row.date}</td>
                         <td className="p-3">{row.category}</td>
@@ -483,14 +420,6 @@ export default function DataUpload() {
                         <td className="p-3 text-right">{row.quantity}</td>
                         <td className="p-3">{row.unit}</td>
                         <td className="p-3 text-right">{row.scope}</td>
-                        <td className="p-3">{row.emissions != null ? row.emissions.toFixed(3) : "-"}</td>
-                        <td className="p-3">
-                          {row.match_status === "matched" ? (
-                            <span className="text-green-700 font-semibold">Matched</span>
-                          ) : (
-                            <span className="text-red-700 font-semibold">Unmatched</span>
-                          )}
-                        </td>
                         <td className="p-3">{row.notes || "-"}</td>
                       </tr>
                     ))}
@@ -756,3 +685,4 @@ export default function DataUpload() {
     </MainLayout>
   );
 }
+
