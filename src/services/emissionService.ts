@@ -1,4 +1,6 @@
 
+// Fixing type argument usages and data checks for supabase queries
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -33,8 +35,7 @@ export interface EmissionFactorStatus {
 export const fetchEmissionFactors = async () => {
   try {
     const { data, error } = await supabase
-      .from<"emission_factors">("emission_factors")
-      // Use correct casing for columns
+      .from<"emission_factors", any>("emission_factors")
       .select(
         `"category_1", "uom", "Source", "scope", "GHG Conversion Factor 2024"`
       )
@@ -70,7 +71,7 @@ export const checkEmissionFactorStatus = async (companyId: string) => {
     }
 
     const { data: factorsData, error: factorsError } = await supabase
-      .from<"emission_factors">("emission_factors")
+      .from<"emission_factors", any>("emission_factors")
       .select(`"category_1", "uom", "Source", "scope"`);
 
     if (factorsError) throw factorsError;
@@ -164,7 +165,7 @@ export const runEmissionDiagnostics = async (companyId: string) => {
     }
 
     const { data: factorsData, error: factorsError } = await supabase
-      .from<"emission_factors">("emission_factors")
+      .from<"emission_factors", any>("emission_factors")
       .select(`"category_1", "uom", "Source", "scope"`);
 
     if (factorsError) throw factorsError;
@@ -187,8 +188,8 @@ export const runEmissionDiagnostics = async (companyId: string) => {
     entriesData.forEach((entry) => {
       const factorExists = factorsData.some(
         (factor) =>
-          factor.category_1.toLowerCase().trim() === entry.category.toLowerCase().trim() &&
-          factor.uom.toLowerCase().trim() === entry.unit.toLowerCase().trim() &&
+          (factor.category_1?.toLowerCase().trim() ?? "") === entry.category.toLowerCase().trim() &&
+          (factor.uom?.toLowerCase().trim() ?? "") === entry.unit.toLowerCase().trim() &&
           Number(factor.scope) === entry.scope &&
           factor.Source === preferredSource
       );

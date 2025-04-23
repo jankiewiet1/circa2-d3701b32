@@ -1,4 +1,6 @@
 
+// Fixing generics and property access issues with supabase query and types
+
 import Fuse from "fuse.js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -10,7 +12,7 @@ interface EmissionFactor {
   category_4: string;
   "GHG Conversion Factor 2024": number | null;
   uom: string;
-  Source: string; // Note exact casing for DB columns
+  Source: string;
   scope: string;
 }
 
@@ -118,7 +120,7 @@ export async function loadEmissionFactorsFuse(): Promise<{ fuse: Fuse<FuseFactor
   }
 
   const factors: FuseFactor[] = data.map((factor) => ({
-    id: factor.ID,
+    ID: factor.ID,
     category_1: factor.category_1 ?? "",
     category_2: factor.category_2 ?? "",
     category_3: factor.category_3 ?? "",
@@ -137,7 +139,7 @@ export async function loadEmissionFactorsFuse(): Promise<{ fuse: Fuse<FuseFactor
       Source: factor.Source ?? "",
       scope: factor.scope ?? "",
       "GHG Conversion Factor 2024": factor["GHG Conversion Factor 2024"] ?? null,
-    } as EmissionFactor),
+    }),
   }));
 
   const fuse = new Fuse(factors, {
@@ -203,7 +205,7 @@ export async function matchEmissionEntry(
     const catResults = fuseCat.search(normCategory, { limit: 3 });
     const logMatches = catResults
       .map((r) => {
-        return `id:${r.item.id}, category: "${r.item.category_1} ${r.item.category_2} ${r.item.category_3} ${r.item.category_4}", uom: ${r.item.uom}, scope: ${r.item.scope}, score: ${r.score?.toFixed(4)}`;
+        return `ID:${r.item.ID}, category: "${r.item.category_1} ${r.item.category_2} ${r.item.category_3} ${r.item.category_4}", uom: ${r.item.uom}, scope: ${r.item.scope}, score: ${r.score?.toFixed(4)}`;
       })
       .join(" | ");
 
