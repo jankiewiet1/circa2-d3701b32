@@ -23,7 +23,7 @@ type EmissionEntry = {
   notes?: string;
 };
 
-// Define the type used for inserting/upserting emission entries, includes company_id
+// Adjusted the type for insert to correctly omit emission_factor which is nullable now
 interface EmissionEntryInsert {
   company_id: string;
   date: string;
@@ -127,7 +127,6 @@ export default function DataUpload() {
             });
           });
 
-          // For simplicity, mark all rows as new
           parsedRows.forEach((row) => {
             row.isNew = true;
           });
@@ -170,7 +169,7 @@ export default function DataUpload() {
 
     setIsUploadingCsv(true);
     try {
-      // Use explicit type for rows to upsert
+      // Use explicit type for rows to upsert without emission_factor
       const rowsToUpsert: EmissionEntryInsert[] = csvRows.map((row) => ({
         company_id: company.id,
         date: row.date,

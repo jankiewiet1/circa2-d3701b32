@@ -252,7 +252,7 @@ export type Database = {
           created_at: string
           date: string
           description: string
-          emission_factor: number
+          emission_factor: number | null
           emissions: number | null
           id: string
           notes: string | null
@@ -269,7 +269,7 @@ export type Database = {
           created_at?: string
           date: string
           description: string
-          emission_factor: number
+          emission_factor?: number | null
           emissions?: number | null
           id?: string
           notes?: string | null
@@ -286,7 +286,7 @@ export type Database = {
           created_at?: string
           date?: string
           description?: string
-          emission_factor?: number
+          emission_factor?: number | null
           emissions?: number | null
           id?: string
           notes?: string | null
