@@ -1,6 +1,4 @@
 
-// Fixing generics and property access issues with supabase query and types
-
 import Fuse from "fuse.js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -46,21 +44,25 @@ const synonymsMap: Record<string, string> = {
   ton: "t",
   tonnage: "t",
   t: "t",
+  diesel: "diesel",
+  biofuel: "biofuel",
+  "average biofuel blend": "biofuel", // normalize biofuel blends into same term
+  // add more synonyms if needed
 };
 
 /**
- * Normalize and replace synonyms in input strings.
+ * Normalize a string, trim, lowercase and replace synonyms
  */
 const normalizeStr = (str: string): string => {
+  if (!str) return "";
   const lowered = str.toLowerCase().trim().replace(/\s+/g, " ");
-  const replaced = synonymsMap[lowered] ?? lowered;
-  return replaced;
+  return synonymsMap[lowered] ?? lowered;
 };
 
 /**
- * Compose the full category string by combining category_1 through category_4 (normalized).
+ * Build an array of normalized categories for each category field from the factor
  */
-const buildFullCategory = (factor: EmissionFactor): string => {
+const buildNormalizedCategories = (factor: EmissionFactor): string[] => {
   return [
     factor.category_1,
     factor.category_2,
@@ -68,8 +70,7 @@ const buildFullCategory = (factor: EmissionFactor): string => {
     factor.category_4,
   ]
     .filter(Boolean)
-    .map(normalizeStr)
-    .join(" ");
+    .map(normalizeStr);
 };
 
 /**
@@ -85,17 +86,16 @@ const normalizeScope = (scope: string): string => {
 };
 
 /**
- * Compose searchable string for each factor for Fuse search with all relevant fields.
+ * Compose searchable string for each factor for Fuse search including distinct categories + unit + scope.
+ * We generate multiple keys to allow matching on any category level.
  */
-const composeSearchString = (factor: EmissionFactor): string => {
-  return [
-    buildFullCategory(factor),
-    normalizeUnit(factor.uom),
-    normalizeScope(factor.scope),
-  ].join(" ");
+type FuseFactor = EmissionFactor & {
+  normalizedCategories: string[];
+  normalizedUnit: string;
+  normalizedScope: string;
+  // Flatten all searchable parts for Fuse
+  searchStrings: string[];
 };
-
-type FuseFactor = EmissionFactor & { searchString: string };
 
 /**
  * Loads emission factors from Supabase filtered by Source = 'DEFRA' using correct casing.
@@ -111,41 +111,41 @@ export async function loadEmissionFactorsFuse(): Promise<{ fuse: Fuse<FuseFactor
 
   if (error) {
     console.error("[EmissionFactorMatcher] Error fetching emission factors:", error);
-    return { fuse: new Fuse([], { keys: ["searchString"] }), factors: [] };
+    return { fuse: new Fuse([], { keys: ["searchStrings"] }), factors: [] };
   }
 
   if (!data || !Array.isArray(data)) {
     console.error("[EmissionFactorMatcher] No emission factors data found");
-    return { fuse: new Fuse([], { keys: ["searchString"] }), factors: [] };
+    return { fuse: new Fuse([], { keys: ["searchStrings"] }), factors: [] };
   }
 
-  // Map data to FuseFactor with safe property names and search string
-  const factors: FuseFactor[] = data.map((factor) => ({
-    ID: factor.ID,
-    category_1: factor.category_1 ?? "",
-    category_2: factor.category_2 ?? "",
-    category_3: factor.category_3 ?? "",
-    category_4: factor.category_4 ?? "",
-    uom: factor.uom ?? "",
-    Source: factor.Source ?? "",
-    scope: factor.scope ?? "",
-    "GHG Conversion Factor 2024": factor["GHG Conversion Factor 2024"] ?? null,
-    searchString: composeSearchString({
-      ID: factor.ID,
-      category_1: factor.category_1 ?? "",
-      category_2: factor.category_2 ?? "",
-      category_3: factor.category_3 ?? "",
-      category_4: factor.category_4 ?? "",
-      uom: factor.uom ?? "",
-      Source: factor.Source ?? "",
-      scope: factor.scope ?? "",
-      "GHG Conversion Factor 2024": factor["GHG Conversion Factor 2024"] ?? null,
-    }),
-  }));
+  // Map data to FuseFactor with normalized fields and multiple search strings
+  const factors: FuseFactor[] = data.map((factor) => {
+    const normalizedCategories = buildNormalizedCategories(factor);
+    const normalizedUnit = normalizeUnit(factor.uom ?? "");
+    const normalizedScope = normalizeScope(factor.scope ?? "");
+    // For Fuse, create multiple search strings, combining category with unit and scope, each category individually
+    const searchStrings = normalizedCategories.map(
+      (cat) => `${cat} ${normalizedUnit} ${normalizedScope}`
+    );
+    // Also add full combined category as separate string (fallback)
+    const fullCombinedCategory = normalizedCategories.join(" ");
+    searchStrings.push(`${fullCombinedCategory} ${normalizedUnit} ${normalizedScope}`);
 
+    return {
+      ...factor,
+      normalizedCategories,
+      normalizedUnit,
+      normalizedScope,
+      searchStrings,
+    };
+  });
+
+  // Fuse will search over the array of searchStrings
+  // Use a threshold around 0.35 for fuzzy matching with no location bias
   const fuse = new Fuse(factors, {
-    keys: ["searchString"],
-    threshold: 0.4,
+    keys: ["searchStrings"],
+    threshold: 0.35,
     ignoreLocation: true,
     isCaseSensitive: false,
     findAllMatches: false,
@@ -158,11 +158,13 @@ export async function loadEmissionFactorsFuse(): Promise<{ fuse: Fuse<FuseFactor
 
 /**
  * Match a single emission entry to emission factor using fuzzy matching and boosting exact uom/scope matches.
+ * It matches the entry category by searching against all category levels (1-4) of the emission factors.
  */
 export async function matchEmissionEntry(
   entry: EmissionEntry
 ): Promise<MatchedEmissionResult> {
   const { category, unit, scope, quantity } = entry;
+
   if (!category || !unit || !scope) {
     return {
       matchedFactor: null,
@@ -185,17 +187,18 @@ export async function matchEmissionEntry(
     };
   }
 
-  const searchString = `${normCategory} ${normUnit} ${normScope}`;
-  let searchResults = fuse.search(searchString, { limit: 10 });
+  // Search by combining normalized input category with unit and scope
+  let searchResults = fuse.search(`${normCategory} ${normUnit} ${normScope}`, { limit: 10 });
 
   if (searchResults.length === 0) {
+    // Try with just category if no matches with full combination
     searchResults = fuse.search(normCategory, { limit: 10 });
   }
 
   if (searchResults.length === 0) {
     // Provide top 3 closest matches by category as debug info
     const fuseCat = new Fuse(factors, {
-      keys: ["searchString"],
+      keys: ["searchStrings"],
       threshold: 1.0,
       ignoreLocation: true,
       isCaseSensitive: false,
@@ -207,14 +210,14 @@ export async function matchEmissionEntry(
     const catResults = fuseCat.search(normCategory, { limit: 3 });
     const logMatches = catResults
       .map((r) => {
-        return `ID:${r.item.ID}, category: "${r.item.category_1} ${r.item.category_2} ${r.item.category_3} ${r.item.category_4}", uom: ${r.item.uom}, scope: ${r.item.scope}, score: ${r.score?.toFixed(4)}`;
+        return `ID:${r.item.ID}, categories: "${r.item.normalizedCategories.join(" ")}", uom: ${r.item.uom}, scope: ${r.item.scope}, score: ${r.score?.toFixed(4)}`;
       })
       .join(" | ");
 
     return {
       matchedFactor: null,
       calculatedEmissions: null,
-      log: `[EmissionFactorMatcher] No matching emission factor for input category "${category}", unit "${unit}", scope "${scope}". Top 3 closest matches: ${logMatches}`,
+      log: `[EmissionFactorMatcher] No matching emission factor for category "${category}", unit "${unit}", scope "${scope}". Top 3 closest matches: ${logMatches}`,
     };
   }
 
