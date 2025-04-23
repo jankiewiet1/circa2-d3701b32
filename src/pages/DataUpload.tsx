@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/CompanyContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { Upload, Check, X as XIcon, AlertTriangle } from "lucide-react";
 
 type EmissionEntry = {
   date: string;
@@ -33,7 +34,9 @@ export default function DataUpload() {
 
   // CSV Upload state
   const [csvFile, setCsvFile] = useState<File | null>(null);
-  const [csvRows, setCsvRows] = useState<EmissionEntry[]>([]);
+  const [csvRows, setCsvRows] = useState<
+    (EmissionEntry & { isNew?: boolean; isUpdate?: boolean })[]
+  >([]);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [isUploadingCsv, setIsUploadingCsv] = useState(false);
 
@@ -42,74 +45,88 @@ export default function DataUpload() {
   const [manualEntryErrors, setManualEntryErrors] = useState<string[]>([]);
   const [isSubmittingManual, setIsSubmittingManual] = useState(false);
 
-  const parseCsv = useCallback((file: File) => {
-    setValidationErrors([]);
-    setCsvRows([]);
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        const rawData = results.data as Record<string, any>[];
-        const parsedRows: EmissionEntry[] = [];
-        const errors: string[] = [];
+  const parseCsv = useCallback(
+    (file: File) => {
+      setValidationErrors([]);
+      setCsvRows([]);
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          const rawData = results.data as Record<string, any>[];
+          const parsedRows: (EmissionEntry & {
+            isNew?: boolean;
+            isUpdate?: boolean;
+          })[] = [];
+          const errors: string[] = [];
 
-        rawData.forEach((row, idx) => {
-          const missingFields = requiredFields.filter(
-            (f) =>
-              !(f in row) ||
-              row[f] === null ||
-              row[f] === undefined ||
-              row[f].toString().trim() === ""
-          );
-
-          if (missingFields.length > 0) {
-            errors.push(
-              `Row ${idx + 2}: Missing required field(s): ${missingFields.join(
-                ", "
-              )}`
+          rawData.forEach((row, idx) => {
+            const missingFields = requiredFields.filter(
+              (f) =>
+                !(f in row) ||
+                row[f] === null ||
+                row[f] === undefined ||
+                row[f].toString().trim() === ""
             );
-            return;
-          }
 
-          // Validate individual fields
-          const dateValue = new Date(row.date);
-          if (isNaN(dateValue.getTime())) {
-            errors.push(`Row ${idx + 2}: Invalid date format`);
-            return;
-          }
+            if (missingFields.length > 0) {
+              errors.push(
+                `Row ${idx + 2}: Missing required field(s): ${missingFields.join(
+                  ", "
+                )}`
+              );
+              return;
+            }
 
-          const quantityNum = parseFloat(row.quantity);
-          if (isNaN(quantityNum)) {
-            errors.push(`Row ${idx + 2}: Quantity must be a number`);
-            return;
-          }
+            // Validate individual fields
+            const dateValue = new Date(row.date);
+            if (isNaN(dateValue.getTime())) {
+              errors.push(`Row ${idx + 2}: Invalid date format`);
+              return;
+            }
 
-          const scopeNum = parseInt(row.scope, 10);
-          if (![1, 2, 3].includes(scopeNum)) {
-            errors.push(`Row ${idx + 2}: Scope must be 1, 2, or 3`);
-            return;
-          }
+            const quantityNum = parseFloat(row.quantity);
+            if (isNaN(quantityNum) || quantityNum < 0) {
+              errors.push(`Row ${idx + 2}: Quantity must be a positive number`);
+              return;
+            }
 
-          parsedRows.push({
-            date: dateValue.toISOString().split("T")[0],
-            year: dateValue.getFullYear(),
-            category: row.category.toString().trim(),
-            description: row.description.toString().trim(),
-            quantity: quantityNum,
-            unit: row.unit.toString().trim(),
-            scope: scopeNum,
-            notes: row.notes ? row.notes.toString().trim() : undefined,
+            const scopeNum = parseInt(row.scope, 10);
+            if (![1, 2, 3].includes(scopeNum)) {
+              errors.push(`Row ${idx + 2}: Scope must be 1, 2, or 3`);
+              return;
+            }
+
+            parsedRows.push({
+              date: dateValue.toISOString().split("T")[0],
+              year: dateValue.getFullYear(),
+              category: row.category.toString().trim(),
+              description: row.description.toString().trim(),
+              quantity: quantityNum,
+              unit: row.unit.toString().trim(),
+              scope: scopeNum,
+              notes: row.notes ? row.notes.toString().trim() : undefined,
+              isNew: undefined,
+              isUpdate: undefined,
+            });
           });
-        });
 
-        setValidationErrors(errors);
-        setCsvRows(parsedRows);
-      },
-      error: (error) => {
-        setValidationErrors([`Error parsing CSV file: ${error.message}`]);
-      },
-    });
-  }, []);
+          // Determine if rows are new or updates based on some logic
+          // For simplicity, we mark all as new here.
+          for (let i = 0; i < parsedRows.length; i++) {
+            parsedRows[i].isNew = true;
+          }
+
+          setValidationErrors(errors);
+          setCsvRows(parsedRows);
+        },
+        error: (error) => {
+          setValidationErrors([`Error parsing CSV file: ${error.message}`]);
+        },
+      });
+    },
+    []
+  );
 
   const handleCsvFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
@@ -278,13 +295,13 @@ export default function DataUpload() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-5xl mx-auto p-6">
       <h1 className="text-3xl font-semibold mb-6">Emission Data Upload</h1>
 
       <div className="flex space-x-4 mb-6">
         <button
           onClick={() => setMode("csv")}
-          className={`px-4 py-2 rounded-md font-medium transition-colors ${
+          className={`px-5 py-2 rounded-md font-semibold text-sm transition-colors ${
             mode === "csv"
               ? "bg-circa-green text-white"
               : "bg-gray-200 text-gray-700 hover:bg-gray-300"
@@ -296,7 +313,7 @@ export default function DataUpload() {
         </button>
         <button
           onClick={() => setMode("manual")}
-          className={`px-4 py-2 rounded-md font-medium transition-colors ${
+          className={`px-5 py-2 rounded-md font-semibold text-sm transition-colors ${
             mode === "manual"
               ? "bg-circa-green text-white"
               : "bg-gray-200 text-gray-700 hover:bg-gray-300"
@@ -310,114 +327,122 @@ export default function DataUpload() {
 
       {mode === "csv" && (
         <section>
-          <label
-            htmlFor="csvFileInput"
-            className="block mb-2 font-semibold text-gray-700"
+          <div
+            {...{
+              onDragOver: (e) => e.preventDefault(),
+              onDrop: (e: React.DragEvent<HTMLDivElement>) => {
+                e.preventDefault();
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                  parseCsv(e.dataTransfer.files[0]);
+                  setCsvFile(e.dataTransfer.files[0]);
+                }
+              },
+            }}
+            className={`border-2 border-dashed rounded-lg p-8 mb-4 cursor-pointer text-center transition-colors ${
+              csvFile
+                ? "border-circa-green bg-circa-green-light/30"
+                : "border-gray-300 hover:border-circa-green"
+            }`}
           >
-            Select CSV file:
-          </label>
-          <input
-            type="file"
-            id="csvFileInput"
-            accept=".csv"
-            onChange={handleCsvFileChange}
-            className="mb-4 block w-full text-sm text-gray-600
-              file:mr-4 file:py-2 file:px-4
-              file:rounded-md file:border-0
-              file:text-sm file:font-semibold
-              file:bg-circa-green file:text-white
-              hover:file:bg-circa-green-dark
-            "
-          />
+            <input
+              type="file"
+              accept=".csv"
+              className="hidden"
+              onChange={handleCsvFileChange}
+              id="csv-file-upload"
+            />
+            <label htmlFor="csv-file-upload" className="cursor-pointer">
+              <Upload size={48} className="mx-auto mb-3 text-gray-500" />
+              <p className="text-gray-600 text-sm">
+                {csvFile
+                  ? csvFile.name
+                  : "Drag and drop your CSV file here, or click to browse"}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                Supported format: .csv
+              </p>
+            </label>
+          </div>
 
           {validationErrors.length > 0 && (
-            <div className="mb-4 rounded border border-red-400 bg-red-50 p-3 text-sm text-red-700">
-              <p>Validation Errors:</p>
-              <ul className="ml-5 list-disc">
-                {validationErrors.map((err, i) => (
-                  <li key={i}>{err}</li>
-                ))}
-              </ul>
+            <div className="mb-4 rounded border border-red-400 bg-red-50 p-4 text-sm text-red-700 flex items-start space-x-2">
+              <AlertTriangle className="shrink-0 mt-1 h-5 w-5" />
+              <div>
+                <p className="mb-2 font-semibold">Validation Errors:</p>
+                <ul className="ml-5 list-disc max-h-40 overflow-auto">
+                  {validationErrors.map((err, i) => (
+                    <li key={i}>{err}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
           )}
 
           {csvRows.length > 0 && (
-            <div className="mb-4 overflow-x-auto max-h-96 border rounded border-gray-300">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50 sticky top-0">
-                  <tr>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                      Date
-                    </th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                      Category
-                    </th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                      Description
-                    </th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">
-                      Quantity
-                    </th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                      Unit
-                    </th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">
-                      Scope
-                    </th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                      Notes
-                    </th>
+            <div className="mb-4 max-h-96 overflow-auto rounded border border-gray-300 shadow-sm">
+              <table className="w-full text-sm table-fixed border-collapse">
+                <thead className="bg-gray-50 sticky top-0 z-10">
+                  <tr className="border-b border-gray-200">
+                    <th className="p-2 text-left">Status</th>
+                    <th className="p-2 text-left">Date</th>
+                    <th className="p-2 text-left">Category</th>
+                    <th className="p-2 text-left">Description</th>
+                    <th className="p-2 text-right">Quantity</th>
+                    <th className="p-2 text-left">Unit</th>
+                    <th className="p-2 text-right">Scope</th>
+                    <th className="p-2 text-left">Notes</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {csvRows.slice(0, 20).map((row, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50">
-                      <td className="whitespace-nowrap px-3 py-2 text-sm text-gray-700">
-                        {row.date}
+                <tbody>
+                  {csvRows.map((row, idx) => (
+                    <tr
+                      key={idx}
+                      className={
+                        idx % 2 === 0 ? "bg-white" : "bg-gray-50"
+                      }
+                    >
+                      <td className="p-2">
+                        {row.isNew ? (
+                          <Check className="text-green-600" title="New" />
+                        ) : row.isUpdate ? (
+                          <XIcon
+                            className="text-yellow-600"
+                            title="Update"
+                          />
+                        ) : (
+                          <></>
+                        )}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-sm text-gray-700">
-                        {row.category}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-sm text-gray-700">
-                        {row.description}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-sm text-gray-700 text-right">
-                        {row.quantity}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-sm text-gray-700">
-                        {row.unit}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-sm text-gray-700 text-right">
-                        {row.scope}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-sm text-gray-700">
-                        {row.notes || "-"}
-                      </td>
+                      <td className="p-2">{row.date}</td>
+                      <td className="p-2">{row.category}</td>
+                      <td className="p-2">{row.description}</td>
+                      <td className="p-2 text-right">{row.quantity}</td>
+                      <td className="p-2">{row.unit}</td>
+                      <td className="p-2 text-right">{row.scope}</td>
+                      <td className="p-2">{row.notes || "-"}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               {csvRows.length > 20 && (
-                <div className="p-2 text-sm text-gray-500">
-                  Showing first 20 rows of {csvRows.length} total.
+                <div className="p-2 text-xs text-gray-500">
+                  Showing all {csvRows.length} rows
                 </div>
               )}
             </div>
           )}
 
-          <div className="flex justify-end mt-4">
-            <Button
-              onClick={uploadCsvData}
-              disabled={
-                isUploadingCsv ||
-                csvRows.length === 0 ||
-                validationErrors.length > 0
-              }
-              className="bg-circa-green hover:bg-circa-green-dark"
-            >
-              {isUploadingCsv ? "Uploading..." : "Upload CSV Data"}
-            </Button>
-          </div>
+          <Button
+            onClick={uploadCsvData}
+            disabled={
+              isUploadingCsv ||
+              csvRows.length === 0 ||
+              validationErrors.length > 0
+            }
+            className="w-full bg-circa-green hover:bg-circa-green-dark py-3 font-semibold"
+          >
+            {isUploadingCsv ? "Uploading..." : "Upload CSV Data"}
+          </Button>
 
           <div className="mt-6 text-sm text-gray-600">
             <a
@@ -432,162 +457,203 @@ export default function DataUpload() {
       )}
 
       {mode === "manual" && (
-        <section className="space-y-4 max-w-lg">
-          <div>
-            <label
-              htmlFor="date"
-              className="block font-semibold text-gray-700 mb-1"
-            >
-              Date *
-            </label>
-            <input
-              id="date"
-              name="date"
-              type="date"
-              value={manualEntry.date || ""}
-              onChange={handleManualInputChange}
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
-              required
-            />
-          </div>
+        <section>
+          <div className="max-w-3xl bg-white rounded-lg shadow-md p-6 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label
+                  htmlFor="date"
+                  className="block font-semibold text-gray-700 mb-1"
+                >
+                  Date *
+                </label>
+                <input
+                  id="date"
+                  name="date"
+                  type="date"
+                  value={manualEntry.date || ""}
+                  onChange={handleManualInputChange}
+                  className={`w-full rounded-md border ${
+                    manualEntryErrors.some((e) =>
+                      e.toLowerCase().includes("date")
+                    )
+                      ? "border-red-500"
+                      : "border-gray-300"
+                  } px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-circa-green`}
+                  required
+                />
+              </div>
 
-          <div>
-            <label
-              htmlFor="category"
-              className="block font-semibold text-gray-700 mb-1"
-            >
-              Category *
-            </label>
-            <input
-              id="category"
-              name="category"
-              type="text"
-              value={manualEntry.category || ""}
-              onChange={handleManualInputChange}
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
-              required
-              placeholder="e.g. Electricity"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="description"
-              className="block font-semibold text-gray-700 mb-1"
-            >
-              Description *
-            </label>
-            <input
-              id="description"
-              name="description"
-              type="text"
-              value={manualEntry.description || ""}
-              onChange={handleManualInputChange}
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
-              required
-              placeholder="Brief description"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="quantity"
-              className="block font-semibold text-gray-700 mb-1"
-            >
-              Quantity *
-            </label>
-            <input
-              id="quantity"
-              name="quantity"
-              type="number"
-              step="any"
-              min="0"
-              value={manualEntry.quantity ?? ""}
-              onChange={handleManualInputChange}
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
-              required
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="unit"
-              className="block font-semibold text-gray-700 mb-1"
-            >
-              Unit *
-            </label>
-            <input
-              id="unit"
-              name="unit"
-              type="text"
-              value={manualEntry.unit || ""}
-              onChange={handleManualInputChange}
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
-              required
-              placeholder="e.g. kWh"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="scope"
-              className="block font-semibold text-gray-700 mb-1"
-            >
-              Scope (1, 2, or 3) *
-            </label>
-            <input
-              id="scope"
-              name="scope"
-              type="number"
-              min={1}
-              max={3}
-              value={manualEntry.scope ?? ""}
-              onChange={handleManualInputChange}
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
-              required
-              placeholder="1, 2, or 3"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="notes"
-              className="block font-semibold text-gray-700 mb-1"
-            >
-              Notes
-            </label>
-            <textarea
-              id="notes"
-              name="notes"
-              value={manualEntry.notes || ""}
-              onChange={handleManualInputChange}
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
-              rows={3}
-              placeholder="Optional notes"
-            />
-          </div>
-
-          {manualEntryErrors.length > 0 && (
-            <div className="text-sm text-red-700">
-              <ul className="list-disc ml-5">
-                {manualEntryErrors.map((err, i) => (
-                  <li key={i}>{err}</li>
-                ))}
-              </ul>
+              <div>
+                <label
+                  htmlFor="category"
+                  className="block font-semibold text-gray-700 mb-1"
+                >
+                  Category *
+                </label>
+                <input
+                  id="category"
+                  name="category"
+                  type="text"
+                  value={manualEntry.category || ""}
+                  onChange={handleManualInputChange}
+                  placeholder="e.g. Electricity"
+                  className={`w-full rounded-md border ${
+                    manualEntryErrors.some((e) =>
+                      e.toLowerCase().includes("category")
+                    )
+                      ? "border-red-500"
+                      : "border-gray-300"
+                  } px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-circa-green`}
+                  required
+                />
+              </div>
             </div>
-          )}
 
-          <div className="flex justify-end">
+            <div>
+              <label
+                htmlFor="description"
+                className="block font-semibold text-gray-700 mb-1"
+              >
+                Description *
+              </label>
+              <input
+                id="description"
+                name="description"
+                type="text"
+                value={manualEntry.description || ""}
+                onChange={handleManualInputChange}
+                placeholder="Brief description"
+                className={`w-full rounded-md border ${
+                  manualEntryErrors.some((e) =>
+                    e.toLowerCase().includes("description")
+                  )
+                    ? "border-red-500"
+                    : "border-gray-300"
+                } px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-circa-green`}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label
+                  htmlFor="quantity"
+                  className="block font-semibold text-gray-700 mb-1"
+                >
+                  Quantity *
+                </label>
+                <input
+                  id="quantity"
+                  name="quantity"
+                  type="number"
+                  step="any"
+                  min="0"
+                  value={manualEntry.quantity ?? ""}
+                  onChange={handleManualInputChange}
+                  className={`w-full rounded-md border ${
+                    manualEntryErrors.some((e) =>
+                      e.toLowerCase().includes("quantity")
+                    )
+                      ? "border-red-500"
+                      : "border-gray-300"
+                  } px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-circa-green`}
+                  required
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="unit"
+                  className="block font-semibold text-gray-700 mb-1"
+                >
+                  Unit *
+                </label>
+                <input
+                  id="unit"
+                  name="unit"
+                  type="text"
+                  value={manualEntry.unit || ""}
+                  onChange={handleManualInputChange}
+                  placeholder="e.g. kWh"
+                  className={`w-full rounded-md border ${
+                    manualEntryErrors.some((e) =>
+                      e.toLowerCase().includes("unit")
+                    )
+                      ? "border-red-500"
+                      : "border-gray-300"
+                  } px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-circa-green`}
+                  required
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="scope"
+                  className="block font-semibold text-gray-700 mb-1"
+                >
+                  Scope (1, 2, or 3) *
+                </label>
+                <input
+                  id="scope"
+                  name="scope"
+                  type="number"
+                  min={1}
+                  max={3}
+                  value={manualEntry.scope ?? ""}
+                  onChange={handleManualInputChange}
+                  placeholder="1, 2, or 3"
+                  className={`w-full rounded-md border ${
+                    manualEntryErrors.some((e) =>
+                      e.toLowerCase().includes("scope")
+                    )
+                      ? "border-red-500"
+                      : "border-gray-300"
+                  } px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-circa-green`}
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="notes"
+                className="block font-semibold text-gray-700 mb-1"
+              >
+                Notes
+              </label>
+              <textarea
+                id="notes"
+                name="notes"
+                value={manualEntry.notes || ""}
+                onChange={handleManualInputChange}
+                rows={3}
+                placeholder="Optional notes"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-circa-green"
+              />
+            </div>
+
+            {manualEntryErrors.length > 0 && (
+              <div className="rounded border border-red-400 bg-red-50 p-3 text-sm text-red-700">
+                <p className="mb-1 font-semibold">Form Errors:</p>
+                <ul className="ml-5 list-disc">
+                  {manualEntryErrors.map((err, i) => (
+                    <li key={i}>{err}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <Button
               onClick={submitManualEntry}
               disabled={isSubmittingManual}
-              className="bg-circa-green hover:bg-circa-green-dark"
+              className="w-full bg-circa-green hover:bg-circa-green-dark py-3 font-semibold"
             >
               {isSubmittingManual ? "Submitting..." : "Submit Entry"}
             </Button>
           </div>
 
-          <div className="mt-6 text-sm text-gray-600">
+          <div className="mt-6 text-sm text-gray-600 max-w-3xl">
             <a
               href="/templates/emissions_template.csv"
               download
