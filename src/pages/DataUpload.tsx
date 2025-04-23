@@ -32,6 +32,8 @@ interface EmissionEntryInsert {
   unit: string;
   scope: number;
   notes?: string | null;
+  emission_factor?: number | null;
+  emissions?: number | null;
 }
 
 const requiredFields = [
@@ -213,6 +215,8 @@ export default function DataUpload() {
         unit: row.unit,
         scope: row.scope,
         notes: row.notes ?? null,
+        emission_factor: row.emission_factor ?? null,
+        emissions: row.emissions ?? null,
       }));
 
       const { error } = await supabase
