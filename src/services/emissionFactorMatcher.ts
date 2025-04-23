@@ -34,6 +34,7 @@ const synonymsMap: Record<string, string> = {
   liter: "liters",
   litre: "liters",
   l: "liters",
+  ltr: "liters",
   petrol: "gasoline",
   gas: "gasoline",
   gasoline: "gasoline",
@@ -45,12 +46,10 @@ const synonymsMap: Record<string, string> = {
   tonnage: "t",
   t: "t",
   diesel: "diesel",
-  biofuel: "biofuel",
-  "average biofuel blend": "biofuel", // normalize biofuel blends
   "diesel blend": "diesel",
   "diesel oil": "diesel",
-  ltr: "liters",
-  litre: "liters",
+  biofuel: "biofuel",
+  "average biofuel blend": "biofuel", // normalize biofuel blends
   kwht: "kwh",
   kwh: "kwh",
 };
