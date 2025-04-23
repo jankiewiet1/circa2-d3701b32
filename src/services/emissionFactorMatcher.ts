@@ -67,9 +67,14 @@ export async function loadEmissionFactorsFuse() {
     throw error;
   }
 
+  if (!data || !Array.isArray(data)) {
+    console.error("[EmissionFactorMatcher] No data found");
+    return { fuse: null, factors: [] };
+  }
+
   // Normalize scope to number, and build fullCategory property for Fuse
-  const factors: (EmissionFactor & { fullCategory: string })[] = (data || []).map(
-    (factor) => ({
+  const factors: (EmissionFactor & { fullCategory: string })[] = data.map(
+    (factor: any) => ({
       ...factor,
       scope: Number(factor.scope),
       fullCategory: buildFullCategory(factor),
@@ -102,6 +107,11 @@ export async function matchEmissionEntry(
   const normCategory = normalizeStr(category);
 
   const { fuse, factors } = await loadEmissionFactorsFuse();
+
+  if (!fuse) {
+    const logMessage = "Emission Factors Fuse index is unavailable";
+    return { matchedFactor: null, calculatedEmissions: null, log: logMessage };
+  }
 
   // Filter factors by exact scope and unit (case insensitive)
   const candidateFactors = factors.filter(
@@ -161,4 +171,3 @@ export async function matchEmissionEntry(
     calculatedEmissions: emissions,
   };
 }
-

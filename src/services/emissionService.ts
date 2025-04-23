@@ -43,6 +43,10 @@ export const fetchEmissionFactors = async () => {
 
     if (error) throw error;
 
+    if (!data || !Array.isArray(data)) {
+      throw new Error("No emission factors data returned");
+    }
+
     return { data, error: null };
   } catch (error: any) {
     console.error("Error fetching emission factors:", error);
@@ -63,12 +67,20 @@ export const checkEmissionFactorStatus = async (companyId: string) => {
 
     if (entriesError) throw entriesError;
 
+    if (!entriesData || !Array.isArray(entriesData)) {
+      throw new Error("No emission entries data returned");
+    }
+
     // Get all emission factors
     const { data: factorsData, error: factorsError } = await supabase
       .from("emission_factors")
       .select("category_1, uom, source, scope");
 
     if (factorsError) throw factorsError;
+
+    if (!factorsData || !Array.isArray(factorsData)) {
+      throw new Error("No emission factors data returned");
+    }
 
     // Get company's preferred emission source
     const { data: preferences } = await supabase
@@ -84,7 +96,7 @@ export const checkEmissionFactorStatus = async (companyId: string) => {
 
     // Deduplicate by category/unit/scope
     const uniqueCombinations =
-      entriesData?.filter((value, index, self) =>
+      entriesData.filter((value, index, self) =>
         index ===
         self.findIndex(
           (t) =>
@@ -101,7 +113,7 @@ export const checkEmissionFactorStatus = async (companyId: string) => {
     const statusChecks = uniqueCombinations.map((combo) => {
       const sources = knownSources.map((source) => {
         const matchingFactors =
-          factorsData?.filter(
+          factorsData.filter(
             (factor) =>
               normalizeString(factor.category_1) === normalizeString(combo.category) &&
               normalizeString(factor.uom) === normalizeString(combo.unit) &&
@@ -149,11 +161,19 @@ export const runEmissionDiagnostics = async (companyId: string) => {
 
     if (entriesError) throw entriesError;
 
+    if (!entriesData || !Array.isArray(entriesData)) {
+      throw new Error("No emission entries data returned");
+    }
+
     const { data: factorsData, error: factorsError } = await supabase
       .from("emission_factors")
       .select("category_1, uom, source, scope");
 
     if (factorsError) throw factorsError;
+
+    if (!factorsData || !Array.isArray(factorsData)) {
+      throw new Error("No emission factors data returned");
+    }
 
     const { data: pref } = await supabase
       .from("company_preferences")
@@ -166,12 +186,12 @@ export const runEmissionDiagnostics = async (companyId: string) => {
     // Find entries with no emissions calculated (emissions is NULL)
     const missingFactorsSet = new Set<string>();
 
-    entriesData?.forEach((entry) => {
+    entriesData.forEach((entry) => {
       // Check if emission factor is present in emission_factors for this entry
-      const factorExists = factorsData?.some(
+      const factorExists = factorsData.some(
         (factor) =>
-          factor.category_1.toLowerCase().trim() === entry.category?.toLowerCase().trim() &&
-          factor.uom.toLowerCase().trim() === entry.unit?.toLowerCase().trim() &&
+          factor.category_1.toLowerCase().trim() === entry.category.toLowerCase().trim() &&
+          factor.uom.toLowerCase().trim() === entry.unit.toLowerCase().trim() &&
           Number(factor.scope) === entry.scope &&
           factor.source === preferredSource
       );

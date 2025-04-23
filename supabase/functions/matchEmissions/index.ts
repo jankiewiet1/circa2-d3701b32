@@ -1,7 +1,7 @@
 
 import { serve } from "std/server.ts";
-import Fuse from "fuse.js";
-import { createClient } from "@supabase/supabase-js";
+import Fuse from "https://cdn.skypack.dev/fuse.js";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 const SUPABASE_URL = "https://vfdbyvnjhimmnbyhxyun.supabase.co";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -14,13 +14,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY || "", {
 /**
  * Normalize a string: lowercase, trim, and collapse whitespace.
  */
-const normalizeStr = (str) =>
+const normalizeStr = (str: string) =>
   str.toLowerCase().trim().replace(/\s+/g, " ");
 
 /**
  * Build a combined category string from the emission factor properties.
  */
-const buildFullCategory = (factor) => {
+const buildFullCategory = (factor: any) => {
   return [
     factor.category_1,
     factor.category_2,
@@ -48,7 +48,11 @@ async function loadEmissionFactorsFuse() {
     throw error;
   }
 
-  const factors = (data || []).map((factor) => ({
+  if (!data || !Array.isArray(data)) {
+    throw new Error("No emission factors data found");
+  }
+
+  const factors = data.map((factor: any) => ({
     ...factor,
     scope: Number(factor.scope),
     fullCategory: buildFullCategory(factor),
@@ -68,8 +72,14 @@ async function loadEmissionFactorsFuse() {
 /**
  * Match a single emission entry to the best emission factor from DEFRA source
  */
-async function matchEmissionEntry(entry) {
+async function matchEmissionEntry(entry: {
+  category: string;
+  unit: string;
+  scope: number;
+  quantity: number;
+}) {
   const { category, unit, scope, quantity } = entry;
+
   if (
     typeof category !== "string" ||
     typeof unit !== "string" ||
@@ -145,13 +155,17 @@ async function matchEmissionEntry(entry) {
 }
 
 serve(async (req) => {
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  };
+
+  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
       headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers":
-          "authorization, x-client-info, apikey, content-type",
+        ...corsHeaders,
         "Access-Control-Allow-Methods": "POST, OPTIONS",
       },
     });
@@ -162,10 +176,7 @@ serve(async (req) => {
       JSON.stringify({ error: "Method not allowed, POST expected" }),
       {
         status: 405,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
+        headers: { "Content-Type": "application/json", ...corsHeaders },
       }
     );
   }
@@ -180,7 +191,7 @@ serve(async (req) => {
       }),
       {
         status: 400,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+        headers: { "Content-Type": "application/json", ...corsHeaders },
       }
     );
   }
@@ -192,7 +203,7 @@ serve(async (req) => {
       }),
       {
         status: 400,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+        headers: { "Content-Type": "application/json", ...corsHeaders },
       }
     );
   }
@@ -214,6 +225,6 @@ serve(async (req) => {
 
   return new Response(JSON.stringify({ results }), {
     status: 200,
-    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+    headers: { "Content-Type": "application/json", ...corsHeaders },
   });
 });
