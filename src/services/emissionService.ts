@@ -1,4 +1,3 @@
-
 // Fixing type argument usages and data checks for supabase queries
 
 import { supabase } from "@/integrations/supabase/client";
@@ -220,3 +219,27 @@ export const runEmissionDiagnostics = async (companyId: string) => {
   }
 };
 
+/**
+ * Recalculate emissions for a company using the new GHG calculation function
+ */
+export const recalculateCompanyEmissions = async (companyId: string) => {
+  try {
+    const { data, error } = await supabase.functions.invoke('calculate-emissions', {
+      body: { company_id: companyId }
+    });
+
+    if (error) throw error;
+
+    if (data.success) {
+      const { updated_rows, unmatched_rows } = data.data[0];
+      toast.success(`Successfully updated ${updated_rows} entries. ${unmatched_rows} entries remain unmatched.`);
+      return { updated_rows, unmatched_rows };
+    } else {
+      throw new Error('Calculation failed');
+    }
+  } catch (error) {
+    console.error('Error recalculating emissions:', error);
+    toast.error('Failed to recalculate emissions');
+    throw error;
+  }
+};

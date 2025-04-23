@@ -248,6 +248,8 @@ export type Database = {
       emission_entries: {
         Row: {
           category: string
+          ch4_emissions: number | null
+          co2_emissions: number | null
           company_id: string
           created_at: string
           date: string
@@ -256,6 +258,7 @@ export type Database = {
           emissions: number | null
           id: string
           match_status: string | null
+          n2o_emissions: number | null
           notes: string | null
           quantity: number
           scope: number
@@ -266,6 +269,8 @@ export type Database = {
         }
         Insert: {
           category: string
+          ch4_emissions?: number | null
+          co2_emissions?: number | null
           company_id: string
           created_at?: string
           date: string
@@ -274,6 +279,7 @@ export type Database = {
           emissions?: number | null
           id?: string
           match_status?: string | null
+          n2o_emissions?: number | null
           notes?: string | null
           quantity: number
           scope: number
@@ -284,6 +290,8 @@ export type Database = {
         }
         Update: {
           category?: string
+          ch4_emissions?: number | null
+          co2_emissions?: number | null
           company_id?: string
           created_at?: string
           date?: string
@@ -292,6 +300,7 @@ export type Database = {
           emissions?: number | null
           id?: string
           match_status?: string | null
+          n2o_emissions?: number | null
           notes?: string | null
           quantity?: number
           scope?: number
@@ -358,6 +367,47 @@ export type Database = {
           uom?: string
         }
         Relationships: []
+      }
+      emission_matching_diagnostics: {
+        Row: {
+          category: string | null
+          checked_at: string | null
+          company_id: string | null
+          entry_id: string | null
+          id: string
+          reason: string | null
+          scope: number | null
+          unit: string | null
+        }
+        Insert: {
+          category?: string | null
+          checked_at?: string | null
+          company_id?: string | null
+          entry_id?: string | null
+          id?: string
+          reason?: string | null
+          scope?: number | null
+          unit?: string | null
+        }
+        Update: {
+          category?: string | null
+          checked_at?: string | null
+          company_id?: string | null
+          entry_id?: string | null
+          id?: string
+          reason?: string | null
+          scope?: number | null
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emission_matching_diagnostics_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "emission_entries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -818,6 +868,13 @@ export type Database = {
       }
     }
     Functions: {
+      calculate_ghg_emissions: {
+        Args: { company_id: string }
+        Returns: {
+          updated_rows: number
+          unmatched_rows: number
+        }[]
+      }
       recalculate_scope1_emissions: {
         Args: { p_company_id: string }
         Returns: {
