@@ -32,9 +32,6 @@ interface EmissionEntryInsert {
   unit: string;
   scope: number;
   notes?: string | null;
-  emission_factor?: number | null;
-  emissions?: number | null;
-  match_status?: string;
 }
 
 const requiredFields = [
@@ -125,7 +122,6 @@ export default function DataUpload() {
               continue;
             }
 
-            // Prepare entry
             const entry: EmissionEntry = {
               date: dateValue.toISOString().split("T")[0],
               category: row.category.toString().trim(),
@@ -136,7 +132,6 @@ export default function DataUpload() {
               notes: row.notes ? row.notes.toString().trim() : undefined,
             };
 
-            // Perform fuzzy matching to find emission_factor and emissions
             try {
               const matchResult = await matchEmissionEntry({
                 category: entry.category,
@@ -146,24 +141,20 @@ export default function DataUpload() {
               });
 
               entry["emission_factor"] = matchResult.matchedFactor?.["GHG Conversion Factor 2024"] ?? null;
-              entry["emissions"] = matchResult.calculatedEmissions ?? null;
               entry["match_status"] = matchResult.matchedFactor ? "matched" : "unmatched";
 
               parsedRows.push({
                 ...entry,
                 isNew: true,
                 emission_factor: entry["emission_factor"],
-                emissions: entry["emissions"],
                 match_status: entry["match_status"],
               });
             } catch (e) {
               errors.push(`Row ${idx + 2}: Matching error - ${(e as Error).message}`);
-              // Include the raw row but mark unmatched due to error
               parsedRows.push({
                 ...entry,
                 isNew: true,
                 emission_factor: null,
-                emissions: null,
                 match_status: "unmatched",
               });
             }
@@ -216,9 +207,6 @@ export default function DataUpload() {
         unit: row.unit,
         scope: row.scope,
         notes: row.notes ?? null,
-        emission_factor: row.emission_factor ?? null,
-        emissions: row.emissions ?? null,
-        match_status: row.match_status ?? "matched",
       }));
 
       const { error } = await supabase
