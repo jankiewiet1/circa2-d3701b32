@@ -1,9 +1,14 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Check, BarChart3, Upload, FileText, Target } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
+import { Logo } from "@/components/branding/Logo";
+import { HowItWorksFlow } from "@/components/landing/HowItWorksFlow";
+import { TrustBadges } from "@/components/landing/TrustBadges";
+import { ClientLogos } from "@/components/landing/ClientLogos";
+import { ProductShowcase } from "@/components/landing/ProductShowcase";
+import { ValueProposition } from "@/components/landing/ValueProposition";
 
 const Index = () => {
   return (
@@ -11,15 +16,11 @@ const Index = () => {
       {/* Sticky Header/Nav */}
       <header className="fixed w-full bg-white/95 backdrop-blur-sm shadow-sm z-50 py-4 px-6 md:px-10">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center">
-            <div className="h-9 w-9 rounded-full bg-circa-green-dark mr-3 flex items-center justify-center">
-              <span className="text-white font-bold">C</span>
-            </div>
-            <span className="text-xl font-bold">Circa</span>
-          </div>
+          <Logo />
           
           <div className="hidden md:flex items-center space-x-8">
             <a href="#why-circa" className="text-gray-600 hover:text-gray-900 font-medium">Why Circa</a>
+            <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 font-medium">How It Works</a>
             <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</a>
             <a href="#testimonials" className="text-gray-600 hover:text-gray-900 font-medium">Testimonials</a>
             <a href="#pricing" className="text-gray-600 hover:text-gray-900 font-medium">Pricing</a>
@@ -36,44 +37,116 @@ const Index = () => {
         </div>
       </header>
       
-      {/* Hero Section - More like Greenly */}
-      <section className="pt-32 pb-20 md:pt-40 md:pb-28 px-6 bg-gradient-to-br from-circa-green-light to-white">
+      {/* Hero Section - Improved with stronger value prop */}
+      <section className="pt-32 pb-20 md:pt-40 md:pb-28 px-6 bg-gradient-to-br from-circa-green-light via-white to-blue-50">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
           <div className="text-left">
-            <h1 className="text-4xl md:text-6xl font-bold text-circa-green-dark mb-6 leading-tight">
-              Take control of your carbon footprint
+            <div className="mb-6">
+              <TrustBadges />
+            </div>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-circa-green-dark mb-6 leading-tight">
+              Cut carbon tracking time <span className="text-blue-600">by 80%</span>
             </h1>
-            <p className="text-xl md:text-2xl text-gray-700 mb-10 leading-relaxed">
+            <p className="text-xl md:text-2xl text-gray-700 mb-8 leading-relaxed">
               The complete carbon management platform for ambitious companies committed to climate action.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 mb-8">
               <Button size="lg" className="bg-circa-green-dark hover:bg-circa-green text-lg" asChild>
                 <Link to="/auth/register">
-                  Get Started
+                  Start Free Trial
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
               <Button size="lg" variant="outline" className="border-circa-green-dark text-circa-green-dark hover:bg-circa-green-dark/10 text-lg">
-                Book a Demo
+                Book a 15-min Demo
               </Button>
             </div>
+            <p className="text-sm text-gray-500">No credit card required. Free for 14 days.</p>
           </div>
           
           <div className="relative">
             <div className="absolute -top-10 -right-10 w-40 h-40 bg-circa-green/10 rounded-full filter blur-3xl"></div>
-            <div className="absolute bottom-10 -left-5 w-40 h-40 bg-circa-green/20 rounded-full filter blur-3xl"></div>
+            <div className="absolute bottom-10 -left-5 w-40 h-40 bg-blue-500/10 rounded-full filter blur-3xl"></div>
             
             <div className="relative z-10 rounded-xl overflow-hidden shadow-2xl border border-gray-100">
               <img 
                 src="https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&q=80&w=2600&h=1548" 
-                alt="Sustainable landscape" 
+                alt="Carbon reduction visualization" 
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-circa-green-dark/40 to-transparent"></div>
-              <div className="absolute bottom-8 left-8 bg-white/90 backdrop-blur-md rounded-lg px-4 py-2 shadow-lg">
-                <span className="text-circa-green-dark font-medium">Reduce emissions by 30%</span>
+              <div className="absolute inset-0 bg-gradient-to-t from-circa-green-dark/50 to-transparent"></div>
+              <div className="absolute bottom-8 left-8 bg-white/90 backdrop-blur-md rounded-lg px-4 py-3 shadow-lg">
+                <div className="flex items-center space-x-2">
+                  <Check className="h-5 w-5 text-green-500" />
+                  <span className="font-medium">Reduce emissions by 30%</span>
+                </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Value Proposition Stats */}
+      <section className="py-14 bg-white border-y border-gray-100">
+        <div className="max-w-6xl mx-auto px-6">
+          <ValueProposition />
+        </div>
+      </section>
+      
+      {/* Client Logos */}
+      <section className="py-10 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-8">
+            <h2 className="text-lg font-medium text-gray-600">Trusted by forward-thinking companies</h2>
+          </div>
+          <ClientLogos />
+        </div>
+      </section>
+      
+      {/* How It Works Section */}
+      <section id="how-it-works" className="py-20 md:py-28 px-6 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-circa-green-dark">
+              How Circa Works
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Our streamlined process makes carbon accounting simple and intuitive
+            </p>
+          </div>
+          
+          <HowItWorksFlow />
+          
+          <div className="mt-14 text-center">
+            <Button className="bg-circa-green hover:bg-circa-green-dark" size="lg" asChild>
+              <Link to="/auth/register">
+                Upload Your Data Now
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+      
+      {/* Product Showcase */}
+      <section className="py-20 md:py-28 px-6 bg-gray-50">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-circa-green-dark">
+              See Circa in Action
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Powerful features designed for carbon management excellence
+            </p>
+          </div>
+          
+          <ProductShowcase />
+          
+          <div className="mt-14 text-center">
+            <Button className="bg-circa-green hover:bg-circa-green-dark" size="lg" asChild>
+              <Link to="/auth/register">
+                See Your Impact Live
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
@@ -86,7 +159,7 @@ const Index = () => {
               Why Companies Choose Circa
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Trusted by organizations of all sizes to simplify their carbon accounting journey.
+              Trusted by organizations of all sizes to simplify their carbon accounting journey
             </p>
           </div>
           
@@ -103,7 +176,9 @@ const Index = () => {
             
             <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
               <div className="h-14 w-14 rounded-full bg-circa-green-light flex items-center justify-center mb-6">
-                <BarChart3 className="h-7 w-7 text-circa-green" />
+                <svg className="h-7 w-7 text-circa-green" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M16 8V16M12 11V16M8 14V16M6 20H18C19.1046 20 20 19.1046 20 18V6C20 4.89543 19.1046 4 18 4H6C4.89543 4 4 4.89543 4 6V18C4 19.1046 4.89543 20 6 20Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </div>
               <h3 className="text-xl font-bold mb-3">Actionable Insights</h3>
               <p className="text-gray-600">
@@ -190,7 +265,7 @@ const Index = () => {
               Trusted by Climate Leaders
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Join hundreds of forward-thinking organizations using Circa to achieve their sustainability goals.
+              Join hundreds of forward-thinking organizations using Circa to achieve their sustainability goals
             </p>
           </div>
           
@@ -386,7 +461,7 @@ const Index = () => {
         </div>
       </section>
       
-      {/* CTA Section */}
+      {/* CTA Section - Enhanced */}
       <section className="py-16 md:py-24 px-6 bg-circa-green">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">
@@ -398,13 +473,14 @@ const Index = () => {
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button size="lg" className="bg-white text-circa-green hover:bg-gray-100 text-lg" asChild>
               <Link to="/auth/register">
-                Get Started Free
+                Start Saving Time & CO₂
               </Link>
             </Button>
             <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 text-lg">
               Schedule a Demo
             </Button>
           </div>
+          <p className="text-white/80 mt-6">No credit card required for 14-day free trial</p>
         </div>
       </section>
       
@@ -460,7 +536,7 @@ const Index = () => {
               <a href="#" className="hover:text-white">
                 <span className="sr-only">Twitter</span>
                 <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
+                  <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                 </svg>
               </a>
               <a href="#" className="hover:text-white">
