@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { EmissionsData } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BarChart, ChartContainer } from "@/components/ui/chart";
+import { ChartContainer } from "@/components/ui/chart";
 import { PieChart, BarChart as BarChartIcon } from "lucide-react";
 import { 
   ResponsiveContainer, BarChart as RechartsBarChart, PieChart as RechartsPieChart, 

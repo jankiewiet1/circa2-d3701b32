@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { User } from "@/contexts/AuthContext";
+import { User } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface DashboardGreetingProps {

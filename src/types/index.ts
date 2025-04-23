@@ -31,17 +31,26 @@ export interface ChartDataPoint {
   value: number;
 }
 
-export interface User {
-  id: string;
-  email: string;
-  profile?: {
-    first_name?: string;
-    last_name?: string;
-    phone?: string;
-    avatar_url?: string;
-  };
+// User and Profile interfaces
+export interface Profile {
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  avatar_url?: string;
+  email?: string;
+  job_title?: string;
+  department?: string;
 }
 
+export interface UserWithProfile {
+  id: string;
+  email: string;
+  profile?: Profile;
+}
+
+export type User = UserWithProfile;
+
+// Company and related interfaces
 export interface Company {
   id: string;
   name: string;
@@ -62,4 +71,42 @@ export interface Company {
   setup_completed: boolean;
   created_at: string;
   updated_at: string;
+  // Company preferences
+  preferred_currency?: string;
+  fiscal_year_start_month?: string;
+  reporting_frequency?: string;
+  language?: string;
+  timezone?: string;
+  emission_unit?: string;
+  default_view?: string;
+}
+
+export interface CompanyFormValues {
+  name: string;
+  industry: string;
+  country?: string;
+  kvk_number?: string;
+  vat_number?: string;
+  iban?: string;
+  bank_name?: string;
+  billing_email?: string;
+  phone_number?: string;
+  billing_address?: string;
+  postal_code?: string;
+  city?: string;
+  contact_name?: string;
+  contact_title?: string;
+  contact_email?: string;
+}
+
+export type UserRole = 'admin' | 'editor' | 'viewer';
+
+export interface CompanyMember {
+  id: string;
+  user_id: string;
+  role: UserRole;
+  company_id: string;
+  email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
 }

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -122,7 +121,6 @@ export default function CompanyPreferences() {
         description: "Your company preferences have been saved successfully",
       });
       
-      // Navigate to dashboard after completing the setup
       navigate("/dashboard");
     } catch (error) {
       console.error("Error saving preferences:", error);
