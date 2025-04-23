@@ -27,7 +27,10 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    // Call the database function
+    // First, manually extract year from date field if not already set
+    await supabaseClient.rpc('update_emission_entries_year');
+
+    // Then call the database function to calculate emissions
     const { data, error } = await supabaseClient.rpc('calculate_ghg_emissions', {
       company_id: company_id
     });

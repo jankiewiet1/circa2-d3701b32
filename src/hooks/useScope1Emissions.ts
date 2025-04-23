@@ -45,9 +45,20 @@ export const useEmissionEntries = (companyId: string, scopeFilter?: number) => {
       }
 
       if (filters) {
-        // Replace dateRange usage with year filter if year specified
+        // Use year filter if specified, otherwise use dateRange
         if (filters.year) {
-          query = query.eq('year', filters.year);
+          const yearExists = await checkYearColumnExists();
+          
+          if (yearExists) {
+            query = query.eq('year', filters.year);
+          } else {
+            // Fallback to filtering by date range for the entire year
+            const startDate = new Date(filters.year, 0, 1); 
+            const endDate = new Date(filters.year + 1, 0, 0);
+            query = query
+              .gte('date', startDate.toISOString().split('T')[0])
+              .lte('date', endDate.toISOString().split('T')[0]);
+          }
         } else if (filters.dateRange && filters.dateRange !== 'all') {
           const today = new Date();
           let startDate = new Date();
@@ -97,10 +108,24 @@ export const useEmissionEntries = (companyId: string, scopeFilter?: number) => {
     }
   };
 
+  // Helper function to check if year column exists
+  const checkYearColumnExists = async () => {
+    try {
+      const { data: yearData } = await supabase
+        .from('emission_entries')
+        .select('year')
+        .limit(1);
+      
+      return yearData && yearData.length > 0 && yearData[0].year !== undefined;
+    } catch (error) {
+      console.error('Error checking year column:', error);
+      return false;
+    }
+  };
+
   return {
     entries,
     isLoading,
     fetchEntries,
   };
 };
-
