@@ -1,5 +1,4 @@
 
-import { Leaf } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface LogoProps {
@@ -13,11 +12,22 @@ export const Logo = ({ variant = "dark", withText = true }: LogoProps) => {
   return (
     <Link to="/" className="flex items-center">
       <div className="relative">
-        <div className="h-9 w-9 rounded-full bg-circa-green flex items-center justify-center overflow-hidden shadow-sm">
-          <div className="absolute inset-0 bg-gradient-to-br from-circa-green to-circa-green-dark rounded-full" />
-          <span className="relative text-white font-bold text-xl">C</span>
-          <Leaf className="absolute bottom-0 right-0 h-4 w-4 text-white/80 transform translate-x-0.5 translate-y-0.5" />
-        </div>
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="overflow-visible">
+          <circle cx="18" cy="18" r="18" className="fill-circa-green" />
+          <path
+            d="M14 12C14 12 18 12 22 12C26 12 28 14 28 18C28 22 26 24 22 24H14"
+            className="stroke-white"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+          <path
+            d="M18 15L15 18L18 21"
+            className="stroke-white"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       </div>
       {withText && (
         <span className={`text-xl font-bold ml-2 ${textColor}`}>Circa</span>

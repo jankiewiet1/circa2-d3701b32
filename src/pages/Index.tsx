@@ -9,6 +9,7 @@ import { TrustBadges } from "@/components/landing/TrustBadges";
 import { ClientLogos } from "@/components/landing/ClientLogos";
 import { ProductShowcase } from "@/components/landing/ProductShowcase";
 import { ValueProposition } from "@/components/landing/ValueProposition";
+import { SignupProgress } from "@/components/landing/SignupProgress";
 
 const Index = () => {
   return (
@@ -368,10 +369,12 @@ const Index = () => {
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-circa-green-dark">
             Simple, Transparent Pricing
           </h2>
-          <p className="text-xl text-gray-700 mb-4 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-700 mb-6 max-w-2xl mx-auto">
             First 1000 users get complete access for free!
           </p>
-          <p className="text-lg text-gray-600 mb-12">Already 213 companies have joined - don't miss out!</p>
+          <div className="mb-12">
+            <SignupProgress />
+          </div>
           
           <div className="grid md:grid-cols-3 gap-8">
             <Card className="border-gray-200">
@@ -464,8 +467,13 @@ const Index = () => {
       </section>
       
       {/* CTA Section - Enhanced */}
-      <section className="py-16 md:py-24 px-6 bg-circa-green">
-        <div className="max-w-4xl mx-auto text-center">
+      <section className="py-16 md:py-24 px-6 bg-circa-green relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <path d="M0,0 L100,0 L100,100 L0,100 Z" fill="none" stroke="currentColor" strokeWidth="1" />
+          </svg>
+        </div>
+        <div className="max-w-4xl mx-auto text-center relative z-10">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">
             Start Your Sustainability Journey Today
           </h2>
@@ -473,17 +481,20 @@ const Index = () => {
             Join hundreds of forward-thinking organizations already reducing their carbon footprint with Circa.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button size="lg" className="bg-white text-circa-green hover:bg-gray-100 text-lg" asChild>
+            <Button size="lg" className="bg-white text-circa-green hover:bg-gray-100 text-lg font-semibold shadow-lg hover:shadow-xl transition-all" asChild>
               <Link to="/auth/register">
                 Start Saving Time & CO₂
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 text-lg">
-              Schedule a Demo
+            <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white/10 text-lg font-semibold backdrop-blur-sm" asChild>
+              <Link to="/auth/register">
+                Schedule a Demo
+              </Link>
             </Button>
           </div>
-          <p className="text-white/80 mt-6">No credit card required for 14-day free trial</p>
+          <p className="text-white/80 mt-6 font-medium">No credit card required for 14-day free trial</p>
         </div>
+        <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-circa-green-dark to-transparent opacity-30" />
       </section>
       
       {/* Footer */}
