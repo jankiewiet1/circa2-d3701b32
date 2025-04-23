@@ -1,5 +1,5 @@
 
-// Updated to use correct casing for column names like "Category_1" instead of "category_1"
+// Updated to use correct casing for column names like "category_1" instead of "Category_1"
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -35,14 +35,14 @@ export interface EmissionFactorStatus {
 export const fetchEmissionFactors = async () => {
   try {
     const { data, error } = await supabase
-      .from('emission_factors')
-      .select('*')
-      .order('Category_1')
-      .order('UOM')
-      .order('Source');
-    
+      .from("emission_factors")
+      .select("*")
+      .order("category_1")
+      .order("uom")
+      .order("source");
+
     if (error) throw error;
-    
+
     return { data, error: null };
   } catch (error: any) {
     console.error("Error fetching emission factors:", error);
@@ -57,50 +57,57 @@ export const checkEmissionFactorStatus = async (companyId: string) => {
   try {
     // Get emission_entries category/unit/scope for company
     const { data: entriesData, error: entriesError } = await supabase
-      .from('emission_entries')
-      .select('category, unit, scope')
-      .eq('company_id', companyId);
+      .from("emission_entries")
+      .select("category, unit, scope")
+      .eq("company_id", companyId);
+
     if (entriesError) throw entriesError;
-    
+
     // Get all emission factors
     const { data: factorsData, error: factorsError } = await supabase
-      .from('emission_factors')
-      .select('Category_1, UOM, Source, Scope');
+      .from("emission_factors")
+      .select("category_1, uom, source, scope");
+
     if (factorsError) throw factorsError;
 
     // Get company's preferred emission source
     const { data: preferences } = await supabase
-      .from('company_preferences')
-      .select('preferred_emission_source')
-      .eq('company_id', companyId)
+      .from("company_preferences")
+      .select("preferred_emission_source")
+      .eq("company_id", companyId)
       .maybeSingle();
 
-    const preferredSource = preferences?.preferred_emission_source || 'DEFRA';
+    const preferredSource = preferences?.preferred_emission_source || "DEFRA";
 
     // Standardize string comparison helper
-    const normalizeString = (str?: string) => (str || '').toLowerCase().trim();
+    const normalizeString = (str?: string) => (str || "").toLowerCase().trim();
 
     // Deduplicate by category/unit/scope
-    const uniqueCombinations = entriesData?.filter((value, index, self) =>
-      index === self.findIndex((t) => (
-        normalizeString(t.category) === normalizeString(value.category) &&
-        normalizeString(t.unit) === normalizeString(value.unit) &&
-        t.scope === value.scope
-      ))
-    ) || [];
+    const uniqueCombinations =
+      entriesData?.filter((value, index, self) =>
+        index ===
+        self.findIndex(
+          (t) =>
+            normalizeString(t.category) === normalizeString(value.category) &&
+            normalizeString(t.unit) === normalizeString(value.unit) &&
+            t.scope === value.scope
+        )
+      ) || [];
 
     // Known sources to check for
-    const knownSources = ['DEFRA', 'EPA', 'IPCC', 'GHG Protocol Default', 'ADEME'];
+    const knownSources = ["DEFRA", "EPA", "IPCC", "GHG Protocol Default", "ADEME"];
 
     // Check status for each emission type/unit pair
-    const statusChecks = uniqueCombinations.map(combo => {
-      const sources = knownSources.map(source => {
-        const matchingFactors = factorsData?.filter(factor => 
-          normalizeString(factor.Category_1) === normalizeString(combo.category) &&
-          normalizeString(factor.UOM) === normalizeString(combo.unit) &&
-          factor.Source === source &&
-          Number(factor.Scope) === combo.scope
-        ) || [];
+    const statusChecks = uniqueCombinations.map((combo) => {
+      const sources = knownSources.map((source) => {
+        const matchingFactors =
+          factorsData?.filter(
+            (factor) =>
+              normalizeString(factor.category_1) === normalizeString(combo.category) &&
+              normalizeString(factor.uom) === normalizeString(combo.unit) &&
+              factor.source === source &&
+              Number(factor.scope) === combo.scope
+          ) || [];
 
         return {
           source,
@@ -109,23 +116,23 @@ export const checkEmissionFactorStatus = async (companyId: string) => {
       });
 
       return {
-        category: combo.category || '',
-        unit: combo.unit || '',
-        availableSources: sources
+        category: combo.category || "",
+        unit: combo.unit || "",
+        availableSources: sources,
       };
     });
 
-    return { 
+    return {
       data: statusChecks,
       preferredSource,
-      error: null 
+      error: null,
     };
   } catch (error: any) {
     console.error("Error checking emission factor status:", error);
     return {
       data: [],
       preferredSource: null,
-      error
+      error,
     };
   }
 };
@@ -136,34 +143,37 @@ export const checkEmissionFactorStatus = async (companyId: string) => {
 export const runEmissionDiagnostics = async (companyId: string) => {
   try {
     const { data: entriesData, error: entriesError } = await supabase
-      .from('emission_entries')
-      .select('category, unit, scope, emissions')
-      .eq('company_id', companyId);
+      .from("emission_entries")
+      .select("category, unit, scope, emissions")
+      .eq("company_id", companyId);
+
     if (entriesError) throw entriesError;
 
     const { data: factorsData, error: factorsError } = await supabase
-      .from('emission_factors')
-      .select('Category_1, UOM, Source, Scope');
+      .from("emission_factors")
+      .select("category_1, uom, source, scope");
+
     if (factorsError) throw factorsError;
 
     const { data: pref } = await supabase
-      .from('company_preferences')
-      .select('preferred_emission_source')
-      .eq('company_id', companyId)
+      .from("company_preferences")
+      .select("preferred_emission_source")
+      .eq("company_id", companyId)
       .maybeSingle();
 
-    const preferredSource = pref?.preferred_emission_source || 'DEFRA';
+    const preferredSource = pref?.preferred_emission_source || "DEFRA";
 
     // Find entries with no emissions calculated (emissions is NULL)
     const missingFactorsSet = new Set<string>();
 
-    entriesData?.forEach(entry => {
+    entriesData?.forEach((entry) => {
       // Check if emission factor is present in emission_factors for this entry
-      const factorExists = factorsData?.some(factor =>
-        factor.Category_1.toLowerCase().trim() === entry.category?.toLowerCase().trim() &&
-        factor.UOM.toLowerCase().trim() === entry.unit?.toLowerCase().trim() &&
-        Number(factor.Scope) === entry.scope &&
-        factor.Source === preferredSource
+      const factorExists = factorsData?.some(
+        (factor) =>
+          factor.category_1.toLowerCase().trim() === entry.category?.toLowerCase().trim() &&
+          factor.uom.toLowerCase().trim() === entry.unit?.toLowerCase().trim() &&
+          Number(factor.scope) === entry.scope &&
+          factor.source === preferredSource
       );
 
       if (!factorExists) {
@@ -172,21 +182,21 @@ export const runEmissionDiagnostics = async (companyId: string) => {
     });
 
     return {
-      logs: Array.from(missingFactorsSet).map(type => ({
-        log_type: 'warning',
-        log_message: `Missing emission factor for: ${type}`
+      logs: Array.from(missingFactorsSet).map((type) => ({
+        log_type: "warning",
+        log_message: `Missing emission factor for: ${type}`,
       })),
       missingCalculations: missingFactorsSet.size,
-      error: null
+      error: null,
     };
-
   } catch (error: any) {
     console.error("Error running diagnostics:", error);
     toast.error("Failed to run emission diagnostics");
     return {
       logs: [],
       missingCalculations: 0,
-      error
+      error,
     };
   }
 };
+

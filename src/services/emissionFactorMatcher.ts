@@ -1,19 +1,19 @@
 
 // Utility module to match emission entries to the best available emission factor (DEFRA source) using fuzzy category matching.
 
-import Fuse from 'fuse.js';
-import { supabase } from '@/integrations/supabase/client';
+import Fuse from "fuse.js";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EmissionFactor {
-  ID: number;
-  Category_1: string;
-  Category_2: string;
-  Category_3: string;
-  Category_4: string;
-  "GHG Conversion Factor 2024": number | null;
-  UOM: string;
-  Source: string;
-  Scope: number;
+  id: number;
+  category_1: string;
+  category_2: string;
+  category_3: string;
+  category_4: string;
+  ghg_conversion_factor_2024: number | null;
+  uom: string;
+  source: string;
+  scope: number;
 }
 
 interface EmissionEntry {
@@ -33,21 +33,21 @@ export interface MatchedEmissionResult {
  * Clean and normalize string: lowercase, trim, remove extra spaces.
  */
 const normalizeStr = (str: string): string =>
-  str.toLowerCase().trim().replace(/\s+/g, ' ');
+  str.toLowerCase().trim().replace(/\s+/g, " ");
 
 /**
- * Combine category columns into a normalized "full_category" string.
+ * Combine category columns into a normalized "fullCategory" string.
  */
 const buildFullCategory = (factor: EmissionFactor): string => {
   return [
-    factor.Category_1,
-    factor.Category_2,
-    factor.Category_3,
-    factor.Category_4
+    factor.category_1,
+    factor.category_2,
+    factor.category_3,
+    factor.category_4,
   ]
     .filter(Boolean)
     .map(normalizeStr)
-    .join(' ');
+    .join(" ");
 };
 
 /**
@@ -56,25 +56,29 @@ const buildFullCategory = (factor: EmissionFactor): string => {
  */
 export async function loadEmissionFactorsFuse() {
   const { data, error } = await supabase
-    .from('emission_factors')
-    .select('ID, Category_1, Category_2, Category_3, Category_4, "GHG Conversion Factor 2024", UOM, Source, Scope')
-    .eq('Source', 'DEFRA');
+    .from("emission_factors")
+    .select(
+      "id, category_1, category_2, category_3, category_4, ghg_conversion_factor_2024, uom, source, scope"
+    )
+    .eq("source", "DEFRA");
 
   if (error) {
-    console.error('[EmissionFactorMatcher] Error fetching emission factors:', error);
+    console.error("[EmissionFactorMatcher] Error fetching emission factors:", error);
     throw error;
   }
 
   // Normalize scope to number, and build fullCategory property for Fuse
-  const factors: (EmissionFactor & { fullCategory: string })[] = (data || []).map(factor => ({
-    ...factor,
-    Scope: Number(factor.Scope),
-    fullCategory: buildFullCategory(factor)
-  }));
+  const factors: (EmissionFactor & { fullCategory: string })[] = (data || []).map(
+    (factor) => ({
+      ...factor,
+      scope: Number(factor.scope),
+      fullCategory: buildFullCategory(factor),
+    })
+  );
 
   // Init Fuse.js for fuzzy search on fullCategory
   const fuse = new Fuse(factors, {
-    keys: ['fullCategory'],
+    keys: ["fullCategory"],
     threshold: 0.3,
     ignoreLocation: true,
     isCaseSensitive: false,
@@ -90,7 +94,9 @@ export async function loadEmissionFactorsFuse() {
  * exact scope (integer), and exact unit (case-insensitive).
  * Returns matched factor and calculated emissions or logs if none found.
  */
-export async function matchEmissionEntry(entry: EmissionEntry): Promise<MatchedEmissionResult> {
+export async function matchEmissionEntry(
+  entry: EmissionEntry
+): Promise<MatchedEmissionResult> {
   const { category, unit, scope, quantity } = entry;
   const normUnit = unit.toLowerCase();
   const normCategory = normalizeStr(category);
@@ -98,8 +104,8 @@ export async function matchEmissionEntry(entry: EmissionEntry): Promise<MatchedE
   const { fuse, factors } = await loadEmissionFactorsFuse();
 
   // Filter factors by exact scope and unit (case insensitive)
-  const candidateFactors = factors.filter(f =>
-    f.Scope === scope && f.UOM.toLowerCase() === normUnit
+  const candidateFactors = factors.filter(
+    (f) => f.scope === scope && f.uom.toLowerCase() === normUnit
   );
 
   if (candidateFactors.length === 0) {
@@ -109,7 +115,7 @@ export async function matchEmissionEntry(entry: EmissionEntry): Promise<MatchedE
 
   // Prepare Fuse instance on candidateFactors only for better fuzzy search accuracy
   const fuseForCandidates = new Fuse(candidateFactors, {
-    keys: ['fullCategory'],
+    keys: ["fullCategory"],
     threshold: 0.35,
     ignoreLocation: true,
     isCaseSensitive: false,
@@ -122,13 +128,17 @@ export async function matchEmissionEntry(entry: EmissionEntry): Promise<MatchedE
 
   if (searchResults.length === 0) {
     // Fallback: We attempt exact normalized category match across fullCategory of candidates
-    const exactMatch = candidateFactors.find(f => f.fullCategory === normCategory);
+    const exactMatch = candidateFactors.find((f) => f.fullCategory === normCategory);
     if (exactMatch) {
-      if (exactMatch["GHG Conversion Factor 2024"] != null) {
-        const emissions = quantity * exactMatch["GHG Conversion Factor 2024"];
+      if (exactMatch.ghg_conversion_factor_2024 != null) {
+        const emissions = quantity * exactMatch.ghg_conversion_factor_2024;
         return { matchedFactor: exactMatch, calculatedEmissions: emissions };
       }
-      return { matchedFactor: null, calculatedEmissions: null, log: `Emission factor conversion missing for matched exact category`};
+      return {
+        matchedFactor: null,
+        calculatedEmissions: null,
+        log: `Emission factor conversion missing for matched exact category`,
+      };
     }
     const logMessage = `No matching EF for category '${category}' | unit '${unit}' | Scope ${scope}`;
     return { matchedFactor: null, calculatedEmissions: null, log: logMessage };
@@ -136,15 +146,15 @@ export async function matchEmissionEntry(entry: EmissionEntry): Promise<MatchedE
 
   // Pick best match (lowest score)
   const bestMatch = searchResults[0].item;
-  if (bestMatch["GHG Conversion Factor 2024"] == null) {
+  if (bestMatch.ghg_conversion_factor_2024 == null) {
     return {
       matchedFactor: null,
       calculatedEmissions: null,
-      log: `Emission factor missing GHG Conversion Factor 2024 for matched category for '${category}'`
+      log: `Emission factor missing ghg_conversion_factor_2024 for matched category for '${category}'`,
     };
   }
 
-  const emissions = quantity * bestMatch["GHG Conversion Factor 2024"];
+  const emissions = quantity * bestMatch.ghg_conversion_factor_2024;
 
   return {
     matchedFactor: bestMatch,
