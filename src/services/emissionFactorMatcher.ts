@@ -10,14 +10,14 @@ interface EmissionFactor {
   category_4: string;
   ghg_conversion_factor_2024: number | null;
   uom: string;
-  source: string;
-  scope: number | string;
+  Source: string; // Note: original casing from DB column is 'Source'
+  scope: string;
 }
 
 interface EmissionEntry {
   category: string;
   unit: string;
-  scope: number | string;
+  scope: string;
   quantity: number;
 }
 
@@ -76,10 +76,9 @@ const buildFullCategory = (factor: EmissionFactor): string => {
 const normalizeUnit = (unit: string): string => normalizeStr(unit);
 
 /**
- * Normalize scope by converting numbers to string and lowercasing strings.
+ * Normalize scope by converting to lowercase string.
  */
-const normalizeScope = (scope: number | string): string => {
-  if (typeof scope === "number") return scope.toString();
+const normalizeScope = (scope: string): string => {
   return scope.toLowerCase().trim();
 };
 
@@ -97,20 +96,20 @@ const composeSearchString = (factor: EmissionFactor): string => {
 type FuseFactor = EmissionFactor & { searchString: string };
 
 /**
- * Loads emission factors from Supabase filtered by DEFRA source using lowercase exact keys.
+ * Loads emission factors from Supabase filtered by Source = 'DEFRA' using correct casing.
  * Builds Fuse.js instance for fuzzy searching categories + uom + scope.
  */
-export async function loadEmissionFactorsFuse() {
+export async function loadEmissionFactorsFuse(): Promise<{ fuse: Fuse<FuseFactor> | null; factors: FuseFactor[] }> {
   const { data, error } = await supabase
     .from<EmissionFactor>("emission_factors")
     .select(
-      "id, category_1, category_2, category_3, category_4, ghg_conversion_factor_2024, uom, source, scope"
+      "id, category_1, category_2, category_3, category_4, ghg_conversion_factor_2024, uom, Source, scope"
     )
-    .eq("source", "DEFRA");
+    .eq("Source", "DEFRA");
 
   if (error) {
     console.error("[EmissionFactorMatcher] Error fetching emission factors:", error);
-    throw error;
+    return { fuse: null, factors: [] };
   }
 
   if (!data || !Array.isArray(data)) {
@@ -120,14 +119,13 @@ export async function loadEmissionFactorsFuse() {
 
   const factors: FuseFactor[] = data.map((factor) => ({
     ...factor,
-    // Force scope to string for uniformity
-    scope: typeof factor.scope === "number" ? factor.scope.toString() : factor.scope,
+    scope: factor.scope.toString(),
     category_1: factor.category_1 ?? "",
     category_2: factor.category_2 ?? "",
     category_3: factor.category_3 ?? "",
     category_4: factor.category_4 ?? "",
     uom: factor.uom ?? "",
-    source: factor.source ?? "",
+    Source: factor.Source ?? "",
     ghg_conversion_factor_2024: factor.ghg_conversion_factor_2024 ?? null,
     searchString: composeSearchString(factor),
   }));
@@ -193,9 +191,11 @@ export async function matchEmissionEntry(
     });
 
     const catResults = fuseCat.search(normCategory, { limit: 3 });
-    const logMatches = catResults.map((r) => {
-      return `id:${r.item.id}, category: "${r.item.category_1} ${r.item.category_2} ${r.item.category_3} ${r.item.category_4}", uom: ${r.item.uom}, scope: ${r.item.scope}, score: ${r.score?.toFixed(4)}`;
-    }).join(" | ");
+    const logMatches = catResults
+      .map((r) => {
+        return `id:${r.item.id}, category: "${r.item.category_1} ${r.item.category_2} ${r.item.category_3} ${r.item.category_4}", uom: ${r.item.uom}, scope: ${r.item.scope}, score: ${r.score?.toFixed(4)}`;
+      })
+      .join(" | ");
 
     return {
       matchedFactor: null,
@@ -218,7 +218,7 @@ export async function matchEmissionEntry(
   });
 
   boostedResults.sort((a, b) => a.boostedScore - b.boostedScore);
-  const bestMatch = boostedResults[0].item;
+  const bestMatch = boostedResults[0]?.item ?? null;
 
   if (!bestMatch) {
     return {

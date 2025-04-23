@@ -39,7 +39,7 @@ export const fetchEmissionFactors = async () => {
       .select("*")
       .order("category_1")
       .order("uom")
-      .order("source");
+      .order("Source"); // Use correct casing
 
     if (error) throw error;
     if (!data || !Array.isArray(data)) {
@@ -70,7 +70,7 @@ export const checkEmissionFactorStatus = async (companyId: string) => {
 
     const { data: factorsData, error: factorsError } = await supabase
       .from("emission_factors")
-      .select("category_1, uom, source, scope");
+      .select("category_1, uom, Source, scope"); // Correct casing
 
     if (factorsError) throw factorsError;
     if (!factorsData || !Array.isArray(factorsData)) {
@@ -115,7 +115,7 @@ export const checkEmissionFactorStatus = async (companyId: string) => {
             (factor) =>
               normalizeString(factor.category_1) === normalizeString(combo.category) &&
               normalizeString(factor.uom) === normalizeString(combo.unit) &&
-              factor.source === source &&
+              factor.Source === source &&
               Number(factor.scope) === combo.scope
           ) || [];
 
@@ -164,7 +164,7 @@ export const runEmissionDiagnostics = async (companyId: string) => {
 
     const { data: factorsData, error: factorsError } = await supabase
       .from("emission_factors")
-      .select("category_1, uom, source, scope");
+      .select("category_1, uom, Source, scope"); // Correct casing
 
     if (factorsError) throw factorsError;
     if (!factorsData || !Array.isArray(factorsData)) {
@@ -189,7 +189,7 @@ export const runEmissionDiagnostics = async (companyId: string) => {
           factor.category_1.toLowerCase().trim() === entry.category.toLowerCase().trim() &&
           factor.uom.toLowerCase().trim() === entry.unit.toLowerCase().trim() &&
           Number(factor.scope) === entry.scope &&
-          factor.source === preferredSource
+          factor.Source === preferredSource
       );
       if (!factorExists) {
         missingFactorsSet.add(`${entry.category}/${entry.unit}`);
