@@ -4,7 +4,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, L
 import { ArrowDown, ArrowUp, Flame, BarChart2, TrendingUp, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { ChartContainer } from '@/components/ui/chart';
-import { useScope1Emissions } from '@/hooks/useScope1Emissions';
+import { useEmissionEntries } from '@/hooks/useScope1Emissions';
 import { useCompany } from '@/contexts/CompanyContext';
 import { CalculationStatus } from './CalculationStatus';
 
@@ -12,7 +12,7 @@ const COLORS = ['#0E5D40', '#6ED0AA', '#AAE3CA', '#D6F3E7'];
 
 export const EmissionsOverviewDashboard = () => {
   const { company } = useCompany();
-  const { emissions, isLoading } = useScope1Emissions(company?.id || '');
+  const { entries: emissions, isLoading } = useEmissionEntries(company?.id || '', 1);
   const [scopeData, setScopeData] = useState<{ name: string; value: number }[]>([]);
   const [monthlyData, setMonthlyData] = useState<{ name: string; emissions: number }[]>([]);
   const [totalEmissions, setTotalEmissions] = useState(0);

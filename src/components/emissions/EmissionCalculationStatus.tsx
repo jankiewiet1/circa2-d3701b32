@@ -4,9 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { fetchCompanyPreferences } from '@/services/companyPreferencesService';
-import { useScope1Emissions } from '@/hooks/useScope1Emissions';
+import { useEmissionEntries } from '@/hooks/useScope1Emissions'; // updated import
 
 interface EmissionCalculationStatusProps {
   companyId: string;
@@ -23,22 +22,20 @@ export const EmissionCalculationStatus = ({ companyId }: EmissionCalculationStat
     preferredSource: 'DEFRA',
   });
   
-  const { emissions, isLoading } = useScope1Emissions(companyId);
+  // useEmissionEntries with scopeFilter = 1
+  const { entries: emissions, isLoading } = useEmissionEntries(companyId, 1);
 
   useEffect(() => {
     const checkCalculationStatus = async () => {
       if (!companyId) return;
 
       try {
-        // Get company's preferred emission source
         const { data: preferences } = await fetchCompanyPreferences(companyId);
         const preferredSource = preferences?.preferred_emission_source || 'DEFRA';
-        
-        // Count total emissions from the scope1_emissions hook
+
         const totalCount = emissions.length;
-        
-        // Count emissions that have been calculated
-        const calculatedCount = emissions.filter(e => e.emissions_co2e !== null && e.emissions_co2e !== undefined).length;
+
+        const calculatedCount = emissions.filter(e => e.emissions !== null && e.emissions !== undefined).length;
 
         setCalculationStatus({
           total: totalCount || 0,
@@ -58,7 +55,7 @@ export const EmissionCalculationStatus = ({ companyId }: EmissionCalculationStat
   const needsRecalculation = calculationStatus.total > 0 && calculationStatus.calculated < calculationStatus.total;
 
   if (calculationStatus.total === 0) {
-    return null; // Don't show anything if there are no emissions
+    return null;
   }
 
   return (
@@ -84,3 +81,4 @@ export const EmissionCalculationStatus = ({ companyId }: EmissionCalculationStat
     </div>
   );
 };
+

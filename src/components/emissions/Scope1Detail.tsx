@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, PieChart, Pie, Cell } from 'recharts';
 import { ChartContainer } from '@/components/ui/chart';
-import { useScope1Emissions } from '@/hooks/useScope1Emissions';
+import { useEmissionEntries } from '@/hooks/useScope1Emissions';
 import { useCompany } from '@/contexts/CompanyContext';
 import { Button } from "@/components/ui/button";
 import { Download, RefreshCw } from 'lucide-react';
@@ -14,14 +14,12 @@ const COLORS = ['#0E5D40', '#6ED0AA', '#AAE3CA', '#D6F3E7', '#1E6F50', '#2E8060'
 
 export const Scope1Detail = () => {
   const { company } = useCompany();
-  const { emissions, isLoading, fetchEmissions } = useScope1Emissions(company?.id || '');
+  const { entries: emissions, isLoading, fetchEntries: fetchEmissions } = useEmissionEntries(company?.id || '', 1);
   const [fuelTypeData, setFuelTypeData] = useState<any[]>([]);
   const [sourceData, setSourceData] = useState<any[]>([]);
 
-  // Process emissions data for charts
   useEffect(() => {
     if (emissions.length > 0) {
-      // Group by fuel type
       const fuelTypeEmissions: Record<string, number> = {};
       emissions.forEach(emission => {
         if (emission.fuel_type && emission.emissions_co2e) {
@@ -35,7 +33,6 @@ export const Scope1Detail = () => {
         value: parseFloat(value.toFixed(2))
       }));
       
-      // Group by source
       const sourceEmissions: Record<string, number> = {};
       emissions.forEach(emission => {
         if (emission.source && emission.emissions_co2e) {
@@ -56,14 +53,12 @@ export const Scope1Detail = () => {
     }
   }, [emissions]);
 
-  // Fetch emissions data on component mount
   useEffect(() => {
     if (company?.id) {
       fetchEmissions();
     }
   }, [company?.id]);
 
-  // Export data to CSV
   const exportToCSV = () => {
     if (emissions.length === 0) return;
     

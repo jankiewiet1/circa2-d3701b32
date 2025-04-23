@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Treemap, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
-import { useScope1Emissions } from '@/hooks/useScope1Emissions';
 import { useCompany } from '@/contexts/CompanyContext';
 import { ChartContainer } from '@/components/ui/chart';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -18,20 +17,17 @@ interface TreemapData {
 
 export const EmissionsByCategory = () => {
   const { company } = useCompany();
-  const { emissions, isLoading } = useScope1Emissions(company?.id || '');
+  const { entries: emissions, isLoading } = useEmissionEntries(company?.id || '', 1);
   const [treemapData, setTreemapData] = useState<TreemapData[]>([]);
   const [totalEmissions, setTotalEmissions] = useState(0);
   const [hasEmissionFactorError, setHasEmissionFactorError] = useState(false);
 
-  // Color scale for the treemap
   const getColor = (value: number, max: number) => {
-    // From lighter to darker green
     const colors = ['#D6F3E7', '#AAE3CA', '#6ED0AA', '#3AB688', '#0E5D40'];
     const index = Math.min(Math.floor((value / max) * (colors.length - 1)), colors.length - 1);
     return colors[index];
   };
 
-  // Check for emission factor errors
   useEffect(() => {
     if (emissions && emissions.length > 0) {
       const factorErrors = emissions.filter(emission => !emission.emission_factor);
@@ -41,10 +37,8 @@ export const EmissionsByCategory = () => {
     }
   }, [emissions]);
 
-  // Process emissions data for the treemap
   useEffect(() => {
     if (emissions.length > 0) {
-      // Group by source
       const sourceEmissions: Record<string, number> = {};
       emissions.forEach(emission => {
         if (emission.source) {
@@ -52,14 +46,11 @@ export const EmissionsByCategory = () => {
         }
       });
       
-      // Calculate total for percentages
       const total = Object.values(sourceEmissions).reduce((sum, val) => sum + val, 0);
       setTotalEmissions(total);
       
-      // Find max for color scale
       const maxEmission = Math.max(...Object.values(sourceEmissions));
       
-      // Format data for treemap
       const data: TreemapData[] = Object.entries(sourceEmissions).map(([source, value]) => ({
         name: source,
         size: value,
@@ -85,7 +76,6 @@ export const EmissionsByCategory = () => {
     return null;
   };
 
-  // Custom TreemapContent component to fix the ReactElement error
   const CustomTreemapContent = (props: any) => {
     const { root, x, y, width, height } = props;
     
@@ -99,7 +89,6 @@ export const EmissionsByCategory = () => {
           const nodeWidth = node.x1 - node.x0;
           const nodeHeight = node.y1 - node.y0;
           
-          // Only show text if there's enough space
           const showText = nodeWidth > 50 && nodeHeight > 30;
           
           return (
