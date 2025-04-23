@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Download, Calendar, Filter, Search } from "lucide-react";
+import { FileText, Filter, Search } from "lucide-react";
+import { Avatar } from "@/components/ui/avatar";
+import { ReportSummary } from "@/components/reports/ReportSummary";
+import { ReportStatusBadge } from "@/components/reports/ReportStatusBadge";
+import { ReportTypeTag } from "@/components/reports/ReportTypeTag";
+import { ReportActions } from "@/components/reports/ReportActions";
 
 const reports = [
   {
@@ -54,8 +58,13 @@ const reports = [
 export default function Reports() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
+
+  const summaryData = {
+    totalReports: reports.length,
+    commonType: "Annual",
+    yearChange: 15,
+  };
   
-  // Filter reports based on search term and type filter
   const filteredReports = reports.filter(report => {
     const matchesSearch = searchTerm === "" || 
       report.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -78,6 +87,8 @@ export default function Reports() {
             Create and access carbon emissions reports
           </p>
         </div>
+
+        <ReportSummary {...summaryData} />
         
         <Tabs defaultValue="all">
           <div className="flex items-center justify-between mb-6">
@@ -139,22 +150,28 @@ export default function Reports() {
                   
                   {filteredReports.map((report) => (
                     <div key={report.id} className="flex items-center justify-between border-b pb-4">
-                      <div>
-                        <div className="font-medium">{report.name}</div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium">{report.name}</span>
+                          <ReportTypeTag type={report.type as any} />
+                          <ReportStatusBadge status="Completed" />
+                        </div>
                         <div className="text-sm text-gray-500">{report.description}</div>
-                        <div className="flex items-center mt-1 text-xs text-gray-500">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          {new Date(report.date).toLocaleDateString()}
-                          <span className="mx-2">•</span>
-                          {report.type}
-                          <span className="mx-2">•</span>
-                          {report.format}
+                        <div className="flex items-center mt-2 text-xs text-gray-500 gap-4">
+                          <div className="flex items-center">
+                            <Avatar className="h-5 w-5 mr-1" />
+                            <span>John Doe</span>
+                          </div>
+                          <span>{new Date(report.date).toLocaleDateString()}</span>
                         </div>
                       </div>
-                      <Button variant="ghost" size="icon">
-                        <Download className="h-4 w-4" />
-                        <span className="sr-only">Download</span>
-                      </Button>
+                      <ReportActions
+                        format={report.format}
+                        onDownload={() => console.log("Download", report.id)}
+                        onDuplicate={() => console.log("Duplicate", report.id)}
+                        onSchedule={() => console.log("Schedule", report.id)}
+                        onArchive={() => console.log("Archive", report.id)}
+                      />
                     </div>
                   ))}
                 </div>
@@ -163,7 +180,16 @@ export default function Reports() {
           </TabsContent>
           
           <TabsContent value="templates">
-            <Card>
+            <Card className="relative overflow-hidden">
+              <div className="absolute inset-0 bg-gray-100/80 backdrop-blur-sm flex items-center justify-center z-10">
+                <div className="text-center p-6">
+                  <h3 className="text-lg font-semibold mb-2">Premium Templates</h3>
+                  <p className="text-gray-600 mb-4">Unlock access to professional report templates</p>
+                  <Button className="bg-circa-green hover:bg-circa-green-dark">
+                    Upgrade Now
+                  </Button>
+                </div>
+              </div>
               <CardHeader>
                 <CardTitle>Report Templates</CardTitle>
                 <CardDescription>
@@ -171,7 +197,7 @@ export default function Reports() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-500">Report templates will be available in the full version.</p>
+                {/* Template previews would go here */}
               </CardContent>
             </Card>
           </TabsContent>
@@ -185,7 +211,15 @@ export default function Reports() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-500">Scheduled reports will be available in the full version.</p>
+                <div className="text-center py-8">
+                  <h3 className="text-lg font-semibold mb-2">Coming Soon!</h3>
+                  <p className="text-gray-600 mb-4">
+                    Automated report scheduling will be available soon.
+                  </p>
+                  <Button variant="outline">
+                    Get Notified
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
