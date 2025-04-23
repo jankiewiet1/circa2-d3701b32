@@ -1,6 +1,4 @@
 
-// We update DataUpload.tsx by removing any logic related to emission factors, emissions, or match status from upload and preview table columns.
-
 import React, { useState, useCallback } from "react";
 import Papa from "papaparse";
 import { supabase } from "@/integrations/supabase/client";
