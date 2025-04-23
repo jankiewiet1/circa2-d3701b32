@@ -53,24 +53,28 @@ export const CalculationStatus = () => {
         setLastCalculation(calculationLogs[0].created_at);
       }
       
-      // Get calculation stats
-      const { data: stats, error: statsError } = await supabase
+      // Get calculation stats - Fixed the groupBy query that was causing the error
+      const { data: matchedCount } = await supabase
         .from('emission_entries')
-        .select('match_status, count')
+        .select('count')
         .eq('company_id', company.id)
-        .group('match_status');
+        .eq('match_status', 'matched');
         
-      if (!statsError && stats) {
-        const matched = stats.find(s => s.match_status === 'matched')?.count || 0;
-        const unmatched = stats.find(s => s.match_status === 'unmatched')?.count || 0;
-        const total = matched + unmatched;
+      const { data: unmatchedCount } = await supabase
+        .from('emission_entries')
+        .select('count')
+        .eq('company_id', company.id)
+        .eq('match_status', 'unmatched');
         
-        setCalculationStats({
-          matched: Number(matched),
-          unmatched: Number(unmatched),
-          total
-        });
-      }
+      const matched = matchedCount?.[0]?.count || 0;
+      const unmatched = unmatchedCount?.[0]?.count || 0;
+      const total = Number(matched) + Number(unmatched);
+      
+      setCalculationStats({
+        matched: Number(matched),
+        unmatched: Number(unmatched),
+        total
+      });
       
       // Run diagnostics
       const { logs, missingCalculations } = await runEmissionDiagnostics(company.id);
