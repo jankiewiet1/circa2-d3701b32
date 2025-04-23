@@ -1,11 +1,12 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CompanyProvider } from "@/contexts/CompanyContext";
+import { SessionContextProvider } from "@supabase/auth-helpers-react";
+import { supabase } from "@/integrations/supabase/client";
 
 import { publicRoutes } from "@/routes/publicRoutes";
 import { companySetupRoutes } from "@/routes/companySetupRoutes";
@@ -20,32 +21,26 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AuthProvider>
-        <CompanyProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              {/* Public Routes */}
-              {publicRoutes}
-              
-              {/* Company Setup Routes */}
-              {companySetupRoutes}
-              
-              {/* Main Protected Routes */}
-              {mainRoutes}
-              
-              {/* Emission Routes */}
-              {emissionRoutes}
-              
-              {/* Catch all route - 404 */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </CompanyProvider>
-      </AuthProvider>
+      <SessionContextProvider supabaseClient={supabase}>
+        <AuthProvider>
+          <CompanyProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                {publicRoutes}
+                {companySetupRoutes}
+                {mainRoutes}
+                {emissionRoutes}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </CompanyProvider>
+        </AuthProvider>
+      </SessionContextProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
 
 export default App;
+
