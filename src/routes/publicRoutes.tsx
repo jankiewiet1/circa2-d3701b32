@@ -1,4 +1,3 @@
-
 import { Route } from "react-router-dom";
 import Index from "@/pages/Index";
 import Login from "@/pages/auth/Login";
