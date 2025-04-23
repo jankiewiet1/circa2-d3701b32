@@ -141,6 +141,7 @@ export default function DataUpload() {
       const rowsToUpsert = csvRows.map((row) => ({
         ...row,
         company_id: company.id,
+        emission_factor: 0,
       }));
 
       const { error } = await supabase
@@ -157,7 +158,11 @@ export default function DataUpload() {
         setCsvRows([]);
       }
     } catch (error) {
-      toast.error(`Unexpected error: ${error instanceof Error ? error.message : String(error)}`);
+      toast.error(
+        `Unexpected error: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
     } finally {
       setIsUploadingCsv(false);
     }
@@ -198,11 +203,17 @@ export default function DataUpload() {
       errors.push("Date is required");
     }
 
-    if (manualEntry.quantity !== undefined && (isNaN(Number(manualEntry.quantity)) || Number(manualEntry.quantity) < 0)) {
+    if (
+      manualEntry.quantity !== undefined &&
+      (isNaN(Number(manualEntry.quantity)) || Number(manualEntry.quantity) < 0)
+    ) {
       errors.push("Quantity must be a positive number");
     }
 
-    if (manualEntry.scope !== undefined && ![1, 2, 3].includes(manualEntry.scope)) {
+    if (
+      manualEntry.scope !== undefined &&
+      ![1, 2, 3].includes(manualEntry.scope)
+    ) {
       errors.push("Scope must be 1, 2, or 3");
     }
 
@@ -223,21 +234,24 @@ export default function DataUpload() {
     setIsSubmittingManual(true);
     try {
       const dateObj = new Date(manualEntry.date as string);
-      const entryToUpsert = {
-        company_id: company.id,
-        date: dateObj.toISOString().split("T")[0],
-        year: dateObj.getFullYear(),
-        category: (manualEntry.category || "").toString().trim(),
-        description: (manualEntry.description || "").toString().trim(),
-        quantity: Number(manualEntry.quantity),
-        unit: (manualEntry.unit || "").toString().trim(),
-        scope: Number(manualEntry.scope),
-        notes: manualEntry.notes ? (manualEntry.notes || "").toString().trim() : null,
-      };
+      const entryToUpsert = [
+        {
+          company_id: company.id,
+          date: dateObj.toISOString().split("T")[0],
+          year: dateObj.getFullYear(),
+          category: (manualEntry.category || "").toString().trim(),
+          description: (manualEntry.description || "").toString().trim(),
+          quantity: Number(manualEntry.quantity),
+          unit: (manualEntry.unit || "").toString().trim(),
+          scope: Number(manualEntry.scope),
+          notes: manualEntry.notes ? (manualEntry.notes || "").toString().trim() : null,
+          emission_factor: 0,
+        },
+      ];
 
       const { error } = await supabase
         .from("emission_entries")
-        .upsert([entryToUpsert], {
+        .upsert(entryToUpsert, {
           onConflict: ["company_id", "date", "category", "unit", "scope"],
         });
 
@@ -249,7 +263,11 @@ export default function DataUpload() {
         setManualEntryErrors([]);
       }
     } catch (error) {
-      toast.error(`Unexpected error: ${error instanceof Error ? error.message : String(error)}`);
+      toast.error(
+        `Unexpected error: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
     } finally {
       setIsSubmittingManual(false);
     }
@@ -386,7 +404,11 @@ export default function DataUpload() {
           <div className="flex justify-end mt-4">
             <Button
               onClick={uploadCsvData}
-              disabled={isUploadingCsv || csvRows.length === 0 || validationErrors.length > 0}
+              disabled={
+                isUploadingCsv ||
+                csvRows.length === 0 ||
+                validationErrors.length > 0
+              }
               className="bg-circa-green hover:bg-circa-green-dark"
             >
               {isUploadingCsv ? "Uploading..." : "Upload CSV Data"}
@@ -408,7 +430,10 @@ export default function DataUpload() {
       {mode === "manual" && (
         <section className="space-y-4 max-w-lg">
           <div>
-            <label htmlFor="date" className="block font-semibold text-gray-700 mb-1">
+            <label
+              htmlFor="date"
+              className="block font-semibold text-gray-700 mb-1"
+            >
               Date *
             </label>
             <input
@@ -423,7 +448,10 @@ export default function DataUpload() {
           </div>
 
           <div>
-            <label htmlFor="category" className="block font-semibold text-gray-700 mb-1">
+            <label
+              htmlFor="category"
+              className="block font-semibold text-gray-700 mb-1"
+            >
               Category *
             </label>
             <input
@@ -439,7 +467,10 @@ export default function DataUpload() {
           </div>
 
           <div>
-            <label htmlFor="description" className="block font-semibold text-gray-700 mb-1">
+            <label
+              htmlFor="description"
+              className="block font-semibold text-gray-700 mb-1"
+            >
               Description *
             </label>
             <input
@@ -455,7 +486,10 @@ export default function DataUpload() {
           </div>
 
           <div>
-            <label htmlFor="quantity" className="block font-semibold text-gray-700 mb-1">
+            <label
+              htmlFor="quantity"
+              className="block font-semibold text-gray-700 mb-1"
+            >
               Quantity *
             </label>
             <input
@@ -472,7 +506,10 @@ export default function DataUpload() {
           </div>
 
           <div>
-            <label htmlFor="unit" className="block font-semibold text-gray-700 mb-1">
+            <label
+              htmlFor="unit"
+              className="block font-semibold text-gray-700 mb-1"
+            >
               Unit *
             </label>
             <input
@@ -488,7 +525,10 @@ export default function DataUpload() {
           </div>
 
           <div>
-            <label htmlFor="scope" className="block font-semibold text-gray-700 mb-1">
+            <label
+              htmlFor="scope"
+              className="block font-semibold text-gray-700 mb-1"
+            >
               Scope (1, 2, or 3) *
             </label>
             <input
@@ -506,7 +546,10 @@ export default function DataUpload() {
           </div>
 
           <div>
-            <label htmlFor="notes" className="block font-semibold text-gray-700 mb-1">
+            <label
+              htmlFor="notes"
+              className="block font-semibold text-gray-700 mb-1"
+            >
               Notes
             </label>
             <textarea
