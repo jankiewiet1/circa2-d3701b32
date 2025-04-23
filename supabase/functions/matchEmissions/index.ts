@@ -1,5 +1,5 @@
 
-import { serve } from "std/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Fuse from "https://cdn.skypack.dev/fuse.js";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
