@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from "react";
 import Papa from "papaparse";
 import { supabase } from "@/integrations/supabase/client";
@@ -159,7 +160,6 @@ export default function DataUpload() {
     try {
       const rowsToUpsert = csvRows.map((row) => ({
         company_id: company.id,
-        emission_factor: 0,
         date: row.date,
         category: row.category,
         description: row.description,
@@ -273,7 +273,6 @@ export default function DataUpload() {
           notes: manualEntry.notes
             ? (manualEntry.notes || "").toString().trim()
             : null,
-          emission_factor: 0,
         },
       ];
 
