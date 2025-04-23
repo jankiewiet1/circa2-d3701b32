@@ -1,6 +1,4 @@
 
-// Refactor hook to a more general one for emission entries with scope filter
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -10,6 +8,7 @@ export interface EmissionEntryData {
   company_id: string;
   upload_session_id?: string | null;
   date: string;
+  year: number; // added yearly column
   category: string;
   description: string;
   quantity: number;
@@ -23,6 +22,7 @@ export interface EmissionEntryData {
 
 interface Filters {
   dateRange?: string;
+  year?: number;  // new filter for year
   category?: string;
   scope?: number;
   unit?: string;
@@ -45,7 +45,10 @@ export const useEmissionEntries = (companyId: string, scopeFilter?: number) => {
       }
 
       if (filters) {
-        if (filters.dateRange && filters.dateRange !== 'all') {
+        // Replace dateRange usage with year filter if year specified
+        if (filters.year) {
+          query = query.eq('year', filters.year);
+        } else if (filters.dateRange && filters.dateRange !== 'all') {
           const today = new Date();
           let startDate = new Date();
 

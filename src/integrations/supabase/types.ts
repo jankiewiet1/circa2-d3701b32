@@ -260,6 +260,7 @@ export type Database = {
           unit: string
           updated_at: string
           upload_session_id: string | null
+          year: number | null
         }
         Insert: {
           category: string
@@ -275,6 +276,7 @@ export type Database = {
           unit: string
           updated_at?: string
           upload_session_id?: string | null
+          year?: number | null
         }
         Update: {
           category?: string
@@ -290,6 +292,7 @@ export type Database = {
           unit?: string
           updated_at?: string
           upload_session_id?: string | null
+          year?: number | null
         }
         Relationships: [
           {
@@ -773,6 +776,23 @@ export type Database = {
       }
     }
     Views: {
+      view_entries_by_year_and_scope: {
+        Row: {
+          company_id: string | null
+          scope: number | null
+          total_kg_co2e: number | null
+          year: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emission_entries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       view_monthly_by_scope: {
         Row: {
           company_id: string | null

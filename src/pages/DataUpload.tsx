@@ -156,6 +156,7 @@ export default function DataUpload() {
                 const date = new Date(row[index]);
                 if (!isNaN(date.getTime())) {
                   rowData[columnName] = date.toISOString().split('T')[0];
+                  rowData['year'] = date.getFullYear();
                 } else {
                   rowData[columnName] = row[index];
                 }
