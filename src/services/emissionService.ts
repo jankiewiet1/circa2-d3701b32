@@ -13,8 +13,13 @@ export interface EmissionEntry {
   quantity: number;
   unit: string;
   emission_factor: number;
+  emission_factor_id?: number | null;
   scope: number;
   emissions: number;
+  co2_emissions?: number | null;
+  ch4_emissions?: number | null;
+  n2o_emissions?: number | null;
+  match_status?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -157,7 +162,7 @@ export const runEmissionDiagnostics = async (companyId: string) => {
   try {
     const { data: entriesData, error: entriesError } = await supabase
       .from("emission_entries")
-      .select("category, unit, scope, emissions")
+      .select("category, unit, scope, emissions, match_status")
       .eq("company_id", companyId);
 
     if (entriesError) throw entriesError;
@@ -165,14 +170,15 @@ export const runEmissionDiagnostics = async (companyId: string) => {
       throw new Error("No emission entries data returned");
     }
 
-    const { data: factorsData, error: factorsError } = await supabase
-      .from("emission_factors")
-      .select(`"category_1", "uom", "Source", "scope"`);
-
-    if (factorsError) throw factorsError;
-    if (!factorsData || !Array.isArray(factorsData)) {
-      throw new Error("No emission factors data returned");
-    }
+    const unmatched = entriesData.filter(entry => entry.match_status === 'unmatched' || !entry.emissions);
+    
+    const { data: diagnostics, error: diagnosticsError } = await supabase
+      .from("emission_matching_diagnostics")
+      .select("category, unit, scope, reason")
+      .eq("company_id", companyId)
+      .order('checked_at', { ascending: false });
+      
+    if (diagnosticsError) throw diagnosticsError;
 
     const { data: pref, error: prefError } = await supabase
       .from("company_preferences")
@@ -184,28 +190,15 @@ export const runEmissionDiagnostics = async (companyId: string) => {
 
     const preferredSource = pref?.preferred_emission_source || "DEFRA";
 
-    const missingFactorsSet = new Set<string>();
-
-    entriesData.forEach((entry) => {
-      const factorExists = factorsData.some(
-        (factor) =>
-          (factor.category_1?.toLowerCase().trim() ?? "") ===
-            entry.category.toLowerCase().trim() &&
-          (factor.uom?.toLowerCase().trim() ?? "") === entry.unit.toLowerCase().trim() &&
-          Number(factor.scope) === entry.scope &&
-          factor.Source === preferredSource
-      );
-      if (!factorExists) {
-        missingFactorsSet.add(`${entry.category}/${entry.unit}`);
-      }
-    });
+    // Convert diagnostics to logs format
+    const logs = (diagnostics || []).map(diag => ({
+      log_type: "warning",
+      log_message: `Missing emission factor for: ${diag.category}/${diag.unit} (scope ${diag.scope})`
+    }));
 
     return {
-      logs: Array.from(missingFactorsSet).map((type) => ({
-        log_type: "warning",
-        log_message: `Missing emission factor for: ${type}`,
-      })),
-      missingCalculations: missingFactorsSet.size,
+      logs,
+      missingCalculations: unmatched.length,
       error: null,
     };
   } catch (error: any) {
@@ -220,7 +213,7 @@ export const runEmissionDiagnostics = async (companyId: string) => {
 };
 
 /**
- * Recalculate emissions for a company using the new GHG calculation function
+ * Recalculate emissions for a company using the enhanced GHG calculation function
  */
 export const recalculateCompanyEmissions = async (companyId: string) => {
   try {
@@ -231,15 +224,17 @@ export const recalculateCompanyEmissions = async (companyId: string) => {
     if (error) throw error;
 
     if (data.success) {
-      const { updated_rows, unmatched_rows } = data.data[0];
-      toast.success(`Successfully updated ${updated_rows} entries. ${unmatched_rows} entries remain unmatched.`);
-      return { updated_rows, unmatched_rows };
+      toast.success(data.message || "Emissions recalculated successfully");
+      return { 
+        updated_rows: data.data?.[0]?.updated_rows || 0, 
+        unmatched_rows: data.data?.[0]?.unmatched_rows || 0 
+      };
     } else {
-      throw new Error('Calculation failed');
+      throw new Error(data.error || 'Calculation failed');
     }
   } catch (error) {
     console.error('Error recalculating emissions:', error);
-    toast.error('Failed to recalculate emissions');
+    toast.error(`Failed to recalculate emissions: ${error.message || 'Unknown error'}`);
     throw error;
   }
 };

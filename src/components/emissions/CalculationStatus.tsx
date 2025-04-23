@@ -8,8 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
-import { runEmissionDiagnostics } from '@/services/emissionService';
-import { recalculateCompanyEmissions } from '@/services/companyPreferencesService';
+import { runEmissionDiagnostics, recalculateCompanyEmissions } from '@/services/emissionService';
 
 export const CalculationStatus = () => {
   const { company } = useCompany();
@@ -23,6 +22,11 @@ export const CalculationStatus = () => {
     missingCalculations: 0
   });
   const [lastCalculation, setLastCalculation] = useState<string | null>(null);
+  const [calculationStats, setCalculationStats] = useState<{
+    matched: number;
+    unmatched: number;
+    total: number;
+  }>({ matched: 0, unmatched: 0, total: 0 });
 
   useEffect(() => {
     if (company?.id) {
@@ -41,7 +45,7 @@ export const CalculationStatus = () => {
         .select('created_at, log_message')
         .eq('company_id', company.id)
         .eq('log_type', 'info')
-        .like('log_message', 'Recalculation complete%')
+        .like('log_message', '%Recalculation complete%')
         .order('created_at', { ascending: false })
         .limit(1);
       
@@ -49,11 +53,31 @@ export const CalculationStatus = () => {
         setLastCalculation(calculationLogs[0].created_at);
       }
       
+      // Get calculation stats
+      const { data: stats, error: statsError } = await supabase
+        .from('emission_entries')
+        .select('match_status, count')
+        .eq('company_id', company.id)
+        .group('match_status');
+        
+      if (!statsError && stats) {
+        const matched = stats.find(s => s.match_status === 'matched')?.count || 0;
+        const unmatched = stats.find(s => s.match_status === 'unmatched')?.count || 0;
+        const total = matched + unmatched;
+        
+        setCalculationStats({
+          matched: Number(matched),
+          unmatched: Number(unmatched),
+          total
+        });
+      }
+      
       // Run diagnostics
       const { logs, missingCalculations } = await runEmissionDiagnostics(company.id);
       setDiagnostics({ logs, missingCalculations });
     } catch (error) {
       console.error("Error checking calculation status:", error);
+      toast.error("Failed to check calculation status");
     } finally {
       setLoading(false);
     }
@@ -65,11 +89,9 @@ export const CalculationStatus = () => {
     setRecalculating(true);
     try {
       await recalculateCompanyEmissions(company.id);
-      toast.success("Emissions recalculated successfully");
       await checkCalculationStatus();
     } catch (error) {
       console.error("Error recalculating emissions:", error);
-      toast.error("Failed to recalculate emissions");
     } finally {
       setRecalculating(false);
     }
@@ -111,6 +133,21 @@ export const CalculationStatus = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
+          <div className="grid grid-cols-3 gap-4">
+            <div className="p-4 bg-gray-50 rounded-md">
+              <div className="text-sm text-gray-500 mb-1">Total Entries</div>
+              <div className="text-2xl font-bold">{calculationStats.total}</div>
+            </div>
+            <div className="p-4 bg-green-50 rounded-md">
+              <div className="text-sm text-gray-500 mb-1">Matched</div>
+              <div className="text-2xl font-bold text-green-700">{calculationStats.matched}</div>
+            </div>
+            <div className="p-4 bg-amber-50 rounded-md">
+              <div className="text-sm text-gray-500 mb-1">Unmatched</div>
+              <div className="text-2xl font-bold text-amber-700">{calculationStats.unmatched}</div>
+            </div>
+          </div>
+
           {lastCalculation && (
             <div className="flex items-center space-x-2">
               <span className="text-sm text-muted-foreground">Last calculation:</span>
@@ -121,22 +158,30 @@ export const CalculationStatus = () => {
           )}
 
           {diagnostics.logs.length > 0 ? (
-            <Alert variant="warning">
+            <Alert variant="warning" className="mt-4">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Emission Calculation Issues</AlertTitle>
               <AlertDescription>
                 <div className="mt-2 space-y-2">
-                  <p>Found {diagnostics.missingCalculations} fuel type/unit combinations without matching emission factors:</p>
-                  <ul className="list-disc list-inside">
-                    {diagnostics.logs.map((log, index) => (
+                  <p>Found {diagnostics.missingCalculations} entries without matching emission factors:</p>
+                  <ul className="list-disc list-inside max-h-40 overflow-y-auto">
+                    {diagnostics.logs.slice(0, 5).map((log, index) => (
                       <li key={index}>{log.log_message}</li>
                     ))}
+                    {diagnostics.logs.length > 5 && (
+                      <li className="text-gray-500">...and {diagnostics.logs.length - 5} more</li>
+                    )}
                   </ul>
+                </div>
+                <div className="mt-4">
+                  <p className="text-sm">
+                    <strong>Troubleshooting:</strong> Check that category names, units, and scope values match between your emissions data and DEFRA emission factors.
+                  </p>
                 </div>
               </AlertDescription>
             </Alert>
           ) : diagnostics.logs.length === 0 && !loading ? (
-            <Alert>
+            <Alert className="mt-4">
               <AlertCircle className="h-4 w-4 text-green-500" />
               <AlertDescription className="text-green-800">
                 All emissions have appropriate emission factors available.

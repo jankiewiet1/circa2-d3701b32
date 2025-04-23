@@ -872,10 +872,15 @@ export type Database = {
     }
     Functions: {
       calculate_ghg_emissions: {
-        Args: { company_id: string }
+        Args: { _company_id: string }
         Returns: {
-          updated_rows: number
-          unmatched_rows: number
+          entry_id: string
+          co2_emissions: number
+          ch4_emissions: number
+          n2o_emissions: number
+          total_emissions: number
+          emission_factor: number
+          match_status: string
         }[]
       }
       recalculate_scope1_emissions: {

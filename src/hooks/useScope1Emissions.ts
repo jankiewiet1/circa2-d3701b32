@@ -8,24 +8,30 @@ export interface EmissionEntryData {
   company_id: string;
   upload_session_id?: string | null;
   date: string;
-  year: number; // added yearly column
+  year: number; // year column
   category: string;
   description: string;
   quantity: number;
   unit: string;
   emission_factor: number;
+  emission_factor_id?: number | null;
   scope: number;
   emissions: number;
+  co2_emissions?: number | null;
+  ch4_emissions?: number | null;
+  n2o_emissions?: number | null;
+  match_status?: string | null;
   created_at: string;
   updated_at: string;
 }
 
 interface Filters {
   dateRange?: string;
-  year?: number;  // new filter for year
+  year?: number;  // year filter
   category?: string;
   scope?: number;
   unit?: string;
+  matchStatus?: string; // new filter for match status
 }
 
 export const useEmissionEntries = (companyId: string, scopeFilter?: number) => {
@@ -71,7 +77,7 @@ export const useEmissionEntries = (companyId: string, scopeFilter?: number) => {
               startDate.setMonth(today.getMonth() -6);
               break;
             case 'last12months':
-              startDate.setFullYear(today.getFullYear() -1 );
+              startDate.setFullYear(today.getFullYear() -1);
               break;
             case 'thisYear':
               startDate = new Date(today.getFullYear(), 0, 1);
@@ -90,6 +96,11 @@ export const useEmissionEntries = (companyId: string, scopeFilter?: number) => {
 
         if (filters.unit && filters.unit !== 'all') {
           query = query.eq('unit', filters.unit);
+        }
+        
+        // Add filter by match_status if provided
+        if (filters.matchStatus && filters.matchStatus !== 'all') {
+          query = query.eq('match_status', filters.matchStatus);
         }
       }
 

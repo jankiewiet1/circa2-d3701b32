@@ -27,20 +27,29 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    // First, manually extract year from date field if not already set
+    // First, ensure years are extracted from dates
     await supabaseClient.rpc('update_emission_entries_year');
+    
+    console.log(`Processing emissions for company: ${company_id}`);
 
-    // Then call the database function to calculate emissions
+    // Call the enhanced database function to calculate emissions
     const { data, error } = await supabaseClient.rpc('calculate_ghg_emissions', {
       company_id: company_id
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Database function error:', error);
+      throw error;
+    }
 
+    console.log('Calculation results:', data);
+
+    // Return the results
     return new Response(
       JSON.stringify({
         success: true,
-        data: data
+        data: data || [],
+        message: `Updated ${data[0]?.updated_rows || 0} entries. ${data[0]?.unmatched_rows || 0} entries remain unmatched.`
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
