@@ -5,7 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/CompanyContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Upload, Check, X as XIcon, AlertTriangle } from "lucide-react";
+import {
+  Upload,
+  Check,
+  X as XIcon,
+  AlertTriangle,
+} from "lucide-react";
 
 type EmissionEntry = {
   date: string;
@@ -111,11 +116,10 @@ export default function DataUpload() {
             });
           });
 
-          // Determine if rows are new or updates based on some logic
-          // For simplicity, we mark all as new here.
-          for (let i = 0; i < parsedRows.length; i++) {
-            parsedRows[i].isNew = true;
-          }
+          // For simplicity, mark all rows as new
+          parsedRows.forEach((row) => {
+            row.isNew = true;
+          });
 
           setValidationErrors(errors);
           setCsvRows(parsedRows);
@@ -156,9 +160,16 @@ export default function DataUpload() {
     setIsUploadingCsv(true);
     try {
       const rowsToUpsert = csvRows.map((row) => ({
-        ...row,
         company_id: company.id,
         emission_factor: 0,
+        date: row.date,
+        year: row.year,
+        category: row.category,
+        description: row.description,
+        quantity: row.quantity,
+        unit: row.unit,
+        scope: row.scope,
+        notes: row.notes ?? null,
       }));
 
       const { error } = await supabase
@@ -338,9 +349,9 @@ export default function DataUpload() {
                 }
               },
             }}
-            className={`border-2 border-dashed rounded-lg p-8 mb-4 cursor-pointer text-center transition-colors ${
+            className={`border-2 border-dashed rounded-lg p-12 mb-6 cursor-pointer text-center transition-colors ${
               csvFile
-                ? "border-circa-green bg-circa-green-light/30"
+                ? "border-circa-green bg-circa-green-light/40"
                 : "border-gray-300 hover:border-circa-green"
             }`}
           >
@@ -352,8 +363,8 @@ export default function DataUpload() {
               id="csv-file-upload"
             />
             <label htmlFor="csv-file-upload" className="cursor-pointer">
-              <Upload size={48} className="mx-auto mb-3 text-gray-500" />
-              <p className="text-gray-600 text-sm">
+              <Upload className="mx-auto mb-4 text-gray-500" size={48} />
+              <p className="text-gray-700 text-lg font-medium">
                 {csvFile
                   ? csvFile.name
                   : "Drag and drop your CSV file here, or click to browse"}
@@ -365,11 +376,11 @@ export default function DataUpload() {
           </div>
 
           {validationErrors.length > 0 && (
-            <div className="mb-4 rounded border border-red-400 bg-red-50 p-4 text-sm text-red-700 flex items-start space-x-2">
-              <AlertTriangle className="shrink-0 mt-1 h-5 w-5" />
+            <div className="mb-6 rounded border border-red-400 bg-red-50 p-4 text-sm text-red-700 flex items-start space-x-3">
+              <AlertTriangle className="shrink-0 mt-1 h-6 w-6" />
               <div>
                 <p className="mb-2 font-semibold">Validation Errors:</p>
-                <ul className="ml-5 list-disc max-h-40 overflow-auto">
+                <ul className="ml-6 list-disc max-h-40 overflow-y-auto">
                   {validationErrors.map((err, i) => (
                     <li key={i}>{err}</li>
                   ))}
@@ -379,18 +390,18 @@ export default function DataUpload() {
           )}
 
           {csvRows.length > 0 && (
-            <div className="mb-4 max-h-96 overflow-auto rounded border border-gray-300 shadow-sm">
+            <div className="mb-6 max-h-96 overflow-y-auto rounded border border-gray-300 shadow-sm">
               <table className="w-full text-sm table-fixed border-collapse">
                 <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr className="border-b border-gray-200">
-                    <th className="p-2 text-left">Status</th>
-                    <th className="p-2 text-left">Date</th>
-                    <th className="p-2 text-left">Category</th>
-                    <th className="p-2 text-left">Description</th>
-                    <th className="p-2 text-right">Quantity</th>
-                    <th className="p-2 text-left">Unit</th>
-                    <th className="p-2 text-right">Scope</th>
-                    <th className="p-2 text-left">Notes</th>
+                    <th className="p-3 text-left">Status</th>
+                    <th className="p-3 text-left">Date</th>
+                    <th className="p-3 text-left">Category</th>
+                    <th className="p-3 text-left">Description</th>
+                    <th className="p-3 text-right">Quantity</th>
+                    <th className="p-3 text-left">Unit</th>
+                    <th className="p-3 text-right">Scope</th>
+                    <th className="p-3 text-left">Notes</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -398,37 +409,40 @@ export default function DataUpload() {
                     <tr
                       key={idx}
                       className={
-                        idx % 2 === 0 ? "bg-white" : "bg-gray-50"
+                        idx % 2 === 0
+                          ? "bg-white"
+                          : "bg-gray-50"
                       }
                     >
-                      <td className="p-2">
+                      <td className="p-3">
                         {row.isNew ? (
-                          <Check className="text-green-600" title="New" />
+                          <Check
+                            className="text-green-600"
+                            aria-label="New"
+                          />
                         ) : row.isUpdate ? (
                           <XIcon
                             className="text-yellow-600"
-                            title="Update"
+                            aria-label="Update"
                           />
                         ) : (
                           <></>
                         )}
                       </td>
-                      <td className="p-2">{row.date}</td>
-                      <td className="p-2">{row.category}</td>
-                      <td className="p-2">{row.description}</td>
-                      <td className="p-2 text-right">{row.quantity}</td>
-                      <td className="p-2">{row.unit}</td>
-                      <td className="p-2 text-right">{row.scope}</td>
-                      <td className="p-2">{row.notes || "-"}</td>
+                      <td className="p-3">{row.date}</td>
+                      <td className="p-3">{row.category}</td>
+                      <td className="p-3">{row.description}</td>
+                      <td className="p-3 text-right">{row.quantity}</td>
+                      <td className="p-3">{row.unit}</td>
+                      <td className="p-3 text-right">{row.scope}</td>
+                      <td className="p-3">{row.notes || "-"}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {csvRows.length > 20 && (
-                <div className="p-2 text-xs text-gray-500">
-                  Showing all {csvRows.length} rows
-                </div>
-              )}
+              <div className="p-2 text-xs text-gray-500">
+                Showing all {csvRows.length} rows
+              </div>
             </div>
           )}
 
@@ -439,12 +453,12 @@ export default function DataUpload() {
               csvRows.length === 0 ||
               validationErrors.length > 0
             }
-            className="w-full bg-circa-green hover:bg-circa-green-dark py-3 font-semibold"
+            className="w-full py-3 font-semibold bg-circa-green hover:bg-circa-green-dark disabled:opacity-60"
           >
             {isUploadingCsv ? "Uploading..." : "Upload CSV Data"}
           </Button>
 
-          <div className="mt-6 text-sm text-gray-600">
+          <div className="mt-6 text-sm text-gray-700">
             <a
               href="/templates/emissions_template.csv"
               download
@@ -458,12 +472,12 @@ export default function DataUpload() {
 
       {mode === "manual" && (
         <section>
-          <div className="max-w-3xl bg-white rounded-lg shadow-md p-6 space-y-6">
+          <div className="max-w-3xl bg-white rounded-lg shadow-md p-8 space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label
                   htmlFor="date"
-                  className="block font-semibold text-gray-700 mb-1"
+                  className="block font-semibold text-gray-700 mb-2"
                 >
                   Date *
                 </label>
@@ -473,13 +487,16 @@ export default function DataUpload() {
                   type="date"
                   value={manualEntry.date || ""}
                   onChange={handleManualInputChange}
-                  className={`w-full rounded-md border ${
+                  className={`w-full rounded-md border px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-circa-green ${
                     manualEntryErrors.some((e) =>
                       e.toLowerCase().includes("date")
                     )
                       ? "border-red-500"
                       : "border-gray-300"
-                  } px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-circa-green`}
+                  }`}
+                  aria-invalid={manualEntryErrors.some((e) =>
+                    e.toLowerCase().includes("date")
+                  )}
                   required
                 />
               </div>
@@ -487,7 +504,7 @@ export default function DataUpload() {
               <div>
                 <label
                   htmlFor="category"
-                  className="block font-semibold text-gray-700 mb-1"
+                  className="block font-semibold text-gray-700 mb-2"
                 >
                   Category *
                 </label>
@@ -498,13 +515,16 @@ export default function DataUpload() {
                   value={manualEntry.category || ""}
                   onChange={handleManualInputChange}
                   placeholder="e.g. Electricity"
-                  className={`w-full rounded-md border ${
+                  className={`w-full rounded-md border px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-circa-green ${
                     manualEntryErrors.some((e) =>
                       e.toLowerCase().includes("category")
                     )
                       ? "border-red-500"
                       : "border-gray-300"
-                  } px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-circa-green`}
+                  }`}
+                  aria-invalid={manualEntryErrors.some((e) =>
+                    e.toLowerCase().includes("category")
+                  )}
                   required
                 />
               </div>
@@ -513,7 +533,7 @@ export default function DataUpload() {
             <div>
               <label
                 htmlFor="description"
-                className="block font-semibold text-gray-700 mb-1"
+                className="block font-semibold text-gray-700 mb-2"
               >
                 Description *
               </label>
@@ -524,13 +544,16 @@ export default function DataUpload() {
                 value={manualEntry.description || ""}
                 onChange={handleManualInputChange}
                 placeholder="Brief description"
-                className={`w-full rounded-md border ${
+                className={`w-full rounded-md border px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-circa-green ${
                   manualEntryErrors.some((e) =>
                     e.toLowerCase().includes("description")
                   )
                     ? "border-red-500"
                     : "border-gray-300"
-                } px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-circa-green`}
+                }`}
+                aria-invalid={manualEntryErrors.some((e) =>
+                  e.toLowerCase().includes("description")
+                )}
                 required
               />
             </div>
@@ -539,7 +562,7 @@ export default function DataUpload() {
               <div>
                 <label
                   htmlFor="quantity"
-                  className="block font-semibold text-gray-700 mb-1"
+                  className="block font-semibold text-gray-700 mb-2"
                 >
                   Quantity *
                 </label>
@@ -551,13 +574,16 @@ export default function DataUpload() {
                   min="0"
                   value={manualEntry.quantity ?? ""}
                   onChange={handleManualInputChange}
-                  className={`w-full rounded-md border ${
+                  className={`w-full rounded-md border px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-circa-green ${
                     manualEntryErrors.some((e) =>
                       e.toLowerCase().includes("quantity")
                     )
                       ? "border-red-500"
                       : "border-gray-300"
-                  } px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-circa-green`}
+                  }`}
+                  aria-invalid={manualEntryErrors.some((e) =>
+                    e.toLowerCase().includes("quantity")
+                  )}
                   required
                 />
               </div>
@@ -565,7 +591,7 @@ export default function DataUpload() {
               <div>
                 <label
                   htmlFor="unit"
-                  className="block font-semibold text-gray-700 mb-1"
+                  className="block font-semibold text-gray-700 mb-2"
                 >
                   Unit *
                 </label>
@@ -576,13 +602,16 @@ export default function DataUpload() {
                   value={manualEntry.unit || ""}
                   onChange={handleManualInputChange}
                   placeholder="e.g. kWh"
-                  className={`w-full rounded-md border ${
+                  className={`w-full rounded-md border px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-circa-green ${
                     manualEntryErrors.some((e) =>
                       e.toLowerCase().includes("unit")
                     )
                       ? "border-red-500"
                       : "border-gray-300"
-                  } px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-circa-green`}
+                  }`}
+                  aria-invalid={manualEntryErrors.some((e) =>
+                    e.toLowerCase().includes("unit")
+                  )}
                   required
                 />
               </div>
@@ -590,7 +619,7 @@ export default function DataUpload() {
               <div>
                 <label
                   htmlFor="scope"
-                  className="block font-semibold text-gray-700 mb-1"
+                  className="block font-semibold text-gray-700 mb-2"
                 >
                   Scope (1, 2, or 3) *
                 </label>
@@ -603,13 +632,16 @@ export default function DataUpload() {
                   value={manualEntry.scope ?? ""}
                   onChange={handleManualInputChange}
                   placeholder="1, 2, or 3"
-                  className={`w-full rounded-md border ${
+                  className={`w-full rounded-md border px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-circa-green ${
                     manualEntryErrors.some((e) =>
                       e.toLowerCase().includes("scope")
                     )
                       ? "border-red-500"
                       : "border-gray-300"
-                  } px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-circa-green`}
+                  }`}
+                  aria-invalid={manualEntryErrors.some((e) =>
+                    e.toLowerCase().includes("scope")
+                  )}
                   required
                 />
               </div>
@@ -618,7 +650,7 @@ export default function DataUpload() {
             <div>
               <label
                 htmlFor="notes"
-                className="block font-semibold text-gray-700 mb-1"
+                className="block font-semibold text-gray-700 mb-2"
               >
                 Notes
               </label>
@@ -629,14 +661,14 @@ export default function DataUpload() {
                 onChange={handleManualInputChange}
                 rows={3}
                 placeholder="Optional notes"
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-circa-green"
+                className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-circa-green"
               />
             </div>
 
             {manualEntryErrors.length > 0 && (
-              <div className="rounded border border-red-400 bg-red-50 p-3 text-sm text-red-700">
-                <p className="mb-1 font-semibold">Form Errors:</p>
-                <ul className="ml-5 list-disc">
+              <div className="rounded border border-red-400 bg-red-50 p-4 text-sm text-red-700">
+                <p className="mb-2 font-semibold">Form Errors:</p>
+                <ul className="ml-6 list-disc">
                   {manualEntryErrors.map((err, i) => (
                     <li key={i}>{err}</li>
                   ))}
@@ -647,13 +679,13 @@ export default function DataUpload() {
             <Button
               onClick={submitManualEntry}
               disabled={isSubmittingManual}
-              className="w-full bg-circa-green hover:bg-circa-green-dark py-3 font-semibold"
+              className="w-full py-3 font-semibold bg-circa-green hover:bg-circa-green-dark disabled:opacity-60"
             >
               {isSubmittingManual ? "Submitting..." : "Submit Entry"}
             </Button>
           </div>
 
-          <div className="mt-6 text-sm text-gray-600 max-w-3xl">
+          <div className="mt-6 text-sm text-gray-700 max-w-3xl">
             <a
               href="/templates/emissions_template.csv"
               download
