@@ -1,6 +1,4 @@
 
-// Updated to use correct casing for column names and improved error checking
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -36,10 +34,13 @@ export const fetchEmissionFactors = async () => {
   try {
     const { data, error } = await supabase
       .from("emission_factors")
-      .select("*")
+      // Use correct casing for columns
+      .select(
+        `"category_1", "uom", "Source", "scope", "GHG Conversion Factor 2024"`
+      )
       .order("category_1")
       .order("uom")
-      .order("Source"); // Use correct casing
+      .order("Source");
 
     if (error) throw error;
     if (!data || !Array.isArray(data)) {
@@ -70,7 +71,8 @@ export const checkEmissionFactorStatus = async (companyId: string) => {
 
     const { data: factorsData, error: factorsError } = await supabase
       .from("emission_factors")
-      .select("category_1, uom, Source, scope"); // Correct casing
+      // Correct casing for columns
+      .select(`"category_1", "uom", "Source", "scope"`);
 
     if (factorsError) throw factorsError;
     if (!factorsData || !Array.isArray(factorsData)) {
@@ -164,7 +166,8 @@ export const runEmissionDiagnostics = async (companyId: string) => {
 
     const { data: factorsData, error: factorsError } = await supabase
       .from("emission_factors")
-      .select("category_1, uom, Source, scope"); // Correct casing
+      // Correct casing for columns
+      .select(`"category_1", "uom", "Source", "scope"`);
 
     if (factorsError) throw factorsError;
     if (!factorsData || !Array.isArray(factorsData)) {

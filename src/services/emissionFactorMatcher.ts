@@ -99,35 +99,45 @@ type FuseFactor = EmissionFactor & { searchString: string };
  * Loads emission factors from Supabase filtered by Source = 'DEFRA' using correct casing.
  * Builds Fuse.js instance for fuzzy searching categories + uom + scope.
  */
-export async function loadEmissionFactorsFuse(): Promise<{ fuse: Fuse<FuseFactor> | null; factors: FuseFactor[] }> {
+export async function loadEmissionFactorsFuse(): Promise<{ fuse: Fuse<FuseFactor>; factors: FuseFactor[] }> {
   const { data, error } = await supabase
     .from<EmissionFactor>("emission_factors")
     .select(
-      "id, category_1, category_2, category_3, category_4, ghg_conversion_factor_2024, uom, Source, scope"
+      `"ID", category_1, category_2, category_3, category_4, "GHG Conversion Factor 2024", uom, "Source", scope`
     )
     .eq("Source", "DEFRA");
 
   if (error) {
     console.error("[EmissionFactorMatcher] Error fetching emission factors:", error);
-    return { fuse: null, factors: [] };
+    return { fuse: new Fuse([], { keys: ["searchString"] }), factors: [] };
   }
 
   if (!data || !Array.isArray(data)) {
-    console.error("[EmissionFactorMatcher] No data found");
-    return { fuse: null, factors: [] };
+    console.error("[EmissionFactorMatcher] No emission factors data found");
+    return { fuse: new Fuse([], { keys: ["searchString"] }), factors: [] };
   }
 
   const factors: FuseFactor[] = data.map((factor) => ({
-    ...factor,
-    scope: factor.scope.toString(),
+    id: factor.ID,
     category_1: factor.category_1 ?? "",
     category_2: factor.category_2 ?? "",
     category_3: factor.category_3 ?? "",
     category_4: factor.category_4 ?? "",
     uom: factor.uom ?? "",
     Source: factor.Source ?? "",
-    ghg_conversion_factor_2024: factor.ghg_conversion_factor_2024 ?? null,
-    searchString: composeSearchString(factor),
+    scope: factor.scope ?? "",
+    ghg_conversion_factor_2024: factor["GHG Conversion Factor 2024"] ?? null,
+    searchString: composeSearchString({
+      id: factor.ID,
+      category_1: factor.category_1 ?? "",
+      category_2: factor.category_2 ?? "",
+      category_3: factor.category_3 ?? "",
+      category_4: factor.category_4 ?? "",
+      uom: factor.uom ?? "",
+      Source: factor.Source ?? "",
+      scope: factor.scope ?? "",
+      ghg_conversion_factor_2024: factor["GHG Conversion Factor 2024"] ?? null,
+    }),
   }));
 
   const fuse = new Fuse(factors, {
