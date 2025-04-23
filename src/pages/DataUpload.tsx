@@ -139,15 +139,19 @@ export default function DataUpload() {
                 scope: entry.scope.toString(),
                 quantity: entry.quantity,
               });
-
-              entry["emission_factor"] = matchResult.matchedFactor?.["GHG Conversion Factor 2024"] ?? null;
-              entry["match_status"] = matchResult.matchedFactor ? "matched" : "unmatched";
+              // We're now robustly handling missing matches by setting emissions and factors safely:
+              const emissionFactorValue = matchResult.matchedFactor
+                ? matchResult.matchedFactor["GHG Conversion Factor 2024"]
+                : null;
+              const emissionsValue = matchResult.calculatedEmissions ?? null;
 
               parsedRows.push({
                 ...entry,
                 isNew: true,
-                emission_factor: entry["emission_factor"],
-                match_status: entry["match_status"],
+                emission_factor: emissionFactorValue,
+                emissions: emissionsValue,
+                match_status: matchResult.matchedFactor ? "matched" : "unmatched",
+                match_log: matchResult.log,
               });
             } catch (e) {
               errors.push(`Row ${idx + 2}: Matching error - ${(e as Error).message}`);
@@ -155,7 +159,9 @@ export default function DataUpload() {
                 ...entry,
                 isNew: true,
                 emission_factor: null,
+                emissions: null,
                 match_status: "unmatched",
+                match_log: `Error: ${(e as Error).message}`,
               });
             }
           }
@@ -473,7 +479,7 @@ export default function DataUpload() {
                         <td className="p-3 text-right">{row.quantity}</td>
                         <td className="p-3">{row.unit}</td>
                         <td className="p-3 text-right">{row.scope}</td>
-                        <td className="p-3">{row.emissions ?? "-"}</td>
+                        <td className="p-3">{row.emissions != null ? row.emissions.toFixed(3) : "-"}</td>
                         <td className="p-3">
                           {row.match_status === "matched" ? (
                             <span className="text-green-700 font-semibold">Matched</span>

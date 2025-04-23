@@ -1,4 +1,3 @@
-
 import Fuse from "fuse.js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -47,7 +46,12 @@ const synonymsMap: Record<string, string> = {
   diesel: "diesel",
   biofuel: "biofuel",
   "average biofuel blend": "biofuel", // normalize biofuel blends into same term
-  // add more synonyms if needed
+  diesel blend: "diesel",
+  diesel oil: "diesel",
+  ltr: "liters",
+  litre: "liters",
+  kwht: "kwh",
+  kwh: "kwh",
 };
 
 /**
@@ -85,15 +89,10 @@ const normalizeScope = (scope: string): string => {
   return scope.toLowerCase().trim();
 };
 
-/**
- * Compose searchable string for each factor for Fuse search including distinct categories + unit + scope.
- * We generate multiple keys to allow matching on any category level.
- */
 type FuseFactor = EmissionFactor & {
   normalizedCategories: string[];
   normalizedUnit: string;
   normalizedScope: string;
-  // Flatten all searchable parts for Fuse
   searchStrings: string[];
 };
 
@@ -119,16 +118,13 @@ export async function loadEmissionFactorsFuse(): Promise<{ fuse: Fuse<FuseFactor
     return { fuse: new Fuse([], { keys: ["searchStrings"] }), factors: [] };
   }
 
-  // Map data to FuseFactor with normalized fields and multiple search strings
   const factors: FuseFactor[] = data.map((factor) => {
     const normalizedCategories = buildNormalizedCategories(factor);
     const normalizedUnit = normalizeUnit(factor.uom ?? "");
     const normalizedScope = normalizeScope(factor.scope ?? "");
-    // For Fuse, create multiple search strings, combining category with unit and scope, each category individually
     const searchStrings = normalizedCategories.map(
       (cat) => `${cat} ${normalizedUnit} ${normalizedScope}`
     );
-    // Also add full combined category as separate string (fallback)
     const fullCombinedCategory = normalizedCategories.join(" ");
     searchStrings.push(`${fullCombinedCategory} ${normalizedUnit} ${normalizedScope}`);
 
@@ -141,8 +137,6 @@ export async function loadEmissionFactorsFuse(): Promise<{ fuse: Fuse<FuseFactor
     };
   });
 
-  // Fuse will search over the array of searchStrings
-  // Use a threshold around 0.35 for fuzzy matching with no location bias
   const fuse = new Fuse(factors, {
     keys: ["searchStrings"],
     threshold: 0.35,
@@ -158,7 +152,7 @@ export async function loadEmissionFactorsFuse(): Promise<{ fuse: Fuse<FuseFactor
 
 /**
  * Match a single emission entry to emission factor using fuzzy matching and boosting exact uom/scope matches.
- * It matches the entry category by searching against all category levels (1-4) of the emission factors.
+ * Returns always a calculated emissions number (even 0 if missing EF) and useful logging.
  */
 export async function matchEmissionEntry(
   entry: EmissionEntry
@@ -168,7 +162,7 @@ export async function matchEmissionEntry(
   if (!category || !unit || !scope) {
     return {
       matchedFactor: null,
-      calculatedEmissions: null,
+      calculatedEmissions: 0,
       log: "[EmissionFactorMatcher] Invalid input: missing category, unit or scope",
     };
   }
@@ -182,7 +176,7 @@ export async function matchEmissionEntry(
   if (!fuse) {
     return {
       matchedFactor: null,
-      calculatedEmissions: null,
+      calculatedEmissions: 0,
       log: "[EmissionFactorMatcher] Emission Factors Fuse index not available",
     };
   }
@@ -216,7 +210,7 @@ export async function matchEmissionEntry(
 
     return {
       matchedFactor: null,
-      calculatedEmissions: null,
+      calculatedEmissions: 0,
       log: `[EmissionFactorMatcher] No matching emission factor for category "${category}", unit "${unit}", scope "${scope}". Top 3 closest matches: ${logMatches}`,
     };
   }
@@ -240,24 +234,25 @@ export async function matchEmissionEntry(
   if (!bestMatch) {
     return {
       matchedFactor: null,
-      calculatedEmissions: null,
+      calculatedEmissions: 0,
       log: "[EmissionFactorMatcher] No emission factor matched after boosting.",
     };
   }
 
-  if (bestMatch["GHG Conversion Factor 2024"] == null) {
+  const efValue = bestMatch["GHG Conversion Factor 2024"];
+  if (efValue == null || efValue === undefined) {
     return {
       matchedFactor: null,
-      calculatedEmissions: null,
+      calculatedEmissions: 0,
       log: `[EmissionFactorMatcher] Matched emission factor missing GHG Conversion Factor 2024 for category "${category}"`,
     };
   }
 
-  const emissions = quantity * bestMatch["GHG Conversion Factor 2024"];
+  // Emit calculated emissions (quantity*efValue)
+  const emissions = quantity * efValue;
 
   return {
     matchedFactor: bestMatch,
     calculatedEmissions: emissions,
   };
 }
-
