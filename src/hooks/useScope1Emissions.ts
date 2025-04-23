@@ -1,55 +1,63 @@
 
+// Refactor hook to a more general one for emission entries with scope filter
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-export interface Scope1EmissionData {
+export interface EmissionEntryData {
   id: string;
-  fuel_type: string;
-  source: string;
-  amount: number;
-  unit: string;
+  company_id: string;
+  upload_session_id?: string | null;
   date: string;
-  emissions_co2e?: number;
-  emission_factor_source?: string;
-  emission_factor?: number;
-  company_id?: string;
+  category: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  emission_factor: number;
+  scope: number;
+  emissions: number;
+  created_at: string;
+  updated_at: string;
 }
 
 interface Filters {
   dateRange?: string;
-  fuelType?: string;
-  source?: string;
+  category?: string;
+  scope?: number;
   unit?: string;
 }
 
-export const useScope1Emissions = (companyId: string) => {
+export const useEmissionEntries = (companyId: string, scopeFilter?: number) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [emissions, setEmissions] = useState<Scope1EmissionData[]>([]);
+  const [entries, setEntries] = useState<EmissionEntryData[]>([]);
 
-  const fetchEmissions = async (filters?: Filters) => {
+  const fetchEntries = async (filters?: Filters) => {
     setIsLoading(true);
     try {
-      // Use the scope1_emissions table directly
       let query = supabase
-        .from('scope1_emissions')
+        .from('emission_entries')
         .select('*')
         .eq('company_id', companyId);
-        
+
+      if (scopeFilter) {
+        query = query.eq('scope', scopeFilter);
+      }
+
       if (filters) {
         if (filters.dateRange && filters.dateRange !== 'all') {
           const today = new Date();
           let startDate = new Date();
-          
+
           switch (filters.dateRange) {
             case 'last3months':
-              startDate.setMonth(today.getMonth() - 3);
+              startDate.setMonth(today.getMonth() -3);
               break;
             case 'last6months':
-              startDate.setMonth(today.getMonth() - 6);
+              startDate.setMonth(today.getMonth() -6);
               break;
             case 'last12months':
-              startDate.setMonth(today.getMonth() - 12);
+              startDate.setFullYear(today.getFullYear() -1 );
               break;
             case 'thisYear':
               startDate = new Date(today.getFullYear(), 0, 1);
@@ -58,44 +66,27 @@ export const useScope1Emissions = (companyId: string) => {
               startDate = new Date(today.getFullYear() - 1, 0, 1);
               break;
           }
-          
+
           query = query.gte('date', startDate.toISOString().split('T')[0]);
         }
-        
-        if (filters.fuelType && filters.fuelType !== 'all') {
-          query = query.eq('fuel_type', filters.fuelType);
+
+        if (filters.category && filters.category !== 'all') {
+          query = query.eq('category', filters.category);
         }
-        
-        if (filters.source && filters.source !== 'all') {
-          query = query.eq('source', filters.source);
-        }
-        
+
         if (filters.unit && filters.unit !== 'all') {
           query = query.eq('unit', filters.unit);
         }
       }
-      
+
       const { data, error } = await query;
-      
+
       if (error) throw error;
-      
-      // Use the actual emissions data from the database
-      const formattedData: Scope1EmissionData[] = data?.map((item: any) => ({
-        id: item.id || '',
-        fuel_type: item.fuel_type || '',
-        source: item.source || '',
-        amount: item.amount || 0,
-        unit: item.unit || '',
-        date: item.date || '',
-        emissions_co2e: item.emissions_co2e,
-        emission_factor_source: item.emission_factor_source || '',
-        company_id: item.company_id
-      })) || [];
-      
-      setEmissions(formattedData);
-      return { data: formattedData, error: null };
+
+      setEntries(data || []);
+      return { data, error: null };
     } catch (error: any) {
-      console.error('Error fetching emissions:', error);
+      console.error('Error fetching emission entries:', error);
       toast.error('Failed to load emission data');
       return { data: null, error };
     } finally {
@@ -103,78 +94,10 @@ export const useScope1Emissions = (companyId: string) => {
     }
   };
 
-  const addEmission = async (emissionData: {
-    fuel_type: string;
-    source: string;
-    amount: number;
-    unit: string;
-    date: string;
-  }) => {
-    setIsLoading(true);
-    try {
-      const { error } = await supabase
-        .from('scope1_emissions')
-        .insert([{
-          ...emissionData,
-          company_id: companyId,
-        }]);
-
-      if (error) throw error;
-      
-      // Immediately recalculate the emissions for this new data
-      await supabase.rpc('recalculate_scope1_emissions', { p_company_id: companyId });
-      await fetchEmissions();
-      
-      toast.success('Emission data added and calculated successfully');
-      return { error: null };
-    } catch (error: any) {
-      console.error('Error adding emission:', error);
-      toast.error('Failed to add emission data');
-      return { error };
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const updateEmission = async (id: string, updates: {
-    fuel_type?: string;
-    source?: string;
-    amount?: number;
-    unit?: string;
-    date?: string;
-  }) => {
-    setIsLoading(true);
-    try {
-      const { error } = await supabase
-        .from('scope1_emissions')
-        .update(updates)
-        .eq('id', id);
-
-      if (error) throw error;
-      
-      // Recalculate emissions if fuel_type, unit, or amount changed
-      if (updates.fuel_type || updates.unit || updates.amount !== undefined) {
-        await supabase.rpc('recalculate_scope1_emissions', { p_company_id: companyId });
-      }
-      
-      await fetchEmissions();
-      
-      toast.success('Emission data updated successfully');
-      return { error: null };
-    } catch (error: any) {
-      console.error('Error updating emission:', error);
-      toast.error('Failed to update emission data');
-      return { error };
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return {
-    emissions,
+    entries,
     isLoading,
-    fetchEmissions,
-    addEmission,
-    updateEmission
+    fetchEntries,
   };
 };
+

@@ -245,16 +245,79 @@ export type Database = {
           },
         ]
       }
+      emission_entries: {
+        Row: {
+          category: string
+          company_id: string
+          created_at: string
+          date: string
+          description: string
+          emission_factor: number
+          emissions: number | null
+          id: string
+          quantity: number
+          scope: number
+          unit: string
+          updated_at: string
+          upload_session_id: string | null
+        }
+        Insert: {
+          category: string
+          company_id: string
+          created_at?: string
+          date: string
+          description: string
+          emission_factor: number
+          emissions?: number | null
+          id?: string
+          quantity: number
+          scope: number
+          unit: string
+          updated_at?: string
+          upload_session_id?: string | null
+        }
+        Update: {
+          category?: string
+          company_id?: string
+          created_at?: string
+          date?: string
+          description?: string
+          emission_factor?: number
+          emissions?: number | null
+          id?: string
+          quantity?: number
+          scope?: number
+          unit?: string
+          updated_at?: string
+          upload_session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emission_entries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emission_entries_upload_session_id_fkey"
+            columns: ["upload_session_id"]
+            isOneToOne: false
+            referencedRelation: "upload_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       emission_factors: {
         Row: {
           Category_1: string
           Category_2: string
           Category_3: string
           Category_4: string
-          Column_Text: string
-          GHG_Conversion_Factor_2024: number
+          "Column Text": string
+          "GHG Conversion Factor 2024": string
           "GHG/Unit": string
-          id: number
+          ID: number
           Scope: string
           Source: string
           UOM: string
@@ -264,10 +327,10 @@ export type Database = {
           Category_2?: string
           Category_3?: string
           Category_4?: string
-          Column_Text?: string
-          GHG_Conversion_Factor_2024?: number
+          "Column Text"?: string
+          "GHG Conversion Factor 2024": string
           "GHG/Unit"?: string
-          id?: number
+          ID?: number
           Scope?: string
           Source?: string
           UOM?: string
@@ -277,10 +340,10 @@ export type Database = {
           Category_2?: string
           Category_3?: string
           Category_4?: string
-          Column_Text?: string
-          GHG_Conversion_Factor_2024?: number
+          "Column Text"?: string
+          "GHG Conversion Factor 2024"?: string
           "GHG/Unit"?: string
-          id?: number
+          ID?: number
           Scope?: string
           Source?: string
           UOM?: string
@@ -710,7 +773,23 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      view_monthly_by_scope: {
+        Row: {
+          company_id: string | null
+          month: string | null
+          scope: number | null
+          total_kg_co2e: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emission_entries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       recalculate_scope1_emissions: {

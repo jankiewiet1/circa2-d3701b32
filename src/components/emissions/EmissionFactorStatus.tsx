@@ -1,122 +1,50 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-import { supabase } from '@/integrations/supabase/client';
-import { useCompany } from '@/contexts/CompanyContext';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
-
-interface FactorStatus {
-  fuelType: string;
-  unit: string;
-  hasDefra: boolean;
-  hasEpa: boolean;
-  hasIpcc: boolean;
-  hasGhg: boolean;
-  hasAdeme: boolean;
-  latestYear: number; // Added this property to fix the type error
-}
+import { useCompany } from '@/contexts/CompanyContext';
+import { checkEmissionFactorStatus, runEmissionDiagnostics } from '@/services/emissionService';
 
 export const EmissionFactorStatus = () => {
   const { company } = useCompany();
-  const [factorStatus, setFactorStatus] = useState<FactorStatus[]>([]);
+  const [status, setStatus] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [preferredSource, setPreferredSource] = useState('DEFRA');
 
   useEffect(() => {
-    const fetchFactorStatus = async () => {
+    const loadStatus = async () => {
       if (!company?.id) return;
-      
       setLoading(true);
-      
       try {
-        // Fetch preferred source from company preferences
-        const { data: preferences } = await supabase
-          .from('company_preferences')
-          .select('preferred_emission_source')
-          .eq('company_id', company.id)
-          .maybeSingle();
-          
-        if (preferences?.preferred_emission_source) {
-          setPreferredSource(preferences.preferred_emission_source);
-        }
-        
-        // Fetch unique fuel type/unit combinations from scope1_emissions
-        const { data: emissionsData, error: emissionsError } = await supabase
-          .from('scope1_emissions')
-          .select('fuel_type, unit')
-          .eq('company_id', company.id);
-          
-        if (emissionsError) throw emissionsError;
-        
-        if (emissionsData) {
-          // Deduplicate fuel type/unit combinations
-          const uniqueCombinations = emissionsData.filter((value, index, self) =>
-            index === self.findIndex((t) => (
-              normalizeString(t.fuel_type) === normalizeString(value.fuel_type) && 
-              normalizeString(t.unit) === normalizeString(value.unit)
-            ))
-          );
-          
-          // Fetch all emission factors to check availability
-          const { data: factorsData, error: factorsError } = await supabase
-            .from('emission_factors')
-            .select('Category_1, UOM, Source, Scope')
-            .eq('Scope', '1');
-            
-          if (factorsError) throw factorsError;
-          
-          // Check which emission factors are available for each fuel type/unit combination
-          const statuses = uniqueCombinations.map(combo => {
-            const fuelFactors = factorsData?.filter(factor => 
-              normalizeString(factor.Category_1) === normalizeString(combo.fuel_type) &&
-              normalizeString(factor.UOM) === normalizeString(combo.unit)
-            ) || [];
-
-            return {
-              fuelType: combo.fuel_type || '',
-              unit: combo.unit || '',
-              hasDefra: fuelFactors.some(factor => factor.Source === 'DEFRA'),
-              hasEpa: fuelFactors.some(factor => factor.Source === 'EPA'),
-              hasIpcc: fuelFactors.some(factor => factor.Source === 'IPCC'),
-              hasGhg: fuelFactors.some(factor => factor.Source === 'GHG Protocol Default'),
-              hasAdeme: fuelFactors.some(factor => factor.Source === 'ADEME'),
-              latestYear: 2024 // We're using 2024 data
-            };
-          });
-          
-          setFactorStatus(statuses);
-        }
+        const { data, preferredSource, error } = await checkEmissionFactorStatus(company.id);
+        if (error) throw error;
+        setStatus(data || []);
+        setPreferredSource(preferredSource || 'DEFRA');
       } catch (error) {
-        console.error('Error fetching emission factor status:', error);
+        console.error('Error loading emission factor status:', error);
         toast.error('Failed to load emission factor status');
       } finally {
         setLoading(false);
       }
     };
-    
-    fetchFactorStatus();
+
+    loadStatus();
   }, [company?.id]);
 
   const runDiagnostics = async () => {
     if (!company?.id) return;
-    
     setLoading(true);
     try {
-      // Display diagnostic info directly
-      const warningCount = factorStatus.filter(status => !status[`has${preferredSource.replace(/\s+/g, '')}`]).length;
-      
-      // Create a simple diagnostic message
-      if (warningCount > 0) {
-        toast.warning(`Found ${warningCount} fuel types without ${preferredSource} emission factors`, { duration: 5000 });
-      } else if (factorStatus.length === 0) {
+      const diagnostics = await runEmissionDiagnostics(company.id);
+      if (diagnostics.missingCalculations && diagnostics.missingCalculations > 0) {
+        toast.warning(`Found ${diagnostics.missingCalculations} category/unit combinations without ${preferredSource} emission factors`, { duration: 5000 });
+      } else if (status.length === 0) {
         toast.info('No emission data found to analyze', { duration: 5000 });
       } else {
-        toast.success('All fuel types have proper emission factors available', { duration: 5000 });
+        toast.success('All categories have proper emission factors available', { duration: 5000 });
       }
     } catch (error) {
       console.error('Error running diagnostics:', error);
@@ -125,16 +53,14 @@ export const EmissionFactorStatus = () => {
       setLoading(false);
     }
   };
-  
+
   const getStatusBadge = (hasSource: boolean, source: string) => {
     if (hasSource) {
       return <Badge variant="outline" className="bg-green-100 text-green-800">Available</Badge>;
     }
-    
     if (preferredSource === source) {
       return <Badge variant="outline" className="bg-red-100 text-red-800">Missing</Badge>;
     }
-    
     return <Badge variant="outline" className="bg-gray-100 text-gray-500">N/A</Badge>;
   };
 
@@ -145,10 +71,10 @@ export const EmissionFactorStatus = () => {
           <div>
             <CardTitle>Emission Factor Status</CardTitle>
             <CardDescription>
-              Availability of emission factors for your fuel types and units
+              Availability of emission factors for your categories and units
             </CardDescription>
           </div>
-          {factorStatus.length > 0 && (
+          {status.length > 0 && (
             <Button variant="outline" size="sm" onClick={runDiagnostics} disabled={loading}>
               <Info className="mr-2 h-4 w-4" />
               Run Diagnostics
@@ -159,72 +85,46 @@ export const EmissionFactorStatus = () => {
       <CardContent>
         {loading ? (
           <div className="text-center py-4">Loading status...</div>
-        ) : factorStatus.length > 0 ? (
+        ) : status.length > 0 ? (
           <div className="space-y-4">
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="text-left border-b">
-                    <th className="py-2 px-4">Fuel Type</th>
+                    <th className="py-2 px-4">Category</th>
                     <th className="py-2 px-4">Unit</th>
                     <th className="py-2 px-4">DEFRA</th>
                     <th className="py-2 px-4">EPA</th>
                     <th className="py-2 px-4">IPCC</th>
                     <th className="py-2 px-4">GHG Protocol</th>
                     <th className="py-2 px-4">ADEME</th>
-                    <th className="py-2 px-4">Year</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {factorStatus.map((status, index) => (
+                  {status.map((stat, index) => (
                     <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
-                      <td className="py-2 px-4">{status.fuelType}</td>
-                      <td className="py-2 px-4">{status.unit}</td>
-                      <td className="py-2 px-4">{getStatusBadge(status.hasDefra, 'DEFRA')}</td>
-                      <td className="py-2 px-4">{getStatusBadge(status.hasEpa, 'EPA')}</td>
-                      <td className="py-2 px-4">{getStatusBadge(status.hasIpcc, 'IPCC')}</td>
-                      <td className="py-2 px-4">{getStatusBadge(status.hasGhg, 'GHG Protocol Default')}</td>
-                      <td className="py-2 px-4">{getStatusBadge(status.hasAdeme, 'ADEME')}</td>
-                      <td className="py-2 px-4">{status.latestYear || '-'}</td>
+                      <td className="py-2 px-4">{stat.category}</td>
+                      <td className="py-2 px-4">{stat.unit}</td>
+                      <td className="py-2 px-4">{getStatusBadge(stat.availableSources.find(s => s.source === 'DEFRA')?.hasData ?? false, 'DEFRA')}</td>
+                      <td className="py-2 px-4">{getStatusBadge(stat.availableSources.find(s => s.source === 'EPA')?.hasData ?? false, 'EPA')}</td>
+                      <td className="py-2 px-4">{getStatusBadge(stat.availableSources.find(s => s.source === 'IPCC')?.hasData ?? false, 'IPCC')}</td>
+                      <td className="py-2 px-4">{getStatusBadge(stat.availableSources.find(s => s.source === 'GHG Protocol Default')?.hasData ?? false, 'GHG Protocol Default')}</td>
+                      <td className="py-2 px-4">{getStatusBadge(stat.availableSources.find(s => s.source === 'ADEME')?.hasData ?? false, 'ADEME')}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            
-            {factorStatus.some(status => {
-              const sourceNormalized = preferredSource.replace(/\s+/g, '');
-              const hasKey = `has${sourceNormalized}` as keyof typeof status;
-              return !status[hasKey];
-            }) && (
-              <Alert variant="warning">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Missing Emission Factors</AlertTitle>
-                <AlertDescription>
-                  Some of your emissions data may not be calculated correctly because of missing emission factors for your preferred source ({preferredSource}).
-                  Consider changing your preferred emission source or adding the missing factors.
-                </AlertDescription>
-              </Alert>
-            )}
+
+            {status.some(stat => {
+              const hasPreferred = stat.availableSources.find(s => s.source === preferredSource)?.hasData;
+              return !hasPreferred;
+            })}
           </div>
         ) : (
           <div className="text-center py-4">No emission data available</div>
         )}
-        
-        <div className="mt-6 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <div className="flex items-center">
-              <AlertCircle className="h-4 w-4 mr-1 text-yellow-600" />
-              <span className="text-sm">Preferred source: {preferredSource}</span>
-            </div>
-          </div>
-          <Button asChild>
-            <Link to="/settings">Manage Emission Factors</Link>
-          </Button>
-        </div>
       </CardContent>
     </Card>
   );
 };
-
-const normalizeString = (str?: string) => (str || '').toLowerCase().trim();

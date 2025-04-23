@@ -1,28 +1,31 @@
 
+// Updated to use emission_entries table unified structure and updated function signatures
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export interface EmissionFactor {
-  id: number;
-  Category_1: string;
-  UOM: string;
-  Source: string;
-  GHG_Conversion_Factor_2024: number;
-  Scope: string;
-  Category_2: string;
-  Category_3: string;
-  Category_4: string;
-  Column_Text: string;
-  "GHG/Unit": string;
+export interface EmissionEntry {
+  id: string;
+  company_id: string;
+  upload_session_id?: string | null;
+  date: string;
+  category: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  emission_factor: number;
+  scope: number; // 1, 2, or 3
+  emissions: number; // quantity * emission_factor
+  created_at: string;
+  updated_at: string;
 }
 
 export interface EmissionFactorStatus {
-  fuelType: string;
+  category: string;
   unit: string;
   availableSources: {
     source: string;
     hasData: boolean;
-    latestYear?: number;
   }[];
 }
 
@@ -40,7 +43,7 @@ export const fetchEmissionFactors = async () => {
     
     if (error) throw error;
     
-    return { data: data as EmissionFactor[], error: null };
+    return { data, error: null };
   } catch (error: any) {
     console.error("Error fetching emission factors:", error);
     return { data: null, error };
@@ -48,85 +51,81 @@ export const fetchEmissionFactors = async () => {
 };
 
 /**
- * Checks emission factor availability for company's emissions data
+ * Checks emission factor availability for company's emissions data unified using emission_entries
  */
 export const checkEmissionFactorStatus = async (companyId: string) => {
   try {
-    // Get company's emission types and units
-    const { data: emissionsData, error: emissionsError } = await supabase
-      .from('scope1_emissions')
-      .select('fuel_type, unit')
+    // Get emission_entries category/unit/scope for company
+    const { data: entriesData, error: entriesError } = await supabase
+      .from('emission_entries')
+      .select('category, unit, scope')
       .eq('company_id', companyId);
-      
-    if (emissionsError) throw emissionsError;
+    if (entriesError) throw entriesError;
     
     // Get all emission factors
     const { data: factorsData, error: factorsError } = await supabase
       .from('emission_factors')
-      .select('Category_1, UOM, Source, Scope')
-      .eq('Scope', '1');
-      
+      .select('Category_1, UOM, Source, Scope');
     if (factorsError) throw factorsError;
-    
+
     // Get company's preferred emission source
     const { data: preferences } = await supabase
       .from('company_preferences')
       .select('preferred_emission_source')
       .eq('company_id', companyId)
       .maybeSingle();
-    
+
     const preferredSource = preferences?.preferred_emission_source || 'DEFRA';
-    
-    // Standardize comparison by trimming and lowercase
-    const normalizeString = (str?: string) => 
-      (str || '').toLowerCase().trim();
-    
-    // Deduplicate emission type/unit pairs
-    const uniqueCombinations = emissionsData?.filter((value, index, self) =>
+
+    // Standardize string comparison helper
+    const normalizeString = (str?: string) => (str || '').toLowerCase().trim();
+
+    // Deduplicate by category/unit/scope
+    const uniqueCombinations = entriesData?.filter((value, index, self) =>
       index === self.findIndex((t) => (
-        normalizeString(t.fuel_type) === normalizeString(value.fuel_type) && 
-        normalizeString(t.unit) === normalizeString(value.unit)
+        normalizeString(t.category) === normalizeString(value.category) &&
+        normalizeString(t.unit) === normalizeString(value.unit) &&
+        t.scope === value.scope
       ))
     ) || [];
-    
+
     // Known sources to check for
     const knownSources = ['DEFRA', 'EPA', 'IPCC', 'GHG Protocol Default', 'ADEME'];
-    
+
     // Check status for each emission type/unit pair
     const statusChecks = uniqueCombinations.map(combo => {
       const sources = knownSources.map(source => {
         const matchingFactors = factorsData?.filter(factor => 
-          normalizeString(factor.Category_1) === normalizeString(combo.fuel_type) &&
+          normalizeString(factor.Category_1) === normalizeString(combo.category) &&
           normalizeString(factor.UOM) === normalizeString(combo.unit) &&
           factor.Source === source &&
-          factor.Scope === '1'
+          Number(factor.Scope) === combo.scope
         ) || [];
-        
+
         return {
           source,
           hasData: matchingFactors.length > 0,
-          latestYear: 2024 // Using 2024 data
         };
       });
-      
+
       return {
-        fuelType: combo.fuel_type || '',
+        category: combo.category || '',
         unit: combo.unit || '',
         availableSources: sources
       };
     });
-    
+
     return { 
-      data: statusChecks, 
+      data: statusChecks,
       preferredSource,
       error: null 
     };
   } catch (error: any) {
     console.error("Error checking emission factor status:", error);
-    return { 
-      data: [], 
+    return {
+      data: [],
       preferredSource: null,
-      error 
+      error
     };
   }
 };
@@ -136,55 +135,51 @@ export const checkEmissionFactorStatus = async (companyId: string) => {
  */
 export const runEmissionDiagnostics = async (companyId: string) => {
   try {
-    // Get emissions data to analyze
-    const { data: emissionsData, error: emissionsError } = await supabase
-      .from('scope1_emissions')
-      .select('*')
+    const { data: entriesData, error: entriesError } = await supabase
+      .from('emission_entries')
+      .select('category, unit, scope, emissions')
       .eq('company_id', companyId);
-      
-    if (emissionsError) throw emissionsError;
-    
-    // Get emission factors with scope 1
+    if (entriesError) throw entriesError;
+
     const { data: factorsData, error: factorsError } = await supabase
       .from('emission_factors')
-      .select('*')
-      .eq('Scope', '1');
-      
+      .select('Category_1, UOM, Source, Scope');
     if (factorsError) throw factorsError;
-    
-    // Get company's preferred emission source
-    const { data: preferences } = await supabase
+
+    const { data: pref } = await supabase
       .from('company_preferences')
       .select('preferred_emission_source')
       .eq('company_id', companyId)
       .maybeSingle();
-    
-    const preferredSource = preferences?.preferred_emission_source || 'DEFRA';
-    
-    // Simple diagnostic - count emissions that might have issues
-    const missingFactorTypes = new Set();
-    
-    emissionsData?.forEach(emission => {
-      // Check if there's a matching factor for the preferred source
-      const hasMatchingFactor = factorsData?.some(factor => 
-        factor.Category_1.toLowerCase().trim() === emission.fuel_type?.toLowerCase().trim() &&
-        factor.UOM.toLowerCase().trim() === emission.unit?.toLowerCase().trim() &&
+
+    const preferredSource = pref?.preferred_emission_source || 'DEFRA';
+
+    // Find entries with no emissions calculated (emissions is NULL)
+    const missingFactorsSet = new Set<string>();
+
+    entriesData?.forEach(entry => {
+      // Check if emission factor is present in emission_factors for this entry
+      const factorExists = factorsData?.some(factor =>
+        factor.Category_1.toLowerCase().trim() === entry.category?.toLowerCase().trim() &&
+        factor.UOM.toLowerCase().trim() === entry.unit?.toLowerCase().trim() &&
+        Number(factor.Scope) === entry.scope &&
         factor.Source === preferredSource
       );
-      
-      if (!hasMatchingFactor && emission.fuel_type && emission.unit) {
-        missingFactorTypes.add(`${emission.fuel_type}/${emission.unit}`);
+
+      if (!factorExists) {
+        missingFactorsSet.add(`${entry.category}/${entry.unit}`);
       }
     });
-    
+
     return {
-      logs: Array.from(missingFactorTypes).map(type => ({
+      logs: Array.from(missingFactorsSet).map(type => ({
         log_type: 'warning',
         log_message: `Missing emission factor for: ${type}`
       })),
-      missingCalculations: missingFactorTypes.size,
+      missingCalculations: missingFactorsSet.size,
       error: null
     };
+
   } catch (error: any) {
     console.error("Error running diagnostics:", error);
     toast.error("Failed to run emission diagnostics");
@@ -195,3 +190,4 @@ export const runEmissionDiagnostics = async (companyId: string) => {
     };
   }
 };
+
