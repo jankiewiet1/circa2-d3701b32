@@ -1,5 +1,5 @@
 
-// Updated to use emission_entries table unified structure and updated function signatures
+// Updated to use correct casing for column names like "Category_1" instead of "category_1"
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -190,4 +190,3 @@ export const runEmissionDiagnostics = async (companyId: string) => {
     };
   }
 };
-

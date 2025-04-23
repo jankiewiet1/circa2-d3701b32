@@ -321,7 +321,7 @@ export type Database = {
           Category_3: string
           Category_4: string
           "Column Text": string
-          "GHG Conversion Factor 2024": string
+          "GHG Conversion Factor 2024": number | null
           "GHG/Unit": string
           ID: number
           Scope: string
@@ -334,7 +334,7 @@ export type Database = {
           Category_3?: string
           Category_4?: string
           "Column Text"?: string
-          "GHG Conversion Factor 2024": string
+          "GHG Conversion Factor 2024"?: number | null
           "GHG/Unit"?: string
           ID?: number
           Scope?: string
@@ -347,7 +347,7 @@ export type Database = {
           Category_3?: string
           Category_4?: string
           "Column Text"?: string
-          "GHG Conversion Factor 2024"?: string
+          "GHG Conversion Factor 2024"?: number | null
           "GHG/Unit"?: string
           ID?: number
           Scope?: string
