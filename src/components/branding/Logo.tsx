@@ -11,15 +11,15 @@ export const Logo = ({ variant = "dark", withText = true }: LogoProps) => {
   
   return (
     <Link to="/" className="flex items-center">
-      <div className="relative w-16 h-16 mr-2">
+      <div className="relative w-24 h-24 mr-3">
         <img 
-          src="/lovable-uploads/0c7f9300-43d4-4e92-8ade-16cb067e8c1d.png" 
+          src="/lovable-uploads/27e49794-eff8-4cc2-9877-370e0bcc541a.png" 
           alt="Circa Logo" 
           className="w-full h-full object-contain"
         />
       </div>
       {withText && (
-        <span className={`text-2xl font-bold ${textColor}`}>Circa</span>
+        <span className={`text-3xl font-bold ${textColor}`}>Circa</span>
       )}
     </Link>
   );
