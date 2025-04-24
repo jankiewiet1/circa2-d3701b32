@@ -12,9 +12,9 @@ export const Logo = ({ variant = "dark", withText = true, className = "" }: Logo
   
   return (
     <Link to="/" className={`flex items-center ${className}`}>
-      <div className="relative w-20 h-20 mr-1">
+      <div className="relative w-12 h-12 mr-1">
         <img 
-          src="/lovable-uploads/6d5628a6-f7cd-4429-b923-f548a7bda90f.png" 
+          src="/lovable-uploads/7416a2f2-be9a-4bce-9909-6e9663491308.png" 
           alt="Circa Logo" 
           className="w-full h-full object-contain"
         />

@@ -28,9 +28,9 @@ export const Sidebar = () => {
   return (
     <aside 
       className={cn(
-        "bg-circa-green-dark text-white transition-all duration-300 ease-in-out",
+        "bg-circa-green-dark text-white transition-all duration-300 ease-in-out flex flex-col",
         isExpanded ? "w-[220px]" : "w-[60px]",
-        "h-full flex flex-col group/sidebar hover:w-[220px]"
+        "h-screen group/sidebar hover:w-[220px]"
       )}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
@@ -43,7 +43,7 @@ export const Sidebar = () => {
       </div>
       
       {/* Navigation */}
-      <nav className="flex-1 px-2 py-4 space-y-1">
+      <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
         <NavLink to="/dashboard" icon={<LayoutDashboard size={18} />} label="Dashboard" isExpanded={isExpanded} />
         <NavLink to="/reports" icon={<FileText size={18} />} label="Reports" isExpanded={isExpanded} />
         <NavLink to="/data-upload" icon={<Upload size={18} />} label="Data Upload" isExpanded={isExpanded} />
@@ -81,7 +81,7 @@ export const Sidebar = () => {
       </nav>
       
       {/* Footer */}
-      <div className="p-2">
+      <div className="p-2 border-t border-white/10">
         <NavLink to="/help" icon={<HelpCircle size={18} />} label="Help" isExpanded={isExpanded} />
         <button 
           className={cn(
@@ -92,7 +92,7 @@ export const Sidebar = () => {
         >
           <LogOut size={18} />
           <span className={cn(
-            "ml-3 transition-all duration-300",
+            "ml-3 transition-all duration-300 whitespace-nowrap",
             isExpanded ? "opacity-100 translate-x-0" : "opacity-0 absolute -translate-x-4 pointer-events-none"
           )}>
             Sign Out
