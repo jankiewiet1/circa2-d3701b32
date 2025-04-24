@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Logo } from "@/components/branding/Logo";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -31,7 +31,6 @@ export default function Register() {
         console.error("Registration error:", signUpError);
         setError(signUpError.message);
       } else {
-        // After successful signup, redirect to login
         navigate("/auth/login", { 
           state: { 
             message: "Registration successful! Please check your email to verify your account before logging in." 
@@ -50,10 +49,7 @@ export default function Register() {
     <div className="min-h-screen flex items-center justify-center bg-circa-green-light px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex h-12 w-12 rounded-full bg-circa-green-dark text-white items-center justify-center mb-4">
-            <span className="text-2xl font-bold">C</span>
-          </div>
-          <h1 className="text-3xl font-bold text-circa-green-dark">Circa</h1>
+          <Logo variant="dark" className="mx-auto" />
           <p className="text-gray-600 mt-2">Carbon accounting made simple</p>
         </div>
         

@@ -502,11 +502,8 @@ const Index = () => {
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <div className="flex items-center mb-4">
-                <div className="h-8 w-8 rounded-full bg-white mr-3 flex items-center justify-center">
-                  <span className="text-circa-green-dark font-bold">C</span>
-                </div>
-                <span className="text-xl font-bold text-white">Circa</span>
+              <div className="mb-4">
+                <Logo variant="light" />
               </div>
               <p className="text-gray-400">
                 Making carbon accounting accessible for every organization.

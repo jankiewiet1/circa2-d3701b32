@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
+import { Logo } from "@/components/branding/Logo";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -17,7 +18,6 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   
-  // Get the return URL from location state, or default to dashboard
   const from = (location.state as any)?.from?.pathname || "/dashboard";
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,7 +25,6 @@ export default function Login() {
     setLoading(true);
     
     try {
-      // Pass rememberMe to the signIn function which will handle session persistence
       const { error } = await signIn(email, password, rememberMe);
       
       if (!error) {
@@ -41,10 +40,7 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-circa-green-light px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex h-12 w-12 rounded-full bg-circa-green-dark text-white items-center justify-center mb-4">
-            <span className="text-2xl font-bold">C</span>
-          </div>
-          <h1 className="text-3xl font-bold text-circa-green-dark">Circa</h1>
+          <Logo variant="dark" className="mx-auto" />
           <p className="text-gray-600 mt-2">Carbon accounting made simple</p>
         </div>
         

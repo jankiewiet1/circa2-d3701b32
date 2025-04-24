@@ -1,10 +1,10 @@
-
 import { Link } from "react-router-dom";
 import React, { useState } from "react";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/branding/Logo";
 import { 
   LayoutDashboard, 
   BarChart2, 
@@ -16,11 +16,9 @@ import {
   Wind, 
   Truck, 
   HelpCircle,
-  ChevronRight,
   LogOut,
   Upload
 } from "lucide-react";
-import { Leaf } from "lucide-react";
 
 export const Sidebar = () => {
   const { company } = useCompany();
@@ -39,16 +37,8 @@ export const Sidebar = () => {
     >
       {/* Logo */}
       <div className="p-4 flex items-center justify-center">
-        <Link to="/dashboard" className="flex items-center">
-          <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center relative overflow-hidden">
-            <Leaf className="h-5 w-5 text-circa-green-dark transition-transform group-hover:scale-110" />
-          </div>
-          <span className={cn(
-            "text-lg ml-2 transition-all duration-300",
-            isExpanded ? "opacity-100 translate-x-0" : "opacity-0 absolute -translate-x-4 pointer-events-none"
-          )}>
-            Circa
-          </span>
+        <Link to="/dashboard">
+          <Logo variant="light" withText={isExpanded} className="transition-all duration-300" />
         </Link>
       </div>
       
