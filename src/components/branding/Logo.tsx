@@ -11,7 +11,7 @@ export const Logo = ({ variant = "dark", withText = true }: LogoProps) => {
   
   return (
     <Link to="/" className="flex items-center">
-      <div className="relative w-16 h-16 mr-2">
+      <div className="relative w-20 h-20 mr-1">
         <img 
           src="/lovable-uploads/15cdf85c-fafe-424e-bbe8-d08b639024af.png" 
           alt="Circa Logo" 
@@ -19,7 +19,7 @@ export const Logo = ({ variant = "dark", withText = true }: LogoProps) => {
         />
       </div>
       {withText && (
-        <span className={`text-lg font-bold ${textColor}`}>Circa</span>
+        <span className={`text-xl font-bold ${textColor}`}>Circa</span>
       )}
     </Link>
   );
