@@ -16,7 +16,7 @@ const Index = () => {
     <div className="min-h-screen flex flex-col">
       {/* Sticky Header/Nav */}
       <header className="fixed w-full bg-white/95 backdrop-blur-sm shadow-sm z-50 py-4 px-6 md:px-10">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
+        <div className="max-w-7xl mx-auto flex justify-between items-center h-8">
           <Logo />
           
           <div className="hidden md:flex items-center space-x-8">
