@@ -14,7 +14,7 @@ export const Logo = ({ variant = "dark", withText = true, className = "" }: Logo
     <Link to="/" className={`flex items-center ${className}`}>
       <div className="relative w-20 h-20 mr-1">
         <img 
-          src="/lovable-uploads/4caccdc9-a095-42ce-94b7-13cdaa61a251.png" 
+          src="/lovable-uploads/214ed4f6-b6d3-4819-ad42-7e9b4bc87a1c.png" 
           alt="Circa Logo" 
           className="w-full h-full object-contain"
         />
