@@ -29,21 +29,21 @@ export const Sidebar = () => {
     <aside 
       className={cn(
         "bg-circa-green-dark text-white transition-all duration-300 ease-in-out flex flex-col",
-        isExpanded ? "w-[220px]" : "w-[60px]",
-        "h-screen group/sidebar hover:w-[220px]"
+        isExpanded ? "w-[200px]" : "w-[55px]",
+        "h-screen group/sidebar hover:w-[200px]"
       )}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
     >
       {/* Logo */}
-      <div className="p-4 flex items-center justify-center">
+      <div className="p-3 flex items-center justify-center">
         <Link to="/dashboard">
           <Logo variant="light" withText={isExpanded} className="transition-all duration-300" />
         </Link>
       </div>
       
       {/* Navigation */}
-      <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-1.5 py-3 space-y-0.5 overflow-y-auto">
         <NavLink to="/dashboard" icon={<LayoutDashboard size={18} />} label="Dashboard" isExpanded={isExpanded} />
         <NavLink to="/reports" icon={<FileText size={18} />} label="Reports" isExpanded={isExpanded} />
         <NavLink to="/data-upload" icon={<Upload size={18} />} label="Data Upload" isExpanded={isExpanded} />
@@ -81,11 +81,11 @@ export const Sidebar = () => {
       </nav>
       
       {/* Footer */}
-      <div className="p-2 border-t border-white/10">
+      <div className="p-1.5 border-t border-white/10">
         <NavLink to="/help" icon={<HelpCircle size={18} />} label="Help" isExpanded={isExpanded} />
         <button 
           className={cn(
-            "w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-md",
+            "w-full flex items-center px-3 py-2 text-sm font-medium rounded-md",
             "transition-all duration-300 text-white/80 hover:bg-white/10 hover:text-white"
           )}
           onClick={() => signOut()}
