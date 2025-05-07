@@ -1,14 +1,16 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Treemap, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { useCompany } from '@/contexts/CompanyContext';
 import { ChartContainer } from '@/components/ui/chart';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, AlertCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { useEmissionEntries } from '@/hooks/useScope1Emissions';
+import { useScopeEntries, EmissionEntryWithCalculation } from '@/hooks/useScopeEntries';
+import { Skeleton } from "@/components/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { format } from 'date-fns';
 
 interface TreemapData {
   name: string;
@@ -17,177 +19,177 @@ interface TreemapData {
   percentOfTotal: number;
 }
 
+const getCalculatedEmissions = (entry: EmissionEntryWithCalculation): number => {
+  if (entry.emission_calculations && entry.emission_calculations.length > 0) {
+    return entry.emission_calculations[0]?.total_emissions ?? 0;
+  }
+  return 0;
+};
+
 export const EmissionsByCategory = () => {
+  const COLORS = ['#D6F3E7', '#AAE3CA', '#6ED0AA', '#3AB688', '#0E5D40'];
+  
   const { company } = useCompany();
-  const { entries: emissions, isLoading } = useEmissionEntries(company?.id || '', 1);
-  const [treemapData, setTreemapData] = useState<TreemapData[]>([]);
-  const [totalEmissions, setTotalEmissions] = useState(0);
-  const [hasEmissionFactorError, setHasEmissionFactorError] = useState(false);
+  const { entries, loading, error, refetch } = useScopeEntries(1);
 
-  const getColor = (value: number, max: number) => {
-    const colors = ['#D6F3E7', '#AAE3CA', '#6ED0AA', '#3AB688', '#0E5D40'];
-    const index = Math.min(Math.floor((value / max) * (colors.length - 1)), colors.length - 1);
-    return colors[index];
-  };
-
-  useEffect(() => {
-    if (emissions && emissions.length > 0) {
-      const factorErrors = emissions.filter(emission => emission.emission_factor === 0);
-      setHasEmissionFactorError(factorErrors.length > 0);
-    } else {
-      setHasEmissionFactorError(false);
+  const { treemapData, totalEmissions, hasCalculationIssues } = useMemo(() => {
+    if (loading || !entries || entries.length === 0) {
+      return { treemapData: [], totalEmissions: 0, hasCalculationIssues: false };
     }
-  }, [emissions]);
 
-  useEffect(() => {
-    if (emissions.length > 0) {
-      // emissions do not have 'source', so grouping by category instead, aggregating emissions value
+    let hasIssues = false;
       const categoryEmissions: Record<string, number> = {};
-      emissions.forEach(emission => {
-        const cat = emission.category || 'Unknown';
-        categoryEmissions[cat] = (categoryEmissions[cat] || 0) + (emission.emissions || 0);
+    entries.forEach(entry => {
+      const cat = entry.category || 'Unknown';
+      const emissions = getCalculatedEmissions(entry);
+      if (emissions === 0 && entry.quantity > 0) {
+        hasIssues = true;
+      } 
+      categoryEmissions[cat] = (categoryEmissions[cat] || 0) + emissions;
       });
 
       const total = Object.values(categoryEmissions).reduce((sum, val) => sum + val, 0);
-      setTotalEmissions(total);
+    const maxEmission = Math.max(...Object.values(categoryEmissions).filter(v => v > 0), 0);
 
-      const maxEmission = Math.max(...Object.values(categoryEmissions));
+    const getColor = (value: number, max: number) => {
+      if (max === 0) return '#D6F3E7';
+      const colors = ['#D6F3E7', '#AAE3CA', '#6ED0AA', '#3AB688', '#0E5D40'];
+      const index = value <= 0 ? 0 : Math.min(Math.floor((value / max) * (colors.length - 1)), colors.length - 1);
+      return colors[index];
+    };
 
-      const data: TreemapData[] = Object.entries(categoryEmissions).map(([category, value]) => ({
+    const data: TreemapData[] = Object.entries(categoryEmissions)
+      .filter(([, value]) => value > 0)
+      .map(([category, value]) => ({
         name: category,
-        size: value,
+        size: parseFloat(value.toFixed(2)),
         color: getColor(value, maxEmission),
-        percentOfTotal: (value / total) * 100,
+        percentOfTotal: total > 0 ? (value / total) * 100 : 0,
       }));
 
-      setTreemapData(data);
-    }
-  }, [emissions]);
+    return { 
+      treemapData: data, 
+      totalEmissions: total, 
+      hasCalculationIssues: hasIssues 
+    };
+
+  }, [entries, loading]);
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white p-4 border shadow-lg rounded-md">
-          <p className="font-bold">{data.name}</p>
-          <p className="text-gray-700">{data.size.toFixed(2)} tonnes CO₂e</p>
-          <p className="text-gray-700">{data.percentOfTotal.toFixed(1)}% of total</p>
+        <div className="bg-background p-3 border shadow-lg rounded-md text-sm">
+          <p className="font-bold mb-1">{data.name}</p>
+          <p className="text-muted-foreground">{data.size.toFixed(2)} tCO₂e</p>
+          <p className="text-muted-foreground">{data.percentOfTotal.toFixed(1)}% of total</p>
         </div>
       );
     }
     return null;
   };
 
-  const CustomTreemapContent = (props: any) => {
-    const { root } = props;
-
-    if (!root || !root.children) {
-      return null;
-    }
+  const CustomTreemapContent = React.memo(({ root, depth, x, y, width, height, index, colors, name, value }: any) => {
+    const nodeWidth = width;
+    const nodeHeight = height;
+    const showText = nodeWidth > 60 && nodeHeight > 30;
+    const nodeColor = root.children?.[index]?.payload?.color || colors[Math.floor(Math.random() * colors.length)];
 
     return (
       <g>
-        {root.children.map((node: any, i: number) => {
-          const nodeWidth = node.x1 - node.x0;
-          const nodeHeight = node.y1 - node.y0;
-
-          const showText = nodeWidth > 50 && nodeHeight > 30;
-
-          return (
-            <g key={`node-${i}`}>
               <rect
-                x={node.x0}
-                y={node.y0}
-                width={nodeWidth}
-                height={nodeHeight}
-                fill={node.payload.color}
-                stroke="#fff"
+          x={x}
+          y={y}
+          width={width}
+          height={height}
+          style={{
+            fill: nodeColor, 
+            stroke: '#fff',
+            strokeWidth: 2 / (depth + 1e-10),
+            strokeOpacity: 1 / (depth + 1e-10),
+          }}
               />
               {showText && (
-                <>
                   <text
-                    x={node.x0 + nodeWidth / 2}
-                    y={node.y0 + nodeHeight / 2}
+            x={x + width / 2}
+            y={y + height / 2 + 7}
                     textAnchor="middle"
                     fill="#fff"
                     fontSize={12}
-                    fontWeight="bold"
+            style={{ textShadow: '0px 0px 3px rgba(0,0,0,0.7)' }}
                   >
-                    {node.name}
+            {name} ({value?.toFixed(1)} tCO₂e)
                   </text>
-                  <text
-                    x={node.x0 + nodeWidth / 2}
-                    y={node.y0 + nodeHeight / 2 + 14}
-                    textAnchor="middle"
-                    fill="#fff"
-                    fontSize={10}
-                  >
-                    {node.value.toFixed(1)} tCO₂e
-                  </text>
-                </>
               )}
             </g>
           );
-        })}
-      </g>
+  });
+
+  if (error) {
+    return (
+      <Alert variant="destructive" className="my-6">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error Loading Scope 1 Categories</AlertTitle>
+        <AlertDescription>
+          {error || "An unexpected error occurred."}
+          <Button variant="secondary" size="sm" onClick={refetch} className="ml-4">
+            Try Again
+          </Button>
+        </AlertDescription>
+      </Alert>
     );
-  };
+  }
 
   return (
     <Card className="w-full h-full">
       <CardHeader>
-        <CardTitle>Emissions by Category</CardTitle>
+        <CardTitle>Scope 1 Emissions by Category</CardTitle>
         <CardDescription>
-          Breakdown by emission source (sized by tonnes CO₂e)
+          Breakdown by category, sized by total emissions (tCO₂e)
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {hasEmissionFactorError && (
-          <Alert className="mb-4 bg-yellow-50 border-yellow-200">
-            <AlertTriangle className="h-5 w-5 text-yellow-600" />
-            <AlertTitle className="text-yellow-800">Missing Emission Factors</AlertTitle>
-            <AlertDescription className="text-yellow-700">
-              <p>Your emissions cannot be calculated because there are no matching emission factors in the database for your fuel types and units.</p>
-              <p className="mt-2">To fix this:</p>
-              <ol className="list-decimal ml-5 mt-1">
-                <li>Ensure emission factors for your fuel types and units are added to the database</li>
-                <li>Check that your preferred emission source (DEFRA) has factors for the units you're using</li>
-                <li>Consider changing units (e.g., from liters to m³) to match available factors</li>
-              </ol>
-              <div className="mt-3">
-                <Button asChild variant="outline" className="text-yellow-800 border-yellow-300 hover:bg-yellow-100">
-                  <Link to="/settings">Go to Settings</Link>
+        {hasCalculationIssues && !loading && (
+          <Alert variant="warning" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Potential Calculation Issues</AlertTitle>
+            <AlertDescription>
+              Some entries resulted in zero calculated emissions despite having a quantity greater than zero. 
+              This might indicate missing or incorrect emission factors for certain categories or units. 
+              Please review your emission factors and data entries.
+              <Button asChild variant="link" size="sm" className="p-0 h-auto ml-2 text-amber-700 hover:text-amber-800">
+                <Link to="/settings">Review Factors</Link>
                 </Button>
-              </div>
             </AlertDescription>
           </Alert>
         )}
 
-        <div className="h-96">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <p>Loading emissions data...</p>
-            </div>
+        <div className="h-96 w-full">
+          {loading ? (
+            <Skeleton className="h-full w-full rounded-lg" />
           ) : treemapData.length > 0 ? (
-            <ChartContainer config={{}}>
+            <ChartContainer config={{}} >
               <ResponsiveContainer width="100%" height="100%">
                 <Treemap
+                  width={400}
+                  height={200}
                   data={treemapData}
                   dataKey="size"
                   stroke="#fff"
                   fill="#0E5D40"
-                  content={<CustomTreemapContent />}
+                  isAnimationActive={false}
+                  content={<CustomTreemapContent colors={COLORS} />}
                 >
                   <RechartsTooltip content={<CustomTooltip />} />
                 </Treemap>
               </ResponsiveContainer>
             </ChartContainer>
           ) : (
-            <div className="flex flex-col items-center justify-center h-full">
-              <p className="text-gray-500 mb-2">No emissions data available</p>
-              {hasEmissionFactorError && (
-                <p className="text-sm text-yellow-600">
-                  Please add emission factors to see your data visualized here.
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+              <p className="mb-2">No Scope 1 emissions data available by category.</p>
+              {hasCalculationIssues && (
+                <p className="text-sm text-amber-600"> 
+                  Calculation issues detected, please review factors.
                 </p>
               )}
             </div>

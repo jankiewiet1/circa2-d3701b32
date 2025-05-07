@@ -1,50 +1,128 @@
+import { useEffect, useRef, useState } from 'react';
+import { Upload, Sparkles, BarChart3, FileText } from 'lucide-react';
 
-import { ArrowRight, Upload, BarChart3, FileText } from "lucide-react";
+export function HowItWorksFlow() {
+  const [activeStep, setActiveStep] = useState(0);
+  const stepsRef = useRef<(HTMLDivElement | null)[]>([]);
 
-export const HowItWorksFlow = () => {
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = stepsRef.current.findIndex(ref => ref === entry.target);
+            if (index !== -1) {
+              setActiveStep(index);
+            }
+          }
+        });
+      },
+      {
+        threshold: 0.6,
+        rootMargin: '-20% 0px -20% 0px'
+      }
+    );
+
+    stepsRef.current.forEach(ref => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   const steps = [
     {
-      icon: <Upload className="h-8 w-8 text-circa-green" />,
       title: "Upload Data",
-      description: "Simple drag & drop for all your emission sources"
+      description: "Simple drag & drop for all your emission sources",
+      icon: Upload,
+      color: "bg-blue-500"
     },
     {
-      icon: <svg className="h-8 w-8 text-circa-green" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>,
       title: "Auto-Match",
-      description: "AI-powered emission factor matching"
+      description: "AI-powered emission factor matching",
+      icon: Sparkles,
+      color: "bg-purple-500"
     },
     {
-      icon: <BarChart3 className="h-8 w-8 text-circa-green" />,
       title: "Instant Insights",
-      description: "Visualize your carbon footprint immediately"
+      description: "Visualize your carbon footprint immediately",
+      icon: BarChart3,
+      color: "bg-green-500"
     },
     {
-      icon: <FileText className="h-8 w-8 text-circa-green" />,
       title: "Generate Reports",
-      description: "CDP, GRI, and custom formats in one click"
+      description: "CDP, GRI, and custom formats in one click",
+      icon: FileText,
+      color: "bg-orange-500"
     }
   ];
 
   return (
     <div className="relative">
-      <div className="absolute top-1/2 left-8 right-8 h-1 bg-circa-green-light transform -translate-y-1/2 hidden md:block"></div>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        {steps.map((step, index) => (
-          <div key={index} className="relative flex flex-col items-center">
-            <div className="bg-white rounded-full p-4 shadow-md mb-4 relative z-10">
-              {step.icon}
+      {/* Progress Line */}
+      <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-gray-200 transform -translate-x-1/2 hidden md:block">
+        <div 
+          className="absolute top-0 w-full bg-circa-green transition-all duration-500 ease-out"
+          style={{ height: `${((activeStep + 1) * 100) / steps.length}%` }}
+        />
+      </div>
+
+      {/* Steps */}
+      <div className="space-y-24 md:space-y-32 relative">
+        {steps.map((step, index) => {
+          const Icon = step.icon;
+          const isActive = index <= activeStep;
+          
+          return (
+            <div
+              key={index}
+              ref={el => stepsRef.current[index] = el}
+              className={`flex flex-col md:flex-row items-center gap-8 md:gap-16 transition-all duration-500 ${
+                isActive ? 'opacity-100' : 'opacity-50'
+              }`}
+            >
+              {/* Left Content - Shown on even indexes */}
+              {index % 2 === 0 && (
+                <div className="flex-1 text-right hidden md:block">
+                  <h3 className={`text-2xl font-semibold mb-2 ${isActive ? 'text-circa-green' : ''}`}>
+                    {step.title}
+                  </h3>
+                  <p className="text-gray-600">{step.description}</p>
+                </div>
+              )}
+
+              {/* Icon */}
+              <div className={`relative flex items-center justify-center ${isActive ? 'scale-110' : ''} transition-transform duration-500`}>
+                <div className={`w-16 h-16 rounded-full ${isActive ? 'bg-circa-green' : 'bg-gray-200'} flex items-center justify-center transition-colors duration-500`}>
+                  <Icon className={`w-8 h-8 ${isActive ? 'text-white' : 'text-gray-500'}`} />
+                </div>
+                {/* Step number */}
+                <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full ${isActive ? 'bg-circa-green-dark' : 'bg-gray-400'} text-white text-sm flex items-center justify-center`}>
+                  {index + 1}
+                </div>
+              </div>
+
+              {/* Right Content - Shown on odd indexes */}
+              {index % 2 !== 0 && (
+                <div className="flex-1 hidden md:block">
+                  <h3 className={`text-2xl font-semibold mb-2 ${isActive ? 'text-circa-green' : ''}`}>
+                    {step.title}
+                  </h3>
+                  <p className="text-gray-600">{step.description}</p>
+                </div>
+              )}
+
+              {/* Mobile Content */}
+              <div className="text-center md:hidden">
+                <h3 className={`text-2xl font-semibold mb-2 ${isActive ? 'text-circa-green' : ''}`}>
+                  {step.title}
+                </h3>
+                <p className="text-gray-600">{step.description}</p>
+              </div>
             </div>
-            <h3 className="text-lg font-semibold mb-2">{step.title}</h3>
-            <p className="text-gray-600 text-center text-sm">{step.description}</p>
-            
-            {index < steps.length - 1 && (
-              <ArrowRight className="absolute top-8 -right-4 h-6 w-6 text-circa-green-dark hidden md:block" />
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
-};
+}

@@ -11,6 +11,7 @@ import { ClientLogos } from "@/components/landing/ClientLogos";
 import { ProductShowcase } from "@/components/landing/ProductShowcase";
 import { ValueProposition } from "@/components/landing/ValueProposition";
 import { SignupProgress } from "@/components/landing/SignupProgress";
+import CO2Calculator from '@/components/landing/CO2Calculator';
 
 const Index = () => {
   return (
@@ -21,8 +22,8 @@ const Index = () => {
           <Logo />
           
           <div className="hidden md:flex items-center space-x-8">
-            <a href="#why-circa" className="text-gray-600 hover:text-gray-900 font-medium">Why Circa</a>
             <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 font-medium">How It Works</a>
+            <a href="#why-circa" className="text-gray-600 hover:text-gray-900 font-medium">Why Circa</a>
             <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</a>
             <a href="#testimonials" className="text-gray-600 hover:text-gray-900 font-medium">Testimonials</a>
             <a href="#pricing" className="text-gray-600 hover:text-gray-900 font-medium">Pricing</a>
@@ -89,23 +90,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Value Proposition Stats */}
-      <section className="py-14 bg-white border-y border-gray-100">
-        <div className="max-w-6xl mx-auto px-6">
-          <ValueProposition />
-        </div>
-      </section>
-      
-      {/* Client Logos */}
-      <section className="py-10 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-8">
-            <h2 className="text-lg font-medium text-gray-600">Trusted by forward-thinking companies</h2>
-          </div>
-          <ClientLogos />
-        </div>
-      </section>
-      
       {/* How It Works Section */}
       <section id="how-it-works" className="py-20 md:py-28 px-6 bg-white">
         <div className="max-w-6xl mx-auto">
@@ -117,9 +101,7 @@ const Index = () => {
               Our streamlined process makes carbon accounting simple and intuitive
             </p>
           </div>
-          
           <HowItWorksFlow />
-          
           <div className="mt-14 text-center">
             <Button className="bg-circa-green hover:bg-circa-green-dark" size="lg" asChild>
               <Link to="/auth/register">
@@ -127,6 +109,22 @@ const Index = () => {
               </Link>
             </Button>
           </div>
+        </div>
+      </section>
+
+      {/* CO2 Calculator Demo Section */}
+      <section className="py-14 bg-white border-y border-gray-100">
+        <div className="max-w-6xl mx-auto px-6">
+          <h2 className="text-2xl md:text-3xl font-bold mb-6 text-circa-green-dark text-center">Bereken direct je CO₂-voetafdruk</h2>
+          <p className="text-center text-gray-600 mb-8">Vul je verbruik in en ontvang een samenvatting per mail. Probeer het nu!</p>
+          <CO2Calculator />
+        </div>
+      </section>
+
+      {/* Value Proposition Stats */}
+      <section className="py-14 bg-white border-y border-gray-100">
+        <div className="max-w-6xl mx-auto px-6">
+          <ValueProposition />
         </div>
       </section>
       
@@ -474,7 +472,7 @@ const Index = () => {
             <path d="M0,0 L100,0 L100,100 L0,100 Z" fill="none" stroke="currentColor" strokeWidth="1" />
           </svg>
         </div>
-        <div className="max-w-4xl mx-auto text-center relative z-10">
+        <div className="max-w-7xl mx-auto text-center relative z-10">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">
             Start Your Sustainability Journey Today
           </h2>
@@ -487,7 +485,7 @@ const Index = () => {
                 Start Saving Time & CO₂
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white/10 text-lg font-semibold backdrop-blur-sm" asChild>
+            <Button size="lg" className="bg-circa-green-dark text-white hover:bg-circa-green-darker border-2 border-white text-lg font-semibold transition-all" asChild>
               <Link to="/auth/register">
                 Schedule a Demo
               </Link>
@@ -495,7 +493,6 @@ const Index = () => {
           </div>
           <p className="text-white/80 mt-6 font-medium">No credit card required for 14-day free trial</p>
         </div>
-        <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-circa-green-dark to-transparent opacity-30" />
       </section>
       
       {/* Footer */}
@@ -566,6 +563,30 @@ const Index = () => {
           </div>
         </div>
       </footer>
+
+      {/* Update max-width for all major sections */}
+      <style jsx global>{`
+        .max-w-6xl {
+          max-width: min(90vw, 1280px);
+        }
+        .max-w-7xl {
+          max-width: min(90vw, 1440px);
+        }
+        .max-w-4xl {
+          max-width: min(90vw, 1024px);
+        }
+        @media (min-width: 1536px) {
+          .max-w-6xl {
+            max-width: min(85vw, 1280px);
+          }
+          .max-w-7xl {
+            max-width: min(85vw, 1440px);
+          }
+          .max-w-4xl {
+            max-width: min(85vw, 1024px);
+          }
+        }
+      `}</style>
     </div>
   );
 };

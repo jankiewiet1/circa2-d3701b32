@@ -1,217 +1,187 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { ArrowDown, ArrowUp, Flame, BarChart2, TrendingUp, Calendar } from 'lucide-react';
+import { Flame, BarChart2, Calendar, AlertCircle, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { ChartContainer } from '@/components/ui/chart';
-import { useEmissionEntries } from '@/hooks/useScope1Emissions';
-import { useCompany } from '@/contexts/CompanyContext';
-import { CalculationStatus } from './CalculationStatus';
+import { EmissionEntryWithCalculation } from '@/hooks/useScopeEntries';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 const COLORS = ['#0E5D40', '#6ED0AA', '#AAE3CA', '#D6F3E7'];
 
-export const EmissionsOverviewDashboard = () => {
-  const { company } = useCompany();
-  const { entries: emissions, isLoading } = useEmissionEntries(company?.id || '', 1);
-  const [scopeData, setScopeData] = useState<{ name: string; value: number }[]>([]);
-  const [monthlyData, setMonthlyData] = useState<{ name: string; emissions: number }[]>([]);
-  const [totalEmissions, setTotalEmissions] = useState(0);
-  const [changePercentage, setChangePercentage] = useState(0);
-  const [isIncreasing, setIsIncreasing] = useState(false);
-  const [topCategory, setTopCategory] = useState('');
+interface EmissionsOverviewDashboardProps {
+  entries: EmissionEntryWithCalculation[];
+  loading: boolean;
+  error: string | null;
+  refetch: () => void;
+}
 
-  useEffect(() => {
-    if (emissions.length > 0) {
-      const scope1Total = emissions.reduce((sum, emission) => sum + (emission.emissions || 0), 0);
+const getCalculatedEmissions = (entry: EmissionEntryWithCalculation): number => {
+  if (entry.emission_calculations && entry.emission_calculations.length > 0) {
+    return entry.emission_calculations[0]?.total_emissions ?? 0;
+  }
+  return 0;
+};
 
-      const newScopeData = [
-        { name: 'Scope 1', value: scope1Total },
-        { name: 'Scope 2', value: 0 },
-        { name: 'Scope 3', value: 0 }
-      ];
+export const EmissionsOverviewDashboard = ({ entries, loading, error, refetch }: EmissionsOverviewDashboardProps) => {
+  const overviewData = useMemo(() => {
+    if (loading || !entries || entries.length === 0) {
+      return { totalEmissions: 0, monthlyData: [], topCategory: 'N/A', lastDate: null };
+    }
 
+    let totalEmissions = 0;
       const emissionsByMonth: Record<string, number> = {};
-      emissions.forEach(emission => {
-        if (emission.date) {
-          const month = emission.date.substring(0, 7);
-          emissionsByMonth[month] = (emissionsByMonth[month] || 0) + (emission.emissions || 0);
+    const categoryEmissions: Record<string, number> = {};
+    let lastDate: Date | null = null;
+
+    entries.forEach(entry => {
+      const emissions = getCalculatedEmissions(entry);
+      totalEmissions += emissions;
+
+      if (entry.date) {
+        const entryDate = new Date(entry.date);
+        if (!isNaN(entryDate.getTime())) {
+           const month = entry.date.substring(0, 7);
+           emissionsByMonth[month] = (emissionsByMonth[month] || 0) + emissions;
+           if (!lastDate || entryDate > lastDate) {
+              lastDate = entryDate;
+           }
         }
+      }
+      
+      const cat = entry.category || 'Unknown';
+      categoryEmissions[cat] = (categoryEmissions[cat] || 0) + emissions;
       });
 
       const sortedMonths = Object.keys(emissionsByMonth).sort();
-      const newMonthlyData = sortedMonths.map(month => ({
-        name: format(new Date(month + '-01'), 'MMM yyyy'),
+    const monthlyData = sortedMonths.map(month => ({
+      name: format(new Date(month + '-01T00:00:00'), 'MMM yyyy'),
         emissions: parseFloat(emissionsByMonth[month].toFixed(2))
       }));
 
-      const categoryEmissions: Record<string, number> = {};
-      emissions.forEach(emission => {
-        const cat = emission.category || 'Unknown';
-        categoryEmissions[cat] = (categoryEmissions[cat] || 0) + (emission.emissions || 0);
-      });
-
       let maxEmissions = 0;
-      let maxCategory = '';
+    let topCategory = 'N/A';
       Object.entries(categoryEmissions).forEach(([category, amount]) => {
         if (amount > maxEmissions) {
           maxEmissions = amount;
-          maxCategory = category;
+        topCategory = category;
         }
       });
 
-      const total = emissions.reduce((sum, emission) => sum + (emission.emissions || 0), 0);
+    return {
+      totalEmissions: parseFloat(totalEmissions.toFixed(2)),
+      monthlyData,
+      topCategory,
+      lastDate
+    };
 
-      const previousTotal = total * 0.9;
-      const change = ((total - previousTotal) / previousTotal) * 100;
+  }, [entries, loading]);
 
-      setScopeData(newScopeData);
-      setMonthlyData(newMonthlyData);
-      setTotalEmissions(total);
-      setChangePercentage(Math.abs(change));
-      setIsIncreasing(change > 0);
-      setTopCategory(maxCategory);
-    }
-  }, [emissions]);
+  if (error) {
+     return (
+      <Alert variant="destructive" className="my-6">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error Loading Scope 1 Overview</AlertTitle>
+        <AlertDescription>
+          {error || "An unexpected error occurred."}
+          <Button variant="secondary" size="sm" onClick={refetch} className="ml-4">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Try Again
+          </Button>
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Total Emissions</CardTitle>
-            <CardDescription>Year to date (tonnes CO₂e)</CardDescription>
+            <CardTitle className="text-lg">Total Scope 1 Emissions</CardTitle>
+            <CardDescription>Year to date (tCO₂e)</CardDescription>
           </CardHeader>
           <CardContent>
+            {loading ? (
+              <Skeleton className="h-8 w-3/4" />
+            ) : (
             <div className="flex items-center">
               <Flame className="mr-2 h-4 w-4 text-orange-500" />
-              <span className="text-2xl font-bold">{totalEmissions.toFixed(2)}</span>
-              <div className="ml-auto flex items-center">
-                {isIncreasing ? (
-                  <div className="text-red-500 flex items-center">
-                    <ArrowUp className="mr-1 h-4 w-4" />
-                    {changePercentage.toFixed(1)}%
-                  </div>
-                ) : (
-                  <div className="text-green-500 flex items-center">
-                    <ArrowDown className="mr-1 h-4 w-4" />
-                    {changePercentage.toFixed(1)}%
-                  </div>
-                )}
+                <span className="text-2xl font-bold">{overviewData.totalEmissions}</span>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Top Emitting Category</CardTitle>
-            <CardDescription>Highest CO₂e contributor</CardDescription>
+            <CardDescription>Highest CO₂e contributor within Scope 1</CardDescription>
           </CardHeader>
           <CardContent>
+             {loading ? (
+              <Skeleton className="h-8 w-3/4" />
+            ) : (
             <div className="flex items-center">
               <BarChart2 className="mr-2 h-4 w-4 text-circa-green" />
-              <span className="text-xl font-bold capitalize">{topCategory || 'N/A'}</span>
+                <span className="text-xl font-bold capitalize truncate" title={overviewData.topCategory}>{overviewData.topCategory}</span>
             </div>
+            )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Top Emitting Scope</CardTitle>
-            <CardDescription>Highest CO₂e source</CardDescription>
+            <CardTitle className="text-lg">Last Entry Date</CardTitle>
+            <CardDescription>Most recent Scope 1 entry</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center">
-              <TrendingUp className="mr-2 h-4 w-4 text-circa-green" />
-              <span className="text-xl font-bold">Scope 1</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Last Calculation</CardTitle>
-            <CardDescription>Emissions data status</CardDescription>
-          </CardHeader>
-          <CardContent>
+            {loading ? (
+              <Skeleton className="h-8 w-3/4" />
+            ) : (
             <div className="flex items-center">
               <Calendar className="mr-2 h-4 w-4 text-circa-green" />
               <span className="text-xl font-bold">
-                {emissions.length > 0
-                  ? format(new Date(), 'dd MMM yyyy')
-                  : 'No data'}
+                  {overviewData.lastDate ? format(overviewData.lastDate, 'dd MMM yyyy') : 'No data'}
               </span>
             </div>
+            )}
           </CardContent>
         </Card>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Emissions by Scope</CardTitle>
-            <CardDescription>Distribution of emissions across scopes</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ChartContainer config={{ "Scope 1": { color: COLORS[0] }, "Scope 2": { color: COLORS[1] }, "Scope 3": { color: COLORS[2] } }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={scopeData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="value"
-                      nameKey="name"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {scopeData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <RechartsTooltip formatter={(value: number | string) => {
-                      const numValue = typeof value === 'number' ? value : parseFloat(value);
-                      return [`${numValue.toFixed(2)} tonnes CO₂e`, 'Emissions'];
-                    }} />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            </div>
-          </CardContent>
-        </Card>
 
         <Card>
           <CardHeader>
             <CardTitle>Monthly Emissions Trend</CardTitle>
-            <CardDescription>Emissions over time (tonnes CO₂e)</CardDescription>
+          <CardDescription>Scope 1 emissions over time (tCO₂e)</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              <ChartContainer config={{ "emissions": { color: "#0E5D40" } }}>
+            {loading ? (
+              <Skeleton className="h-full w-full rounded-lg" />
+            ) : overviewData.monthlyData.length > 0 ? (
+              <ChartContainer config={{ "emissions": { color: COLORS[0] } }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyData}>
+                  <BarChart data={overviewData.monthlyData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
-                    <YAxis />
+                    <YAxis width={60}/>
                     <RechartsTooltip formatter={(value: number | string) => {
                       const numValue = typeof value === 'number' ? value : parseFloat(value);
-                      return [`${numValue} tonnes CO₂e`, 'Emissions'];
+                      return [`${numValue.toFixed(2)} tCO₂e`, 'Emissions'];
                     }} />
-                    <Bar dataKey="emissions" fill="#0E5D40" />
+                    <Bar dataKey="emissions" name="Scope 1 Emissions" fill={COLORS[0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </ChartContainer>
+            ) : (
+               <div className="flex items-center justify-center h-full text-muted-foreground">No monthly data available</div>
+            )}
             </div>
           </CardContent>
         </Card>
-      </div>
-
-      <CalculationStatus />
     </div>
   );
 };

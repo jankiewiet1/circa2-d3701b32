@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -148,10 +147,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Sign up with email and password
   const signUp = async (email: string, password: string, firstName: string, lastName: string) => {
     try {
-      const { data, error } = await supabase.auth.signUp({ 
+      console.log("Starting signup process for:", email);
+
+      // Step 1: Create auth user first
+      const { data: authData, error: authError } = await supabase.auth.signUp({ 
         email, 
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             first_name: firstName,
             last_name: lastName
@@ -159,42 +162,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       });
       
-      if (error) {
+      if (authError) {
+        console.error("Auth signup error:", authError);
         toast({
           title: "Registration Failed",
-          description: error.message,
+          description: authError.message,
           variant: "destructive"
         });
-        return { error, user: null };
+        return { error: authError, user: null };
       }
       
-      if (data.user) {
-        // Create a profile for the new user
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: data.user.id,
-            first_name: firstName,
-            last_name: lastName,
-          });
-        
-        if (profileError) {
-          console.error('Error creating user profile:', profileError);
-          toast({
-            title: "Profile Creation Failed",
-            description: "Your account was created but we couldn't set up your profile",
-            variant: "destructive"
-          });
-        }
+      if (!authData.user) {
+        console.error("No user data returned from auth signup");
+        return { 
+          error: new Error("Failed to create user account"), 
+          user: null 
+        };
       }
+
+      // Step 2: Create profile with the auth user's ID
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: authData.user.id,
+          email: email,
+          first_name: firstName,
+          last_name: lastName,
+          created_at: new Date().toISOString()
+        });
+
+      if (profileError) {
+        console.error("Profile creation error:", profileError);
+        // Log the full error for debugging
+        console.log("Full profile error:", JSON.stringify(profileError, null, 2));
+      }
+      
+      console.log("User registration completed successfully:", authData.user.id);
       
       toast({
-        title: "Registration Successful",
-        description: "Your account has been created. Please check your email for verification.",
+        title: "Welcome to Circa! 🌱",
+        description: "Please check your email to confirm your account. After confirming, we'd love to show you around - book a demo with our team!",
+        variant: "default",
+        duration: 10000, // Show for 10 seconds
+        action: (
+          <div className="flex gap-2">
+            <a
+              href="https://calendly.com/your-calendly-link"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded bg-primary px-3 py-1 text-sm text-primary-foreground hover:bg-primary/90"
+            >
+              Book Demo
+            </a>
+          </div>
+        ),
       });
       
-      return { error: null, user: data.user };
+      return { error: null, user: authData.user };
     } catch (error: any) {
+      console.error("Unexpected error during registration:", error);
       toast({
         title: "Registration Failed",
         description: error.message || "An unexpected error occurred",
