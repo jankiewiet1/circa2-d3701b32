@@ -40,46 +40,47 @@ const Index = () => {
         </div>
       </header>
       
-      {/* Hero Section - Improved with stronger value prop */}
-      <section className="pt-32 pb-20 md:pt-40 md:pb-28 px-6 bg-gradient-to-br from-circa-green-light via-white to-blue-50">
+      {/* Hero Section */}
+      <section className="pt-32 pb-20 md:pt-40 md:pb-28 px-6">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
           <div className="text-left">
-            <div className="mb-6">
-              <p className="text-circa-green font-medium mb-2">Join 213 companies already using Circa</p>
-              <TrustBadges />
+            <div className="flex flex-wrap gap-2 mb-6">
+              <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium">CDP Ready</span>
+              <span className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm font-medium">GHG Protocol</span>
+              <span className="px-3 py-1 bg-purple-50 text-purple-600 rounded-full text-sm font-medium">ISO 14064</span>
+              <span className="px-3 py-1 bg-orange-50 text-orange-700 rounded-full text-sm font-medium">Audit Friendly</span>
             </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-circa-green-dark mb-6 leading-tight">
-              Cut carbon tracking time <span className="text-blue-600">by 80%</span>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+              <span className="text-[#004D2F]">Stop Wasting Days<br />on Spreadsheets</span>—<br />
+              <span className="text-blue-600">Automate Your<br />Carbon Accounting</span>
             </h1>
-            <p className="text-xl md:text-2xl text-gray-700 mb-8 leading-relaxed">
-              The complete carbon management platform for ambitious companies committed to climate action.
+            <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+              Connect all your data sources, leverage 400 000+ emission factors, and generate every major 
+              sustainability report (CDP, GHG, ESRS) with a single click—freeing up your team from manual work.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 mb-8">
-              <Button size="lg" className="bg-circa-green-dark hover:bg-circa-green text-lg" asChild>
+            <div className="flex flex-col sm:flex-row gap-4 mb-4">
+              <Button size="lg" className="bg-[#004D2F] hover:bg-[#003D2F] text-white text-lg px-6" asChild>
                 <Link to="/auth/register">
-                  Start Free Trial
+                  Start Your Free 14-Day Trial
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" className="border-circa-green-dark text-circa-green-dark hover:bg-circa-green-dark/10 text-lg">
-                Book a 15-min Demo
+              <Button size="lg" variant="outline" className="border-[#004D2F] text-[#004D2F] hover:bg-[#004D2F]/10 text-lg">
+                See It in Action
               </Button>
             </div>
-            <p className="text-sm text-gray-500">No credit card required. Free for 14 days.</p>
+            <p className="text-sm text-gray-500">No credit card required</p>
           </div>
           
           <div className="relative">
-            <div className="absolute -top-10 -right-10 w-40 h-40 bg-circa-green/10 rounded-full filter blur-3xl"></div>
-            <div className="absolute bottom-10 -left-5 w-40 h-40 bg-blue-500/10 rounded-full filter blur-3xl"></div>
-            
-            <div className="relative z-10 rounded-xl overflow-hidden shadow-2xl border border-gray-100">
+            <div className="w-full rounded-xl shadow-2xl overflow-hidden bg-white" style={{ height: '500px' }}>
               <img 
-                src="https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&q=80&w=2600&h=1548" 
-                alt="Carbon reduction visualization" 
+                src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?ixlib=rb-4.0.3&auto=format&fit=crop&w=1440&q=80"
+                alt="Beautiful green landscape"
                 className="w-full h-full object-cover"
+                style={{ objectPosition: 'center 25%' }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-circa-green-dark/50 to-transparent"></div>
-              <div className="absolute bottom-8 left-8 bg-white/90 backdrop-blur-md rounded-lg px-4 py-3 shadow-lg">
+              <div className="absolute bottom-8 left-8 bg-white/95 backdrop-blur-sm rounded-lg px-4 py-3 shadow-lg">
                 <div className="flex items-center space-x-2">
                   <Check className="h-5 w-5 text-green-500" />
                   <span className="font-medium">Reduce emissions by 30%</span>
@@ -498,95 +499,11 @@ const Index = () => {
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-300 py-12 px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="mb-4">
-                <Logo variant="light" />
-              </div>
-              <p className="text-gray-400">
-                Making carbon accounting accessible for every organization.
-              </p>
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-medium mb-4">Product</h3>
-              <ul className="space-y-2">
-                <li><a href="#features" className="hover:text-white">Features</a></li>
-                <li><a href="#pricing" className="hover:text-white">Pricing</a></li>
-                <li><a href="#" className="hover:text-white">Case Studies</a></li>
-                <li><a href="#" className="hover:text-white">Documentation</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-medium mb-4">Company</h3>
-              <ul className="space-y-2">
-                <li><a href="#why-circa" className="hover:text-white">About Us</a></li>
-                <li><a href="#" className="hover:text-white">Careers</a></li>
-                <li><a href="#" className="hover:text-white">Blog</a></li>
-                <li><a href="#" className="hover:text-white">Contact</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-medium mb-4">Legal</h3>
-              <ul className="space-y-2">
-                <li><a href="#" className="hover:text-white">Privacy</a></li>
-                <li><a href="#" className="hover:text-white">Terms</a></li>
-                <li><a href="#" className="hover:text-white">Security</a></li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p>© 2023 Circa. All rights reserved.</p>
-            <div className="flex space-x-4 mt-4 md:mt-0">
-              <a href="#" className="hover:text-white">
-                <span className="sr-only">Twitter</span>
-                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-              </a>
-              <a href="#" className="hover:text-white">
-                <span className="sr-only">LinkedIn</span>
-                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path fillRule="evenodd" d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" clipRule="evenodd" />
-                </svg>
-              </a>
-              <a href="#" className="hover:text-white">
-                <span className="sr-only">GitHub</span>
-                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988.1 2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
-                </svg>
-              </a>
-            </div>
+          <div className="flex justify-center items-center">
+            <p>© 2025 Circa. All rights reserved.</p>
           </div>
         </div>
       </footer>
-
-      {/* Update max-width for all major sections */}
-      <style jsx global>{`
-        .max-w-6xl {
-          max-width: min(90vw, 1280px);
-        }
-        .max-w-7xl {
-          max-width: min(90vw, 1440px);
-        }
-        .max-w-4xl {
-          max-width: min(90vw, 1024px);
-        }
-        @media (min-width: 1536px) {
-          .max-w-6xl {
-            max-width: min(85vw, 1280px);
-          }
-          .max-w-7xl {
-            max-width: min(85vw, 1440px);
-          }
-          .max-w-4xl {
-            max-width: min(85vw, 1024px);
-          }
-        }
-      `}</style>
     </div>
   );
 };
