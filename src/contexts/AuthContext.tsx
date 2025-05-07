@@ -201,22 +201,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       toast({
         title: "Welcome to Circa! 🌱",
-        description: "Please check your email to confirm your account. After confirming, we'd love to show you around - book a demo with our team!",
+        description: "Please check your email to confirm your account. We'll help you get started right away!",
         variant: "default",
-        duration: 10000, // Show for 10 seconds
-        action: (
-          <div className="flex gap-2">
-            <a
-              href="https://calendly.com/your-calendly-link"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded bg-primary px-3 py-1 text-sm text-primary-foreground hover:bg-primary/90"
-            >
-              Book Demo
-            </a>
-          </div>
-        ),
+        duration: 10000,
       });
+
+      // Redirect to success page with user info
+      window.location.href = `/auth/success?email=${encodeURIComponent(email)}&firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}`;
       
       return { error: null, user: authData.user };
     } catch (error: any) {

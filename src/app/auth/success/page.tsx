@@ -1,11 +1,17 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import Link from "next/link";
+import { CalendlyEmbed } from "@/components/booking/CalendlyEmbed";
+import { Link, useSearchParams } from 'react-router-dom';
 
 export default function SuccessPage() {
+  const [searchParams] = useSearchParams();
+  const email = searchParams.get('email');
+  const firstName = searchParams.get('firstName');
+  const lastName = searchParams.get('lastName');
+
   return (
-    <div className="container flex h-screen w-full flex-col items-center justify-center">
-      <Card className="w-full max-w-lg">
+    <div className="container flex min-h-screen w-full flex-col items-center justify-center py-10">
+      <Card className="w-full max-w-3xl">
         <CardHeader>
           <CardTitle>Welcome to Circa! 🌱</CardTitle>
           <CardDescription>
@@ -24,19 +30,20 @@ export default function SuccessPage() {
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium">2. Book a Demo</h4>
-              <p className="text-sm text-muted-foreground">
+              <h4 className="font-medium">2. Book Your Onboarding Call</h4>
+              <p className="text-sm text-muted-foreground mb-4">
                 Let us show you how Circa can help your organization track and reduce its carbon footprint.
               </p>
-              <Button asChild className="mt-2">
-                <a
-                  href="https://calendly.com/your-calendly-link"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Schedule Your Demo
-                </a>
-              </Button>
+              <div className="rounded-lg border bg-card overflow-hidden h-[750px]">
+                <CalendlyEmbed 
+                  url="https://calendly.com/circa-info"
+                  prefill={{
+                    email,
+                    firstName,
+                    lastName
+                  }}
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -44,8 +51,8 @@ export default function SuccessPage() {
               <p className="text-sm text-muted-foreground">
                 Once your email is confirmed, you can start exploring your carbon accounting dashboard.
               </p>
-              <Button variant="outline" asChild className="mt-2">
-                <Link href="/dashboard">
+              <Button variant="outline" asChild>
+                <Link to="/dashboard" className="mt-2">
                   Go to Dashboard
                 </Link>
               </Button>
@@ -53,7 +60,7 @@ export default function SuccessPage() {
           </div>
 
           <div className="mt-6 text-center text-sm text-muted-foreground">
-            <p>Need help? Contact us at <a href="mailto:support@circa.com" className="text-primary hover:underline">support@circa.com</a></p>
+            <p>Need help? Contact us at <a href="mailto:info@circa.site" className="text-primary hover:underline">info@circa.site</a></p>
           </div>
         </CardContent>
       </Card>
