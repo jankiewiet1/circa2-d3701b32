@@ -17,11 +17,13 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Sticky Header/Nav */}
-      <header className="fixed w-full bg-white/95 backdrop-blur-sm shadow-sm z-50 py-4 px-6 md:px-10">
-        <div className="max-w-7xl mx-auto flex justify-between items-center h-8">
-          <Logo />
+      <header className="fixed w-full bg-white/95 backdrop-blur-sm shadow-sm z-50 py-6 px-6 md:px-10">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="flex items-center">
+            <Logo className="h-12 w-auto" />
+          </div>
           
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-8 text-base">
             <a href="#how-it-works" className="text-gray-600 hover:text-gray-900 font-medium">How It Works</a>
             <a href="#why-circa" className="text-gray-600 hover:text-gray-900 font-medium">Why Circa</a>
             <a href="#features" className="text-gray-600 hover:text-gray-900 font-medium">Features</a>
@@ -30,10 +32,10 @@ const Index = () => {
           </div>
           
           <div className="flex items-center space-x-4">
-            <Button variant="outline" asChild>
+            <Button variant="outline" size="lg" asChild>
               <Link to="/auth/login">Log In</Link>
             </Button>
-            <Button className="bg-circa-green hover:bg-circa-green-dark" asChild>
+            <Button className="bg-circa-green hover:bg-circa-green-dark" size="lg" asChild>
               <Link to="/auth/register">Sign Up</Link>
             </Button>
           </div>
@@ -41,9 +43,9 @@ const Index = () => {
       </header>
       
       {/* Hero Section */}
-      <section className="pt-32 pb-20 md:pt-40 md:pb-28 px-6">
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
-          <div className="text-left">
+      <section className="pt-32 pb-20 md:pt-40 md:pb-28 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+          <div className="text-left max-w-xl mx-auto lg:max-w-none">
             <div className="flex flex-wrap gap-2 mb-6">
               <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium">CDP Ready</span>
               <span className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm font-medium">GHG Protocol</span>
@@ -73,13 +75,14 @@ const Index = () => {
           </div>
           
           <div className="relative">
-            <div className="w-full rounded-xl shadow-2xl overflow-hidden bg-white" style={{ height: '500px' }}>
+            <div className="w-full rounded-xl shadow-2xl overflow-hidden bg-white" style={{ height: '440px' }}>
               <img 
-                src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?ixlib=rb-4.0.3&auto=format&fit=crop&w=1440&q=80"
-                alt="Beautiful green landscape"
+                src="https://images.unsplash.com/photo-1501854140801-50d01698950b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80"
+                alt="Lush green rolling hills and forest"
                 className="w-full h-full object-cover"
-                style={{ objectPosition: 'center 25%' }}
+                style={{ objectPosition: 'center center' }}
               />
+              <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
               <div className="absolute bottom-8 left-8 bg-white/95 backdrop-blur-sm rounded-lg px-4 py-3 shadow-lg">
                 <div className="flex items-center space-x-2">
                   <Check className="h-5 w-5 text-green-500" />
@@ -499,7 +502,8 @@ const Index = () => {
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-300 py-12 px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="flex justify-center items-center">
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <Logo variant="light" className="h-8 w-auto" />
             <p>© 2025 Circa. All rights reserved.</p>
           </div>
         </div>
