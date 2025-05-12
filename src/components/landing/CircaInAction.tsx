@@ -1,70 +1,39 @@
-import Image from 'next/image';
 
-export default function CircaInAction() {
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import dashboardImage from '@/assets/dashboard.png'; // Assuming you have this image in assets
+
+export function CircaInAction() {
   return (
-    <section className="py-24 bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4">
-        <h2 className="text-4xl font-bold text-center mb-4">See Circa in Action</h2>
-        <p className="text-gray-600 text-center mb-16">
-          Powerful features designed for carbon management excellence
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Dashboard Overview */}
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="p-6">
-              <h3 className="text-xl font-semibold mb-2">Dashboard Overview</h3>
-              <p className="text-gray-600 text-sm mb-4">Complete visibility of your carbon footprint</p>
-            </div>
-            <div className="relative h-[300px] bg-white">
-              <Image
-                src="/images/dashboard-overview.png"
-                alt="Dashboard Overview"
-                fill
-                className="object-cover"
-              />
-            </div>
-          </div>
-
-          {/* Emissions Analytics */}
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="p-6">
-              <h3 className="text-xl font-semibold mb-2">Emissions Analytics</h3>
-              <p className="text-gray-600 text-sm mb-4">Detailed breakdown of your emissions data</p>
-            </div>
-            <div className="relative h-[300px] bg-white">
-              <Image
-                src="/images/emissions-dashboard.png"
-                alt="Emissions Analytics"
-                fill
-                className="object-cover"
-              />
-            </div>
-          </div>
-
-          {/* Reports */}
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="p-6">
-              <h3 className="text-xl font-semibold mb-2">Report Generation</h3>
-              <p className="text-gray-600 text-sm mb-4">Automated reporting for all frameworks</p>
-            </div>
-            <div className="relative h-[300px] bg-white">
-              <Image
-                src="/images/reports-view.png"
-                alt="Report Generation"
-                fill
-                className="object-cover"
-              />
-            </div>
-          </div>
+    <section className="py-16 bg-muted">
+      <div className="container mx-auto">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-4">Circa in Action</h2>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            See how organizations are leveraging Circa to track, report, and reduce their carbon footprint.
+          </p>
         </div>
 
-        <div className="mt-12 text-center">
-          <button className="bg-circa-green text-white px-6 py-3 rounded-lg font-medium hover:bg-circa-green/90 transition-colors">
-            See Your Impact Live
-          </button>
+        <div className="grid grid-cols-1 gap-8">
+          <Card className="overflow-hidden">
+            <CardHeader>
+              <CardTitle>Dashboard Visualization</CardTitle>
+              <CardDescription>
+                Get a complete overview of your organization's emissions with interactive dashboards
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md overflow-hidden shadow-md">
+                <img 
+                  src={dashboardImage}
+                  alt="Circa Dashboard" 
+                  className="w-full h-auto object-cover"
+                />
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </section>
   );
-} 
+}

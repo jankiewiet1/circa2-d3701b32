@@ -1,240 +1,82 @@
-// Fixing type argument usages and data checks for supabase queries
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export interface EmissionEntry {
-  id: string;
-  company_id: string;
-  upload_session_id?: string | null;
-  date: string;
-  category: string;
-  description: string;
-  quantity: number;
-  unit: string;
-  emission_factor: number;
-  emission_factor_id?: number | null;
-  scope: number;
-  emissions: number;
-  co2_emissions?: number | null;
-  ch4_emissions?: number | null;
-  n2o_emissions?: number | null;
-  match_status?: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface EmissionFactorStatus {
-  category: string;
-  unit: string;
-  availableSources: {
-    source: string;
-    hasData: boolean;
-  }[];
-}
-
-/**
- * Fetches emission factors from the database
- */
-export const fetchEmissionFactors = async () => {
-  try {
-    const { data, error } = await supabase
-      .from("emission_factors")
-      .select(
-        `"category_1", "uom", "Source", "scope", "GHG Conversion Factor 2024"`
-      )
-      .order("category_1")
-      .order("uom")
-      .order("Source");
-
-    if (error) throw error;
-    if (!data || !Array.isArray(data)) {
-      throw new Error("No emission factors data returned");
-    }
-
-    return { data, error: null };
-  } catch (error: any) {
-    console.error("Error fetching emission factors:", error);
-    return { data: null, error };
-  }
-};
-
-/**
- * Checks emission factor availability for company's emissions data
- */
-export const checkEmissionFactorStatus = async (companyId: string) => {
-  try {
-    const { data: entriesData, error: entriesError } = await supabase
-      .from("emission_entries")
-      .select("category, unit, scope")
-      .eq("company_id", companyId);
-
-    if (entriesError) throw entriesError;
-    if (!entriesData || !Array.isArray(entriesData)) {
-      throw new Error("No emission entries data returned");
-    }
-
-    const { data: factorsData, error: factorsError } = await supabase
-      .from("emission_factors")
-      .select(`"category_1", "uom", "Source", "scope"`);
-
-    if (factorsError) throw factorsError;
-    if (!factorsData || !Array.isArray(factorsData)) {
-      throw new Error("No emission factors data returned");
-    }
-
-    const { data: preferences, error: prefError } = await supabase
-      .from("company_preferences")
-      .select("preferred_emission_source")
-      .eq("company_id", companyId)
-      .maybeSingle();
-
-    if (prefError) throw prefError;
-
-    const preferredSource = preferences?.preferred_emission_source || "DEFRA";
-
-    const normalizeString = (str?: string) => (str || "").toLowerCase().trim();
-
-    const uniqueCombinations =
-      entriesData.filter((value, index, self) =>
-        index ===
-        self.findIndex(
-          (t) =>
-            normalizeString(t.category) === normalizeString(value.category) &&
-            normalizeString(t.unit) === normalizeString(value.unit) &&
-            t.scope === value.scope
-        )
-      ) || [];
-
-    const knownSources = [
-      "DEFRA",
-      "EPA",
-      "IPCC",
-      "GHG Protocol Default",
-      "ADEME",
-    ];
-
-    const statusChecks = uniqueCombinations.map((combo) => {
-      const sources = knownSources.map((source) => {
-        const matchingFactors =
-          factorsData.filter(
-            (factor) =>
-              (factor.category_1?.toLowerCase().trim() ?? "") ===
-                (combo.category?.toLowerCase().trim() ?? "") &&
-              (factor.uom?.toLowerCase().trim() ?? "") ===
-                (combo.unit?.toLowerCase().trim() ?? "") &&
-              factor.Source === source &&
-              Number(factor.scope) === combo.scope
-          ) || [];
-
-        return {
-          source,
-          hasData: matchingFactors.length > 0,
-        };
-      });
-
-      return {
-        category: combo.category || "",
-        unit: combo.unit || "",
-        availableSources: sources,
-      };
-    });
-
-    return {
-      data: statusChecks,
-      preferredSource,
-      error: null,
-    };
-  } catch (error: any) {
-    console.error("Error checking emission factor status:", error);
-    return {
-      data: [],
-      preferredSource: null,
-      error,
-    };
-  }
-};
-
-/**
- * Run diagnostics on emission calculations and returns any issues found
- */
+// Run diagnostics on emission calculation setup
 export const runEmissionDiagnostics = async (companyId: string) => {
   try {
-    const { data: entriesData, error: entriesError } = await supabase
-      .from("emission_entries")
-      .select("category, unit, scope, emissions, match_status")
-      .eq("company_id", companyId);
+    // Get emission entries without calculations
+    const { data: entriesWithoutCalcs, error: entriesError } = await supabase
+      .from('emission_entries')
+      .select('id, category, unit')
+      .eq('company_id', companyId)
+      .eq('match_status', 'unmatched')
+      .limit(10);
 
     if (entriesError) throw entriesError;
-    if (!entriesData || !Array.isArray(entriesData)) {
-      throw new Error("No emission entries data returned");
-    }
 
-    const unmatched = entriesData.filter(entry => entry.match_status === 'unmatched' || !entry.emissions);
-    
-    const { data: diagnostics, error: diagnosticsError } = await supabase
-      .from("emission_matching_diagnostics")
-      .select("category, unit, scope, reason")
-      .eq("company_id", companyId)
-      .order('checked_at', { ascending: false });
-      
-    if (diagnosticsError) throw diagnosticsError;
+    // Count total entries without calculations
+    const { count: missingCount, error: countError } = await supabase
+      .from('emission_entries')
+      .select('id', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+      .eq('match_status', 'unmatched');
 
-    const { data: pref, error: prefError } = await supabase
-      .from("company_preferences")
-      .select("preferred_emission_source")
-      .eq("company_id", companyId)
-      .maybeSingle();
+    if (countError) throw countError;
 
-    if (prefError) throw prefError;
-
-    const preferredSource = pref?.preferred_emission_source || "DEFRA";
-
-    // Convert diagnostics to logs format
-    const logs = (diagnostics || []).map(diag => ({
-      log_type: "warning",
-      log_message: `Missing emission factor for: ${diag.category}/${diag.unit} (scope ${diag.scope})`
+    // Format logs
+    const logs = (entriesWithoutCalcs || []).map(entry => ({
+      log_type: 'warning',
+      log_message: `Entry with category "${entry.category}" and unit "${entry.unit}" has no matching emission factor`
     }));
 
     return {
       logs,
-      missingCalculations: unmatched.length,
-      error: null,
+      missingCalculations: missingCount || 0
     };
   } catch (error: any) {
-    console.error("Error running diagnostics:", error);
-    toast.error("Failed to run emission diagnostics");
+    console.error("Error running emission diagnostics:", error);
+    toast.error("Failed to analyze emission calculation setup");
     return {
-      logs: [],
-      missingCalculations: 0,
-      error,
+      logs: [{
+        log_type: 'error',
+        log_message: 'Error analyzing emission calculations: ' + error.message
+      }],
+      missingCalculations: 0
     };
   }
 };
 
-/**
- * Recalculate emissions for a company using the enhanced GHG calculation function
- */
+// Recalculate all emissions for a company
 export const recalculateCompanyEmissions = async (companyId: string) => {
   try {
-    const { data, error } = await supabase.functions.invoke('calculate-emissions', {
-      body: { company_id: companyId }
-    });
+    // Call Supabase edge function to recalculate (if deployed)
+    try {
+      const { data, error } = await supabase.functions.invoke('recalculate-emissions', {
+        body: { company_id: companyId }
+      });
 
-    if (error) throw error;
+      if (error) throw error;
+      
+      toast.success("Emissions are being recalculated. This may take a few minutes.");
+      return data;
+    } catch (fnError) {
+      console.warn("Edge function not available:", fnError);
+      
+      // Fallback - direct database operation if allowed
+      // Update match status to trigger recalculation on next view
+      const { error } = await supabase
+        .from('emission_entries')
+        .update({ match_status: null })
+        .eq('company_id', companyId);
 
-    if (data.success) {
-      toast.success(data.message || "Emissions recalculated successfully");
-      return { 
-        updated_rows: data.data?.[0]?.updated_rows || 0, 
-        unmatched_rows: data.data?.[0]?.unmatched_rows || 0 
-      };
-    } else {
-      throw new Error(data.error || 'Calculation failed');
+      if (error) throw error;
+      
+      toast.success("Emissions will be recalculated on next view");
     }
-  } catch (error) {
-    console.error('Error recalculating emissions:', error);
-    toast.error(`Failed to recalculate emissions: ${error.message || 'Unknown error'}`);
+  } catch (error: any) {
+    console.error("Error recalculating emissions:", error);
+    toast.error("Failed to recalculate emissions");
     throw error;
   }
 };

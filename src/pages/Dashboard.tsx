@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { MainLayout } from "@/components/MainLayout";
@@ -37,29 +38,6 @@ export default function Dashboard() {
   const { data: dashboardData, loading: dashboardLoading, error: dashboardError, refetch } = useDashboardSummary();
   
   const { entries, loading: scopeEntriesLoading, error: scopeEntriesError, refetch: scopeEntriesRefetch } = useScopeEntries(1);
-  
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitted(true);
-
-    // Gather summary data
-    const summary = {
-      inputs,
-      totalCO2,
-      totalCost,
-      fte,
-    };
-
-    // Send to backend
-    await fetch('https://<your-project-id>.functions.supabase.co/send-summary-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email,
-        summary: { inputs, totalCO2, totalCost, fte }
-      }),
-    });
-  };
   
   if (!companyLoading && !company) {
     return (
@@ -169,7 +147,7 @@ export default function Dashboard() {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <DashboardTotalEmissions 
-            totalEmissions={dashboardData.total_emissions}
+            totalEmissions={dashboardData.total_emissions || 0}
             loading={dashboardLoading}
           />
           
@@ -188,7 +166,7 @@ export default function Dashboard() {
                 <Skeleton className="h-8 w-28" />
               ) : (
                   <div className="flex items-end space-x-1">
-                  <span className="text-3xl font-bold">{dashboardData.team_members}</span>
+                  <span className="text-3xl font-bold">{dashboardData.team_members || '0'}</span>
                   <span className="text-muted-foreground mb-1 text-sm">members</span>
                   </div>
               )}

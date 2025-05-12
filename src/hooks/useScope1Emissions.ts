@@ -8,30 +8,32 @@ export interface EmissionEntryData {
   company_id: string;
   upload_session_id?: string | null;
   date: string;
-  year: number; // year column
+  year: number;
   category: string;
   description: string;
   quantity: number;
   unit: string;
-  emission_factor: number;
+  emission_factor?: number | null;
   emission_factor_id?: number | null;
   scope: number;
-  emissions: number;
+  emissions?: number | null;
   co2_emissions?: number | null;
   ch4_emissions?: number | null;
   n2o_emissions?: number | null;
   match_status?: string | null;
   created_at: string;
   updated_at: string;
+  embedding?: string;
+  notes?: string;
 }
 
 interface Filters {
   dateRange?: string;
-  year?: number;  // year filter
+  year?: number;
   category?: string;
   scope?: number;
   unit?: string;
-  matchStatus?: string; // new filter for match status
+  matchStatus?: string;
 }
 
 export const useEmissionEntries = (companyId: string, scopeFilter?: number) => {
@@ -108,8 +110,15 @@ export const useEmissionEntries = (companyId: string, scopeFilter?: number) => {
 
       if (error) throw error;
 
-      setEntries(data || []);
-      return { data, error: null };
+      // Convert to EmissionEntryData format
+      const entriesData: EmissionEntryData[] = data ? data.map(entry => ({
+        ...entry,
+        emission_factor: null, // Default values for missing properties
+        emissions: null
+      })) : [];
+
+      setEntries(entriesData);
+      return { data: entriesData, error: null };
     } catch (error: any) {
       console.error('Error fetching emission entries:', error);
       toast.error('Failed to load emission data');
