@@ -93,7 +93,7 @@ const Index = () => {
           </div>
         </div>
       </section>
-
+      
       {/* How It Works Section */}
       <section id="how-it-works" className="py-20 md:py-28 px-6 bg-white">
         <div className="max-w-6xl mx-auto">

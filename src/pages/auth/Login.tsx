@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,13 +12,21 @@ import { Logo } from "@/components/branding/Logo";
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn } = useAuth();
+  const { signIn, session, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   
   const from = (location.state as any)?.from?.pathname || "/dashboard";
+
+  // Watch for session changes
+  useEffect(() => {
+    if (session && !authLoading) {
+      console.log("Session detected, navigating to:", from);
+      navigate(from, { replace: true });
+    }
+  }, [session, authLoading, navigate, from]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,9 +35,8 @@ export default function Login() {
     try {
       const { error } = await signIn(email, password, rememberMe);
       
-      if (!error) {
-        console.log("Login successful, navigating to:", from);
-        navigate(from, { replace: true });
+      if (error) {
+        console.error("Login error:", error);
       }
     } finally {
       setLoading(false);
@@ -93,8 +100,8 @@ export default function Login() {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col">
-              <Button type="submit" className="w-full bg-circa-green hover:bg-circa-green-dark" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Button type="submit" className="w-full bg-circa-green hover:bg-circa-green-dark" disabled={loading || authLoading}>
+                {(loading || authLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Sign In
               </Button>
               <p className="text-center text-sm mt-4">
