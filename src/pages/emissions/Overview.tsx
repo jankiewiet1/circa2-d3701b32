@@ -1,23 +1,78 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { EmissionsOverviewDashboard } from '@/components/emissions/EmissionsOverviewDashboard';
+import { useCompany } from '@/contexts/CompanyContext';
+import { supabase } from '@/integrations/supabase/client';
 
-const Overview = () => {
+export default function Overview() {
+  const { company } = useCompany();
+  const [entries, setEntries] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!company?.id) return;
+
+    const fetchEmissions = async () => {
+      try {
+        setLoading(true);
+        // Fetch emission entries with their calculations
+        const { data, error } = await supabase
+          .from('emission_entries')
+          .select(`
+            *,
+            emission_calculations(*)
+          `)
+          .eq('company_id', company.id)
+          .order('date', { ascending: false })
+          .limit(100);
+
+        if (error) throw error;
+        setEntries(data || []);
+      } catch (err: any) {
+        console.error('Error loading emissions data:', err);
+        setError(err.message || 'Failed to load emissions data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEmissions();
+  }, [company?.id]);
+
+  const refetch = async () => {
+    if (!company?.id) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('emission_entries')
+        .select(`
+          *,
+          emission_calculations(*)
+        `)
+        .eq('company_id', company.id)
+        .order('date', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      setEntries(data || []);
+    } catch (err: any) {
+      console.error('Error refreshing emissions data:', err);
+      setError(err.message || 'Failed to refresh emissions data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <MainLayout>
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold">Emissions Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Overview of your organization's carbon footprint
-          </p>
-        </div>
-        
-        <EmissionsOverviewDashboard />
-      </div>
+      <EmissionsOverviewDashboard 
+        entries={entries} 
+        loading={loading} 
+        error={error} 
+        refetch={refetch} 
+      />
     </MainLayout>
   );
-};
-
-export default Overview;
+}

@@ -19,10 +19,10 @@ export const EmissionFactorStatus = () => {
       if (!company?.id) return;
       setLoading(true);
       try {
-        const { data, preferredSource, error } = await checkEmissionFactorStatus(company.id);
-        if (error) throw error;
-        setStatus(data || []);
-        setPreferredSource(preferredSource || 'DEFRA');
+        const result = await checkEmissionFactorStatus(company.id);
+        if (result.error) throw result.error;
+        setStatus(result.data || []);
+        setPreferredSource(result.preferredSource || 'DEFRA');
       } catch (error) {
         console.error('Error loading emission factor status:', error);
         toast.error('Failed to load emission factor status');
@@ -108,18 +108,13 @@ export const EmissionFactorStatus = () => {
                       <td className="py-2 px-4">{getStatusBadge(stat.availableSources.find(s => s.source === 'DEFRA')?.hasData ?? false, 'DEFRA')}</td>
                       <td className="py-2 px-4">{getStatusBadge(stat.availableSources.find(s => s.source === 'EPA')?.hasData ?? false, 'EPA')}</td>
                       <td className="py-2 px-4">{getStatusBadge(stat.availableSources.find(s => s.source === 'IPCC')?.hasData ?? false, 'IPCC')}</td>
-                      <td className="py-2 px-4">{getStatusBadge(stat.availableSources.find(s => s.source === 'GHG Protocol Default')?.hasData ?? false, 'GHG Protocol Default')}</td>
+                      <td className="py-2 px-4">{getStatusBadge(stat.availableSources.find(s => s.source === 'GHG Protocol')?.hasData ?? false, 'GHG Protocol')}</td>
                       <td className="py-2 px-4">{getStatusBadge(stat.availableSources.find(s => s.source === 'ADEME')?.hasData ?? false, 'ADEME')}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-
-            {status.some(stat => {
-              const hasPreferred = stat.availableSources.find(s => s.source === preferredSource)?.hasData;
-              return !hasPreferred;
-            })}
           </div>
         ) : (
           <div className="text-center py-4">No emission data available</div>

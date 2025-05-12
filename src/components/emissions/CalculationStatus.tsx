@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,10 @@ import { toast } from "sonner";
 import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { runEmissionDiagnostics, recalculateCompanyEmissions } from '@/services/emissionService';
+
+interface CalculationLog {
+  calculated_at: string;
+}
 
 export const CalculationStatus = () => {
   const { company } = useCompany();
@@ -48,7 +51,7 @@ export const CalculationStatus = () => {
         .limit(1);
       
       if (calculationLogs && calculationLogs.length > 0) {
-        setLastCalculation(calculationLogs[0].calculated_at);
+        setLastCalculation((calculationLogs[0] as CalculationLog).calculated_at);
       }
       
       // Get calculation stats
@@ -56,17 +59,19 @@ export const CalculationStatus = () => {
         .from('emission_entries')
         .select('count')
         .eq('company_id', company.id)
-        .eq('match_status', 'matched');
+        .eq('match_status', 'matched')
+        .single();
         
       const { data: unmatchedCount } = await supabase
         .from('emission_entries')
         .select('count')
         .eq('company_id', company.id)
-        .eq('match_status', 'unmatched');
+        .eq('match_status', 'unmatched')
+        .single();
         
       // Handle case where counts might be null
-      const matched = matchedCount?.[0]?.count || 0;
-      const unmatched = unmatchedCount?.[0]?.count || 0;
+      const matched = matchedCount?.count || 0;
+      const unmatched = unmatchedCount?.count || 0;
       const total = Number(matched) + Number(unmatched);
       
       setCalculationStats({

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import dashboardImage from '@/assets/dashboard.png'; // Assuming you have this image in assets
+import dashboardImage from '@/assets/dashboard.png';
 
 export function CircaInAction() {
   return (
@@ -37,3 +37,5 @@ export function CircaInAction() {
     </section>
   );
 }
+
+export default CircaInAction;

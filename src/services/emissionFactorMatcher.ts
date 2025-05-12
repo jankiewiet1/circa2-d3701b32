@@ -3,7 +3,7 @@ import Fuse from "fuse.js";
 import { supabase } from "@/integrations/supabase/client";
 
 interface EmissionFactor {
-  ID: number;
+  id: number;
   category_1: string;
   category_2: string;
   category_3: string;
@@ -107,7 +107,7 @@ export async function loadEmissionFactorsFuse(): Promise<{
   const { data, error } = await supabase
     .from("emission_factors")
     .select(
-      `ID, category_1, category_2, category_3, category_4, "GHG Conversion Factor 2024", uom, Source, scope`
+      `id, category_1, category_2, category_3, category_4, "GHG Conversion Factor 2024", uom, Source, scope`
     )
     .eq("Source", "DEFRA");
 
@@ -207,7 +207,7 @@ export async function matchEmissionEntry(
     const catResults = fuseCat.search(normCategory, { limit: 3 });
     const logMatches = catResults
       .map((r) => {
-        return `ID:${r.item.ID}, categories: "${r.item.normalizedCategories.join(
+        return `ID:${r.item.id}, categories: "${r.item.normalizedCategories.join(
           " "
         )}", uom: ${r.item.uom}, scope: ${r.item.scope}, score: ${
           r.score?.toFixed(4) ?? "N/A"
@@ -263,4 +263,3 @@ export async function matchEmissionEntry(
     calculatedEmissions: emissions,
   };
 }
-

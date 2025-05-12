@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,6 +14,7 @@ import { format, subMonths, startOfMonth, subQuarters, startOfQuarter, startOfYe
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowUp, ArrowDown, CalendarIcon, BarChart2, PieChart as PieChartIcon, AreaChart as AreaChartIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { DateRange } from "react-day-picker";
 
 const COLORS = ["#0E5D40", "#6ED0AA", "#AAE3CA", "#D6F3E7"];
 const SCOPES = ["Scope 1", "Scope 2", "Scope 3"];
@@ -41,7 +41,7 @@ export default function DashboardPage() {
   const [locationBreakdown, setLocationBreakdown] = useState<any[]>([]);
   
   // Filter states
-  const [dateRange, setDateRange] = useState<{from?: Date; to?: Date}>({
+  const [dateRange, setDateRange] = useState<DateRange>({
     from: subMonths(new Date(), 24),
     to: new Date()
   });
@@ -67,17 +67,27 @@ export default function DashboardPage() {
       
       try {
         // Get total emissions summary
-        const { data: summary, error: summaryError } = await supabase.rpc('get_dashboard_data', {
+        const { data: summaryData, error: summaryError } = await supabase.rpc('get_dashboard_data', {
           p_company_id: company.id
         });
         
         if (summaryError) throw summaryError;
         
-        if (summary) {
-          setTotalEmissions(summary.total_emissions || 0);
+        if (summaryData) {
+          // Type checking and safe access
+          const summary = typeof summaryData === 'object' ? summaryData : {};
+          
+          // Set total emissions
+          const totalEmissions = typeof summary.total_emissions === 'number' 
+            ? summary.total_emissions 
+            : 0;
+          setTotalEmissions(totalEmissions);
           
           // Create monthly trends data
-          const monthlyData = summary.monthly_trends || [];
+          const monthlyData = Array.isArray(summary.monthly_trends) 
+            ? summary.monthly_trends 
+            : [];
+            
           setMonthlyTrends(monthlyData.map((item: any) => ({
             month: item.month,
             'Scope 1': item.scope_1_emissions || 0,
@@ -87,7 +97,9 @@ export default function DashboardPage() {
           })));
           
           // Set scope breakdown
-          setScopeBreakdown(summary.emissions_by_scope || []);
+          setScopeBreakdown(Array.isArray(summary.emissions_by_scope) 
+            ? summary.emissions_by_scope 
+            : []);
           
           // Calculate monthly, quarterly, and YTD data
           calculatePeriodEmissions(monthlyData);
@@ -303,7 +315,7 @@ export default function DashboardPage() {
                 <Calendar
                   mode="range"
                   selected={dateRange}
-                  onSelect={(range) => setDateRange(range || { from: undefined, to: undefined })}
+                  onSelect={(range) => handleDateRangeChange(range)}
                   initialFocus
                 />
               </PopoverContent>
@@ -603,7 +615,7 @@ export default function DashboardPage() {
                     <Calendar
                       mode="range"
                       selected={dateRange}
-                      onSelect={(range) => setDateRange(range || { from: undefined, to: undefined })}
+                      onSelect={(range) => handleDateRangeChange(range)}
                       initialFocus
                     />
                   </PopoverContent>
@@ -678,3 +690,9 @@ export default function DashboardPage() {
     </MainLayout>
   );
 }
+
+const handleDateRangeChange = (range: DateRange | undefined) => {
+  if (range) {
+    setDateRange(range);
+  }
+};

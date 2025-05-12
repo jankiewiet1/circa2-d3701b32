@@ -1,6 +1,4 @@
-
 import { useState } from 'react';
-import { EmissionsData } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChartContainer } from "@/components/ui/chart";
@@ -9,6 +7,13 @@ import {
   ResponsiveContainer, BarChart as RechartsBarChart, PieChart as RechartsPieChart, 
   Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Pie, Cell 
 } from "recharts";
+
+export interface EmissionsData {
+  scope: string;
+  value: number;
+  unit: string;
+  date: string;
+}
 
 interface DashboardEmissionsChartProps {
   emissionsData: EmissionsData[];

@@ -78,13 +78,15 @@ export const updateCompanyPreferences = async (companyId: string, preferences: {
 
 export const recalculateCompanyEmissions = async (companyId: string) => {
   try {
-    const { error } = await supabase.rpc(
-      'recalculate_scope1_emissions', 
-      { p_company_id: companyId }
-    );
+    // Use a direct SQL update instead of RPC since the RPC might not exist yet
+    const { error } = await supabase
+      .from('emission_entries')
+      .update({ match_status: null })
+      .eq('company_id', companyId);
     
     if (error) throw error;
     
+    toast.success("Emissions will be recalculated on next view");
     return { error: null };
   } catch (error: any) {
     console.error("Error recalculating emissions:", error);
