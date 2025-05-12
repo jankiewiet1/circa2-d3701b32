@@ -9,44 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      calculation_logs: {
-        Row: {
-          company_id: string | null
-          created_at: string | null
-          id: string
-          log_message: string | null
-          log_type: string | null
-          related_id: string | null
-          user_id: string | null
-        }
-        Insert: {
-          company_id?: string | null
-          created_at?: string | null
-          id?: string
-          log_message?: string | null
-          log_type?: string | null
-          related_id?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          company_id?: string | null
-          created_at?: string | null
-          id?: string
-          log_message?: string | null
-          log_type?: string | null
-          related_id?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "calculation_logs_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       companies: {
         Row: {
           bank_name: string | null
@@ -245,24 +207,112 @@ export type Database = {
           },
         ]
       }
+      emission_calculations: {
+        Row: {
+          calculated_at: string | null
+          ch4_emissions: number | null
+          ch4_factor: number | null
+          co2_emissions: number | null
+          co2_factor: number | null
+          company_id: string
+          date: string | null
+          emission_factor_id: number | null
+          entry_id: string
+          id: string
+          matched_category_1: string | null
+          matched_category_2: string | null
+          matched_category_3: string | null
+          matched_category_4: string | null
+          matched_factor_id: string | null
+          matched_ghg_unit: string | null
+          matched_similarity: number | null
+          matched_uom: string | null
+          n2o_emissions: number | null
+          n2o_factor: number | null
+          source: string | null
+          status: Database["public"]["Enums"]["calculation_status"]
+          total_emissions: number | null
+        }
+        Insert: {
+          calculated_at?: string | null
+          ch4_emissions?: number | null
+          ch4_factor?: number | null
+          co2_emissions?: number | null
+          co2_factor?: number | null
+          company_id: string
+          date?: string | null
+          emission_factor_id?: number | null
+          entry_id: string
+          id?: string
+          matched_category_1?: string | null
+          matched_category_2?: string | null
+          matched_category_3?: string | null
+          matched_category_4?: string | null
+          matched_factor_id?: string | null
+          matched_ghg_unit?: string | null
+          matched_similarity?: number | null
+          matched_uom?: string | null
+          n2o_emissions?: number | null
+          n2o_factor?: number | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["calculation_status"]
+          total_emissions?: number | null
+        }
+        Update: {
+          calculated_at?: string | null
+          ch4_emissions?: number | null
+          ch4_factor?: number | null
+          co2_emissions?: number | null
+          co2_factor?: number | null
+          company_id?: string
+          date?: string | null
+          emission_factor_id?: number | null
+          entry_id?: string
+          id?: string
+          matched_category_1?: string | null
+          matched_category_2?: string | null
+          matched_category_3?: string | null
+          matched_category_4?: string | null
+          matched_factor_id?: string | null
+          matched_ghg_unit?: string | null
+          matched_similarity?: number | null
+          matched_uom?: string | null
+          n2o_emissions?: number | null
+          n2o_factor?: number | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["calculation_status"]
+          total_emissions?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emission_calculations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emission_calculations_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: true
+            referencedRelation: "emission_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       emission_entries: {
         Row: {
           category: string
-          ch4_emissions: number | null
-          co2_emissions: number | null
           company_id: string
           created_at: string
           date: string
           description: string
-          emission_factor: number | null
-          emission_factor_id: number | null
-          emissions: number | null
+          embedding: string | null
           id: string
           match_status: string | null
-          n2o_emissions: number | null
           notes: string | null
           quantity: number
-          scope: number
+          scope: number | null
           unit: string
           updated_at: string
           upload_session_id: string | null
@@ -270,21 +320,16 @@ export type Database = {
         }
         Insert: {
           category: string
-          ch4_emissions?: number | null
-          co2_emissions?: number | null
           company_id: string
           created_at?: string
           date: string
           description: string
-          emission_factor?: number | null
-          emission_factor_id?: number | null
-          emissions?: number | null
+          embedding?: string | null
           id?: string
           match_status?: string | null
-          n2o_emissions?: number | null
           notes?: string | null
           quantity: number
-          scope: number
+          scope?: number | null
           unit: string
           updated_at?: string
           upload_session_id?: string | null
@@ -292,21 +337,16 @@ export type Database = {
         }
         Update: {
           category?: string
-          ch4_emissions?: number | null
-          co2_emissions?: number | null
           company_id?: string
           created_at?: string
           date?: string
           description?: string
-          emission_factor?: number | null
-          emission_factor_id?: number | null
-          emissions?: number | null
+          embedding?: string | null
           id?: string
           match_status?: string | null
-          n2o_emissions?: number | null
           notes?: string | null
           quantity?: number
-          scope?: number
+          scope?: number | null
           unit?: string
           updated_at?: string
           upload_session_id?: string | null
@@ -320,97 +360,49 @@ export type Database = {
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "emission_entries_upload_session_id_fkey"
-            columns: ["upload_session_id"]
-            isOneToOne: false
-            referencedRelation: "upload_sessions"
-            referencedColumns: ["id"]
-          },
         ]
       }
       emission_factors: {
         Row: {
-          category_1: string
-          category_2: string
-          category_3: string
-          category_4: string
-          "Column Text": string
-          "GHG Conversion Factor 2024": number | null
-          "GHG/Unit": string
-          ID: number
-          scope: string
-          Source: string
-          uom: string
+          category_1: string | null
+          category_2: string | null
+          category_3: string | null
+          category_4: string | null
+          embedding: string | null
+          "GHG Conversion Factor": number | null
+          "GHG/Unit": string | null
+          id: number
+          Scope: string | null
+          Source: string | null
+          uom: string | null
         }
         Insert: {
-          category_1?: string
-          category_2?: string
-          category_3?: string
-          category_4?: string
-          "Column Text"?: string
-          "GHG Conversion Factor 2024"?: number | null
-          "GHG/Unit"?: string
-          ID?: number
-          scope?: string
-          Source?: string
-          uom?: string
+          category_1?: string | null
+          category_2?: string | null
+          category_3?: string | null
+          category_4?: string | null
+          embedding?: string | null
+          "GHG Conversion Factor"?: number | null
+          "GHG/Unit"?: string | null
+          id?: number
+          Scope?: string | null
+          Source?: string | null
+          uom?: string | null
         }
         Update: {
-          category_1?: string
-          category_2?: string
-          category_3?: string
-          category_4?: string
-          "Column Text"?: string
-          "GHG Conversion Factor 2024"?: number | null
-          "GHG/Unit"?: string
-          ID?: number
-          scope?: string
-          Source?: string
-          uom?: string
+          category_1?: string | null
+          category_2?: string | null
+          category_3?: string | null
+          category_4?: string | null
+          embedding?: string | null
+          "GHG Conversion Factor"?: number | null
+          "GHG/Unit"?: string | null
+          id?: number
+          Scope?: string | null
+          Source?: string | null
+          uom?: string | null
         }
         Relationships: []
-      }
-      emission_matching_diagnostics: {
-        Row: {
-          category: string | null
-          checked_at: string | null
-          company_id: string | null
-          entry_id: string | null
-          id: string
-          reason: string | null
-          scope: number | null
-          unit: string | null
-        }
-        Insert: {
-          category?: string | null
-          checked_at?: string | null
-          company_id?: string | null
-          entry_id?: string | null
-          id?: string
-          reason?: string | null
-          scope?: number | null
-          unit?: string | null
-        }
-        Update: {
-          category?: string | null
-          checked_at?: string | null
-          company_id?: string | null
-          entry_id?: string | null
-          id?: string
-          reason?: string | null
-          scope?: number | null
-          unit?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "emission_matching_diagnostics_entry_id_fkey"
-            columns: ["entry_id"]
-            isOneToOne: false
-            referencedRelation: "emission_entries"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       profiles: {
         Row: {
@@ -444,258 +436,6 @@ export type Database = {
           phone_number?: string | null
         }
         Relationships: []
-      }
-      scope1_emissions: {
-        Row: {
-          activity_data: string | null
-          additional_notes: string | null
-          amount: number | null
-          company_id: string | null
-          created_at: string | null
-          date: string | null
-          emission_factor_source: string | null
-          emissions_co2e: number | null
-          events_affecting_data: string | null
-          fuel_type: string | null
-          id: string
-          progress_toward_target: string | null
-          ratio_indicators: string | null
-          reporting_boundary: string | null
-          reporting_period: string | null
-          scope_description: string | null
-          source: string | null
-          trend_notes: string | null
-          uncertainty_notes: string | null
-          unit: string | null
-          uploaded_by: string | null
-        }
-        Insert: {
-          activity_data?: string | null
-          additional_notes?: string | null
-          amount?: number | null
-          company_id?: string | null
-          created_at?: string | null
-          date?: string | null
-          emission_factor_source?: string | null
-          emissions_co2e?: number | null
-          events_affecting_data?: string | null
-          fuel_type?: string | null
-          id?: string
-          progress_toward_target?: string | null
-          ratio_indicators?: string | null
-          reporting_boundary?: string | null
-          reporting_period?: string | null
-          scope_description?: string | null
-          source?: string | null
-          trend_notes?: string | null
-          uncertainty_notes?: string | null
-          unit?: string | null
-          uploaded_by?: string | null
-        }
-        Update: {
-          activity_data?: string | null
-          additional_notes?: string | null
-          amount?: number | null
-          company_id?: string | null
-          created_at?: string | null
-          date?: string | null
-          emission_factor_source?: string | null
-          emissions_co2e?: number | null
-          events_affecting_data?: string | null
-          fuel_type?: string | null
-          id?: string
-          progress_toward_target?: string | null
-          ratio_indicators?: string | null
-          reporting_boundary?: string | null
-          reporting_period?: string | null
-          scope_description?: string | null
-          source?: string | null
-          trend_notes?: string | null
-          uncertainty_notes?: string | null
-          unit?: string | null
-          uploaded_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "scope1_emissions_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      scope2_emissions: {
-        Row: {
-          activity_data: string | null
-          additional_notes: string | null
-          amount: number | null
-          company_id: string | null
-          created_at: string | null
-          date: string | null
-          emission_factor_source: string | null
-          emissions_co2e: number | null
-          energy_type: string | null
-          events_affecting_data: string | null
-          id: string
-          location: string | null
-          progress_toward_target: string | null
-          ratio_indicators: string | null
-          reporting_boundary: string | null
-          reporting_period: string | null
-          scope_description: string | null
-          supplier: string | null
-          trend_notes: string | null
-          uncertainty_notes: string | null
-          unit: string | null
-          uploaded_by: string | null
-        }
-        Insert: {
-          activity_data?: string | null
-          additional_notes?: string | null
-          amount?: number | null
-          company_id?: string | null
-          created_at?: string | null
-          date?: string | null
-          emission_factor_source?: string | null
-          emissions_co2e?: number | null
-          energy_type?: string | null
-          events_affecting_data?: string | null
-          id?: string
-          location?: string | null
-          progress_toward_target?: string | null
-          ratio_indicators?: string | null
-          reporting_boundary?: string | null
-          reporting_period?: string | null
-          scope_description?: string | null
-          supplier?: string | null
-          trend_notes?: string | null
-          uncertainty_notes?: string | null
-          unit?: string | null
-          uploaded_by?: string | null
-        }
-        Update: {
-          activity_data?: string | null
-          additional_notes?: string | null
-          amount?: number | null
-          company_id?: string | null
-          created_at?: string | null
-          date?: string | null
-          emission_factor_source?: string | null
-          emissions_co2e?: number | null
-          energy_type?: string | null
-          events_affecting_data?: string | null
-          id?: string
-          location?: string | null
-          progress_toward_target?: string | null
-          ratio_indicators?: string | null
-          reporting_boundary?: string | null
-          reporting_period?: string | null
-          scope_description?: string | null
-          supplier?: string | null
-          trend_notes?: string | null
-          uncertainty_notes?: string | null
-          unit?: string | null
-          uploaded_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "scope2_emissions_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      scope3_emissions: {
-        Row: {
-          activity_data: string | null
-          additional_notes: string | null
-          annual_spend: number | null
-          commodity_type: string | null
-          company_id: string | null
-          created_at: string | null
-          date: string | null
-          emission_factor: number | null
-          emission_factor_source: string | null
-          emissions_co2e: number | null
-          events_affecting_data: string | null
-          id: string
-          procurement_contact: string | null
-          progress_toward_target: string | null
-          ratio_indicators: string | null
-          reporting_boundary: string | null
-          reporting_period: string | null
-          scope_description: string | null
-          supplier_address: string | null
-          supplier_name: string | null
-          supplier_type: string | null
-          trend_notes: string | null
-          uncertainty_notes: string | null
-          uploaded_by: string | null
-        }
-        Insert: {
-          activity_data?: string | null
-          additional_notes?: string | null
-          annual_spend?: number | null
-          commodity_type?: string | null
-          company_id?: string | null
-          created_at?: string | null
-          date?: string | null
-          emission_factor?: number | null
-          emission_factor_source?: string | null
-          emissions_co2e?: number | null
-          events_affecting_data?: string | null
-          id?: string
-          procurement_contact?: string | null
-          progress_toward_target?: string | null
-          ratio_indicators?: string | null
-          reporting_boundary?: string | null
-          reporting_period?: string | null
-          scope_description?: string | null
-          supplier_address?: string | null
-          supplier_name?: string | null
-          supplier_type?: string | null
-          trend_notes?: string | null
-          uncertainty_notes?: string | null
-          uploaded_by?: string | null
-        }
-        Update: {
-          activity_data?: string | null
-          additional_notes?: string | null
-          annual_spend?: number | null
-          commodity_type?: string | null
-          company_id?: string | null
-          created_at?: string | null
-          date?: string | null
-          emission_factor?: number | null
-          emission_factor_source?: string | null
-          emissions_co2e?: number | null
-          events_affecting_data?: string | null
-          id?: string
-          procurement_contact?: string | null
-          progress_toward_target?: string | null
-          ratio_indicators?: string | null
-          reporting_boundary?: string | null
-          reporting_period?: string | null
-          scope_description?: string | null
-          supplier_address?: string | null
-          supplier_name?: string | null
-          supplier_type?: string | null
-          trend_notes?: string | null
-          uncertainty_notes?: string | null
-          uploaded_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "scope3_emissions_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       settings: {
         Row: {
@@ -754,84 +494,47 @@ export type Database = {
         }
         Relationships: []
       }
-      upload_sessions: {
+      unit_conversions: {
         Row: {
-          company_id: string | null
-          completed_at: string | null
-          created_at: string | null
-          detected_scope: string | null
-          filename: string | null
-          id: string
-          row_count: number | null
-          status: string | null
-          uploaded_by: string | null
+          category: string
+          multiplier: number
+          standard_unit: string
+          unit_from: string
         }
         Insert: {
-          company_id?: string | null
-          completed_at?: string | null
-          created_at?: string | null
-          detected_scope?: string | null
-          filename?: string | null
-          id?: string
-          row_count?: number | null
-          status?: string | null
-          uploaded_by?: string | null
+          category: string
+          multiplier: number
+          standard_unit: string
+          unit_from: string
         }
         Update: {
-          company_id?: string | null
-          completed_at?: string | null
-          created_at?: string | null
-          detected_scope?: string | null
-          filename?: string | null
-          id?: string
-          row_count?: number | null
-          status?: string | null
-          uploaded_by?: string | null
+          category?: string
+          multiplier?: number
+          standard_unit?: string
+          unit_from?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "upload_sessions_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
-      user_activities: {
+      user_notification_settings: {
         Row: {
-          activity_type: string
-          company_id: string
           created_at: string
-          description: string
+          email_notifications: boolean | null
           id: string
-          user_id: string
+          updated_at: string
         }
         Insert: {
-          activity_type: string
-          company_id: string
           created_at?: string
-          description: string
-          id?: string
-          user_id: string
+          email_notifications?: boolean | null
+          id: string
+          updated_at?: string
         }
         Update: {
-          activity_type?: string
-          company_id?: string
           created_at?: string
-          description?: string
+          email_notifications?: boolean | null
           id?: string
-          user_id?: string
+          updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "user_activities_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
@@ -871,6 +574,14 @@ export type Database = {
       }
     }
     Functions: {
+      binary_quantize: {
+        Args: { "": string } | { "": unknown }
+        Returns: unknown
+      }
+      calculate_emissions_for_entry: {
+        Args: { p_entry_id: string }
+        Returns: undefined
+      }
       calculate_ghg_emissions: {
         Args: { _company_id: string }
         Returns: {
@@ -883,35 +594,219 @@ export type Database = {
           match_status: string
         }[]
       }
-      recalculate_scope1_emissions: {
-        Args: { p_company_id: string }
+      calculate_scope_emissions: {
+        Args: { p_company_id: string; p_scope: string; p_source?: string }
         Returns: {
-          activity_data: string | null
-          additional_notes: string | null
-          amount: number | null
-          company_id: string | null
-          created_at: string | null
-          date: string | null
-          emission_factor_source: string | null
-          emissions_co2e: number | null
-          events_affecting_data: string | null
-          fuel_type: string | null
-          id: string
-          progress_toward_target: string | null
-          ratio_indicators: string | null
-          reporting_boundary: string | null
-          reporting_period: string | null
-          scope_description: string | null
-          source: string | null
-          trend_notes: string | null
-          uncertainty_notes: string | null
-          unit: string | null
-          uploaded_by: string | null
+          entry_id: string
+          category: string
+          unit: string
+          quantity: number
+          date: string
+          co2_factor: number
+          ch4_factor: number
+          n2o_factor: number
+          co2_emissions: number
+          ch4_emissions: number
+          n2o_emissions: number
+          total_emissions: number
         }[]
+      }
+      generate_category_text: {
+        Args: {
+          category_1: string
+          category_2: string
+          category_3: string
+          category_4: string
+        }
+        Returns: string
+      }
+      get_dashboard_data: {
+        Args: { p_company_id: string }
+        Returns: Json
+      }
+      get_emission_calculation_status: {
+        Args: { p_company_id: string; p_scope: string }
+        Returns: Json
+      }
+      get_entries_without_calculations: {
+        Args:
+          | { batch_limit: number }
+          | { batch_limit: number; p_cursor?: string }
+        Returns: {
+          id: string
+          company_id: string
+          date: string
+          quantity: number
+          unit: string
+          embedding: string
+        }[]
+      }
+      halfvec_avg: {
+        Args: { "": number[] }
+        Returns: unknown
+      }
+      halfvec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      halfvec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      halfvec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
+      hnsw_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_sparsevec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnswhandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflat_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflat_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflathandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      l2_norm: {
+        Args: { "": unknown } | { "": unknown }
+        Returns: number
+      }
+      l2_normalize: {
+        Args: { "": string } | { "": unknown } | { "": unknown }
+        Returns: string
+      }
+      match_categories: {
+        Args: {
+          query_embedding: string
+          match_threshold: number
+          match_count: number
+          table_name: string
+        }
+        Returns: {
+          id: number
+          category_1: string
+          category_2: string
+          category_3: string
+          category_4: string
+          uom: string
+          similarity: number
+        }[]
+      }
+      match_categories_with_factors: {
+        Args: {
+          query_embedding: string
+          match_threshold: number
+          match_count: number
+        }
+        Returns: {
+          category_1: string
+          category_2: string
+          category_3: string
+          category_4: string
+          similarity: number
+          factors: Json
+        }[]
+      }
+      match_emission_factor: {
+        Args: { query_embedding: string; match_threshold?: number }
+        Returns: {
+          id: number
+          scope: string
+          category_1: string
+          category_2: string
+          category_3: string
+          category_4: string
+          uom: string
+          source: string
+          conversion_factor: number
+          similarity: number
+        }[]
+      }
+      normalize_unit: {
+        Args: { raw_value: number; raw_unit: string }
+        Returns: {
+          norm_value: number
+          norm_unit: string
+        }[]
+      }
+      process_all_emission_entries: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      process_emission_entries_batch: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      process_emission_entry: {
+        Args: { entry_id: string }
+        Returns: {
+          calculation_id: string
+          matched_factor_id: number
+          source: string
+          total_emissions: number
+        }[]
+      }
+      process_single_emission_entry: {
+        Args: { p_entry_id: string }
+        Returns: undefined
+      }
+      sparsevec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      sparsevec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      sparsevec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
+      vector_avg: {
+        Args: { "": number[] }
+        Returns: string
+      }
+      vector_dims: {
+        Args: { "": string } | { "": unknown }
+        Returns: number
+      }
+      vector_norm: {
+        Args: { "": string }
+        Returns: number
+      }
+      vector_out: {
+        Args: { "": string }
+        Returns: unknown
+      }
+      vector_send: {
+        Args: { "": string }
+        Returns: string
+      }
+      vector_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
       }
     }
     Enums: {
-      [_ in never]: never
+      calculation_status: "pending" | "matched" | "factor_not_found" | "error"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1026,6 +921,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      calculation_status: ["pending", "matched", "factor_not_found", "error"],
+    },
   },
 } as const

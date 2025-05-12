@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Company, CompanyMember, UserRole } from "@/types";
 
@@ -366,5 +365,38 @@ export const removeMemberService = async (memberId: string) => {
     return { error: null };
   } catch (error) {
     return { error };
+  }
+};
+
+export const getCompanyPreferences = async (companyId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('company_preferences')
+      .select('*')
+      .eq('company_id', companyId)
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error: any) {
+    console.error('Error fetching company preferences:', error);
+    throw error;
+  }
+};
+
+export const updateCompanyPreferences = async (preferences: any) => {
+  try {
+    const { data, error } = await supabase
+      .from('company_preferences')
+      .upsert({
+        ...preferences,
+        updated_at: new Date().toISOString(),
+      });
+
+    if (error) throw error;
+    return data;
+  } catch (error: any) {
+    console.error('Error updating company preferences:', error);
+    throw error;
   }
 };

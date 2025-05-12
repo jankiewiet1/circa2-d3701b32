@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -10,7 +9,7 @@ import CompanyInfoTab from "./setup/tabs/CompanyInfoTab";
 import CompanyTeamTab from "./setup/tabs/CompanyTeamTab";
 import CompanyPreferencesTab from "./setup/tabs/CompanyPreferencesTab";
 import { useNavigate } from "react-router-dom";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
 
@@ -129,8 +128,17 @@ export default function CompanySetup() {
                 <CompanyTeamTab />
               </TabsContent>
               
-              <TabsContent value="preferences">
-                <CompanyPreferencesTab />
+              <TabsContent value="preferences" className="space-y-6">
+                {company?.id ? (
+                  <CompanyPreferencesTab companyId={company.id} />
+                ) : (
+                  <Alert>
+                    <AlertTitle>Complete the company info first</AlertTitle>
+                    <AlertDescription>
+                      Please complete the "Company Info" tab before setting preferences.
+                    </AlertDescription>
+                  </Alert>
+                )}
               </TabsContent>
             </Tabs>
           </CardContent>
