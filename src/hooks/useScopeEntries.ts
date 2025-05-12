@@ -58,7 +58,7 @@ export const useScopeEntries = (scope: 1 | 2 | 3) => {
         .from('emission_entries')
         .select(`
           *,
-          emission_calculations(*)
+          emission_calculations!inner(*)
         `)
         .eq('company_id', company.id)
         .eq('scope', scope)
@@ -90,4 +90,4 @@ export const useScopeEntries = (scope: 1 | 2 | 3) => {
   }, [fetchData]);
 
   return { entries, loading, error, refetch: fetchData };
-}; 
+};
