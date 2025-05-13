@@ -1,6 +1,23 @@
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+interface EmissionCalculation {
+  entry_id: string;
+  total_emissions: number;
+}
+
+interface EmissionEntry {
+  id: string;
+  scope: number;
+  created_at: string;
+  emission_calculations: EmissionCalculation[];
+}
+
+interface MonthlyEntry {
+  created_at: string;
+  emission_calculations: EmissionCalculation[];
+}
+
 interface DashboardSummary {
   total_emissions: number;
   scope_breakdown: {
@@ -13,7 +30,13 @@ interface DashboardSummary {
   }[];
   coverage: number;
   unmatched_entries: number;
-  recent_activities: any[];
+  recent_activities: unknown[];
+}
+
+function ensureArray<T>(value: T | T[]): T[] {
+  if (Array.isArray(value)) return value;
+  if (value === undefined || value === null) return [];
+  return [value];
 }
 
 export function useDashboardSummary(companyId: string | null) {
@@ -45,15 +68,20 @@ export function useDashboardSummary(companyId: string | null) {
 
       if (emissionsError) throw emissionsError;
 
+      const emissionsEntries = (emissionsData || []).map((entry: any) => ({
+        ...entry,
+        emission_calculations: ensureArray(entry.emission_calculations),
+      })) as EmissionEntry[];
+
       // Calculate total emissions and scope breakdown using the joined data
-      const total_emissions = emissionsData.reduce(
-        (sum, entry) => sum + ((Array.isArray(entry.emission_calculations) && entry.emission_calculations[0]?.total_emissions) || 0),
+      const total_emissions = emissionsEntries.reduce(
+        (sum, entry) => sum + (entry.emission_calculations[0]?.total_emissions || 0),
         0
       );
 
       const scope_breakdown = Object.entries(
-        emissionsData.reduce((acc, entry) => {
-          const emissions = (Array.isArray(entry.emission_calculations) && entry.emission_calculations[0]?.total_emissions) || 0;
+        emissionsEntries.reduce((acc, entry) => {
+          const emissions = entry.emission_calculations[0]?.total_emissions || 0;
           acc[entry.scope] = (acc[entry.scope] || 0) + emissions;
           return acc;
         }, {} as Record<number, number>)
@@ -71,9 +99,14 @@ export function useDashboardSummary(companyId: string | null) {
 
       if (monthlyError) throw monthlyError;
 
-      const monthly_trends = monthlyData.reduce((acc, entry) => {
+      const monthlyEntries = (monthlyData || []).map((entry: any) => ({
+        ...entry,
+        emission_calculations: ensureArray(entry.emission_calculations),
+      })) as MonthlyEntry[];
+
+      const monthly_trends = monthlyEntries.reduce((acc, entry) => {
         const month = new Date(entry.created_at).toISOString().slice(0, 7);
-        const emissions = (Array.isArray(entry.emission_calculations) && entry.emission_calculations[0]?.total_emissions) || 0;
+        const emissions = entry.emission_calculations[0]?.total_emissions || 0;
         acc[month] = (acc[month] || 0) + emissions;
         return acc;
       }, {} as Record<string, number>);
@@ -89,18 +122,9 @@ export function useDashboardSummary(companyId: string | null) {
       if (unmatchedError) throw unmatchedError;
 
       // Calculate coverage
-      const coverage = emissionsData.length > 0
-        ? ((emissionsData.length - (unmatched_count || 0)) / emissionsData.length) * 100
+      const coverage = emissionsEntries.length > 0
+        ? ((emissionsEntries.length - (unmatched_count || 0)) / emissionsEntries.length) * 100
         : 0;
-
-      // Fetch recent activities (commented out because 'activity_log' is not defined in Supabase types)
-      // const { data: activities, error: activitiesError } = await supabase
-      //   .from('activity_log')
-      //   .select('*')
-      //   .eq('company_id', companyId)
-      //   .order('created_at', { ascending: false })
-      //   .limit(10);
-      // if (activitiesError) throw activitiesError;
 
       setSummary({
         total_emissions,
@@ -111,7 +135,7 @@ export function useDashboardSummary(companyId: string | null) {
         })),
         coverage,
         unmatched_entries: unmatched_count || 0,
-        recent_activities: [], // activities || [],
+        recent_activities: [],
       });
       setLoading(false);
     } catch (err) {
