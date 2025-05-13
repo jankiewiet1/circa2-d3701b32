@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -6,10 +5,10 @@ import { Form } from "@/components/ui/form";
 import { useCompany } from "@/contexts/CompanyContext";
 import { CompanyFormValues } from "@/types";
 import { useEffect } from "react";
-import { ContactInfoSection } from "./components/ContactInfoSection";
-import { BusinessInfoSection } from "./components/BusinessInfoSection";
-import { BankingInfoSection } from "./components/BankingInfoSection";
-import { BillingInfoSection } from "./components/BillingInfoSection";
+import { ContactInfoSection } from '@/components/company/setup/tabs/ContactInfoSection';
+import { BusinessInfoSection } from '@/components/company/setup/tabs/BusinessInfoSection';
+import { BankingInfoSection } from '@/components/company/setup/tabs/BankingInfoSection';
+import { BillingInfoSection } from '@/components/company/setup/tabs/BillingInfoSection';
 
 const formSchema = z.object({
   name: z.string().min(1, "Company name is required"),
