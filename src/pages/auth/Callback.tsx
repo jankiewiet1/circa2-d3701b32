@@ -6,23 +6,16 @@ export default function Callback() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Only run on client
     const handleCallback = async () => {
       const { error } = await supabase.auth.getSession();
-      
       if (error) {
-        console.error('Error during auth callback:', error);
-        navigate('/auth/login', { 
-          state: { 
-            error: 'Authentication failed. Please try again.' 
-          } 
-        });
+        navigate('/auth/login', { state: { error: 'Authentication failed. Please try again.' } });
         return;
       }
-
       // Redirect to dashboard on success
       navigate('/dashboard');
     };
-
     handleCallback();
   }, [navigate]);
 
