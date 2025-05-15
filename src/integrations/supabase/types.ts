@@ -209,72 +209,72 @@ export type Database = {
       }
       emission_calc_climatiq: {
         Row: {
-          id: string
-          company_id: string
-          entry_id: string
-          calculated_at: string | null
-          total_emissions: number | null
-          emissions_unit: string | null
-          scope: string | null
+          activity_data: Json | null
+          calculated_at: string
+          ch4_emissions: number | null
           climatiq_activity_id: string | null
+          climatiq_category: string | null
           climatiq_emissions_factor_id: string | null
           climatiq_factor_name: string | null
           climatiq_region: string | null
-          climatiq_category: string | null
           climatiq_source: string | null
           climatiq_year: number | null
           co2_emissions: number | null
-          ch4_emissions: number | null
+          company_id: string
+          created_at: string
+          emissions_unit: string
+          entry_id: string | null
+          id: string
           n2o_emissions: number | null
-          activity_data: any | null
-          request_params: any | null
-          created_at: string | null
+          request_params: Json | null
+          scope: number | null
+          total_emissions: number
           updated_at: string | null
         }
         Insert: {
-          id?: string
-          company_id: string
-          entry_id: string
-          calculated_at?: string | null
-          total_emissions?: number | null
-          emissions_unit?: string | null
-          scope?: string | null
+          activity_data?: Json | null
+          calculated_at?: string
+          ch4_emissions?: number | null
           climatiq_activity_id?: string | null
+          climatiq_category?: string | null
           climatiq_emissions_factor_id?: string | null
           climatiq_factor_name?: string | null
           climatiq_region?: string | null
-          climatiq_category?: string | null
           climatiq_source?: string | null
           climatiq_year?: number | null
           co2_emissions?: number | null
-          ch4_emissions?: number | null
+          company_id: string
+          created_at?: string
+          emissions_unit?: string
+          entry_id?: string | null
+          id?: string
           n2o_emissions?: number | null
-          activity_data?: any | null
-          request_params?: any | null
-          created_at?: string | null
+          request_params?: Json | null
+          scope?: number | null
+          total_emissions: number
           updated_at?: string | null
         }
         Update: {
-          id?: string
-          company_id?: string
-          entry_id?: string
-          calculated_at?: string | null
-          total_emissions?: number | null
-          emissions_unit?: string | null
-          scope?: string | null
+          activity_data?: Json | null
+          calculated_at?: string
+          ch4_emissions?: number | null
           climatiq_activity_id?: string | null
+          climatiq_category?: string | null
           climatiq_emissions_factor_id?: string | null
           climatiq_factor_name?: string | null
           climatiq_region?: string | null
-          climatiq_category?: string | null
           climatiq_source?: string | null
           climatiq_year?: number | null
           co2_emissions?: number | null
-          ch4_emissions?: number | null
+          company_id?: string
+          created_at?: string
+          emissions_unit?: string
+          entry_id?: string | null
+          id?: string
           n2o_emissions?: number | null
-          activity_data?: any | null
-          request_params?: any | null
-          created_at?: string | null
+          request_params?: Json | null
+          scope?: number | null
+          total_emissions?: number
           updated_at?: string | null
         }
         Relationships: [
@@ -287,6 +287,99 @@ export type Database = {
           },
           {
             foreignKeyName: "emission_calc_climatiq_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "emission_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      emission_calculations_legacy: {
+        Row: {
+          calculated_at: string | null
+          ch4_emissions: number | null
+          ch4_factor: number | null
+          co2_emissions: number | null
+          co2_factor: number | null
+          company_id: string
+          date: string | null
+          emission_factor_id: number | null
+          entry_id: string
+          id: string
+          matched_category_1: string | null
+          matched_category_2: string | null
+          matched_category_3: string | null
+          matched_category_4: string | null
+          matched_factor_id: string | null
+          matched_ghg_unit: string | null
+          matched_similarity: number | null
+          matched_uom: string | null
+          n2o_emissions: number | null
+          n2o_factor: number | null
+          source: string | null
+          status: Database["public"]["Enums"]["calculation_status"]
+          total_emissions: number | null
+        }
+        Insert: {
+          calculated_at?: string | null
+          ch4_emissions?: number | null
+          ch4_factor?: number | null
+          co2_emissions?: number | null
+          co2_factor?: number | null
+          company_id: string
+          date?: string | null
+          emission_factor_id?: number | null
+          entry_id: string
+          id?: string
+          matched_category_1?: string | null
+          matched_category_2?: string | null
+          matched_category_3?: string | null
+          matched_category_4?: string | null
+          matched_factor_id?: string | null
+          matched_ghg_unit?: string | null
+          matched_similarity?: number | null
+          matched_uom?: string | null
+          n2o_emissions?: number | null
+          n2o_factor?: number | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["calculation_status"]
+          total_emissions?: number | null
+        }
+        Update: {
+          calculated_at?: string | null
+          ch4_emissions?: number | null
+          ch4_factor?: number | null
+          co2_emissions?: number | null
+          co2_factor?: number | null
+          company_id?: string
+          date?: string | null
+          emission_factor_id?: number | null
+          entry_id?: string
+          id?: string
+          matched_category_1?: string | null
+          matched_category_2?: string | null
+          matched_category_3?: string | null
+          matched_category_4?: string | null
+          matched_factor_id?: string | null
+          matched_ghg_unit?: string | null
+          matched_similarity?: number | null
+          matched_uom?: string | null
+          n2o_emissions?: number | null
+          n2o_factor?: number | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["calculation_status"]
+          total_emissions?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emission_calculations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emission_calculations_entry_id_fkey"
             columns: ["entry_id"]
             isOneToOne: true
             referencedRelation: "emission_entries"
@@ -356,7 +449,7 @@ export type Database = {
           },
         ]
       }
-      emission_factors: {
+      emission_factors_legacy: {
         Row: {
           category_1: string | null
           category_2: string | null
@@ -532,6 +625,16 @@ export type Database = {
       }
     }
     Views: {
+      view_emissions_by_scope: {
+        Row: {
+          company_name: string | null
+          emissions_unit: string | null
+          month: string | null
+          scope: number | null
+          total_emissions: number | null
+        }
+        Relationships: []
+      }
       view_entries_by_year_and_scope: {
         Row: {
           company_id: string | null
@@ -572,9 +675,9 @@ export type Database = {
         Args: { "": string } | { "": unknown }
         Returns: unknown
       }
-      calculate_emissions_for_entry: {
-        Args: { p_entry_id: string }
-        Returns: undefined
+      calculate_emissions_climatiq: {
+        Args: { entry_id: string }
+        Returns: Json
       }
       calculate_ghg_emissions: {
         Args: { _company_id: string }
@@ -625,14 +728,23 @@ export type Database = {
       get_entries_without_calculations: {
         Args:
           | { batch_limit: number }
-          | { batch_limit: number; p_cursor?: string }
+          | { batch_limit?: number; cursor_id?: string }
         Returns: {
-          id: string
+          category: string
           company_id: string
+          created_at: string
           date: string
+          description: string
+          embedding: string | null
+          id: string
+          match_status: string | null
+          notes: string | null
           quantity: number
+          scope: number | null
           unit: string
-          embedding: string
+          updated_at: string
+          upload_session_id: string | null
+          year: number | null
         }[]
       }
       halfvec_avg: {
@@ -745,10 +857,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
-      process_emission_entries_batch: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
       process_emission_entry: {
         Args: { entry_id: string }
         Returns: {
@@ -757,10 +865,6 @@ export type Database = {
           source: string
           total_emissions: number
         }[]
-      }
-      process_single_emission_entry: {
-        Args: { p_entry_id: string }
-        Returns: undefined
       }
       sparsevec_out: {
         Args: { "": unknown }
